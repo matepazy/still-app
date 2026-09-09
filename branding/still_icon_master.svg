@@ -2,7 +2,9 @@
   <title>Still app icon</title>
   <desc>Primary brand icon for Still, a screen-time context app.</desc>
   <rect width="512" height="512" rx="112" fill="#111713"/>
-  <path d="M349 168 C323 142 287 128 247 128 C190 128 151 157 151 199 C151 237 178 254 248 268 C316 282 347 300 347 340 C347 385 306 413 248 413 C203 413 164 397 136 367" fill="none" stroke="#E9F5EC" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="349" cy="168" r="13" fill="#9FE3B2"/>
-  <circle cx="136" cy="367" r="13" fill="#9FE3B2"/>
+  <g transform="translate(22 -21)">
+    <path d="M356 157 C326 129 286 113 242 113 C179 113 136 146 136 197 C136 240 166 260 241 275 C314 290 356 311 356 359 C356 410 310 441 243 441 C190 441 145 420 112 386" fill="none" stroke="#E9F5EC" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="356" cy="157" r="13" fill="#9FE3B2"/>
+    <circle cx="112" cy="386" r="13" fill="#9FE3B2"/>
+  </g>
 </svg>

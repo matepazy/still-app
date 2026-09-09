@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img">
+  <title>Still symbol for light surfaces</title>
+  <desc>A single-color ink version of the Still monoline symbol with green anchor points.</desc>
+  <g transform="translate(22 -21)">
+    <path d="M356 157C326 129 286 113 242 113C179 113 136 146 136 197C136 240 166 260 241 275C314 290 356 311 356 359C356 410 310 441 243 441C190 441 145 420 112 386" fill="none" stroke="#172019" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="356" cy="157" r="13" fill="#27683C"/>
+    <circle cx="112" cy="386" r="13" fill="#27683C"/>
+  </g>
+</svg>

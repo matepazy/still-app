@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432">
   <title>Still adaptive icon foreground</title>
   <desc>Safe-zone foreground mark for Android adaptive icons.</desc>
-  <path d="M292 142 C270 120 240 108 207 108 C160 108 127 132 127 167 C127 199 150 213 208 225 C265 237 291 252 291 286 C291 323 257 347 208 347 C171 347 138 333 115 308" fill="none" stroke="#E9F5EC" stroke-width="35" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="292" cy="142" r="11" fill="#9FE3B2"/>
-  <circle cx="115" cy="308" r="11" fill="#9FE3B2"/>
+  <g transform="translate(18.56 -17.72)">
+    <path d="M300.38 132.47 C275.06 108.84 241.31 95.34 204.19 95.34 C151.03 95.34 114.75 123.19 114.75 166.22 C114.75 202.5 140.06 219.38 203.34 232.03 C264.94 244.69 300.38 262.55 300.38 302.91 C300.38 345.94 261.56 372.09 205.03 372.09 C160.31 372.09 122.34 354.38 94.5 325.69" fill="none" stroke="#E9F5EC" stroke-width="35" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="300.38" cy="132.47" r="11" fill="#9FE3B2"/>
+    <circle cx="94.5" cy="325.69" r="11" fill="#9FE3B2"/>
+  </g>
 </svg>

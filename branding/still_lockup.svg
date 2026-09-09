@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="448" height="176" viewBox="0 0 448 176" role="img">
   <title>Still horizontal lockup</title>
-  <desc>Compatibility copy of the primary Still symbol and wordmark lockup.</desc>
+  <desc>The Still symbol in a rounded tile paired with the Still wordmark.</desc>
   <rect x="0" y="0" width="176" height="176" rx="48" fill="#111713"/>
   <g transform="translate(9 -10.5)">
     <path d="M122 55C111 45 97 39 82 39C60 39 45 51 45 69C45 84 55 91 81 96C106 101 122 108 122 125C122 143 106 158 82 158C64 158 48 151 36 139" fill="none" stroke="#E9F5EC" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>

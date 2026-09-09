@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -32,9 +33,14 @@ fun StillMark(
     size: Dp = 88.dp,
     container: Boolean = false,
 ) {
+    val markResource = when {
+        container -> R.drawable.ic_still_brand_mark
+        MaterialTheme.colorScheme.background.luminance() > 0.5f -> R.drawable.ic_still_mark_light
+        else -> R.drawable.ic_still_mark
+    }
     val mark = @Composable {
         Image(
-            painter = painterResource(R.drawable.ic_still_brand_mark),
+            painter = painterResource(markResource),
             contentDescription = "Still logo",
             modifier = Modifier.size(size),
         )
@@ -53,9 +59,8 @@ fun StillMark(
 }
 
 /**
- * The app wordmark pairs the supplied Still SVG mark with the product name.
- * The mark is an Android vector conversion of `branding/still_brand_mark.svg`, so it
- * stays crisp and keeps the same proportions at every density and display size.
+ * The app wordmark pairs the Still tile with the product name. The tile is an
+ * Android vector conversion of the master SVG geometry, so it stays crisp at every density.
  */
 @Composable
 fun StillWordmark(

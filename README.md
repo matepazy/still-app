@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="branding/still_icon_master.svg" width="96" height="96" alt="Still app icon">
+  <img src="branding/still_lockup.svg" width="320" alt="Still">
 </p>
 
 # Still
