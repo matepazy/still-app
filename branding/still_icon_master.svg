@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <title>Still app icon</title>
   <desc>Primary brand icon for Still, a screen-time context app.</desc>
-  <rect width="512" height="512" rx="112" fill="#111713"/>
+  <rect width="512" height="512" fill="#111713"/>
   <g transform="translate(22 -21)">
     <path d="M356 157 C326 129 286 113 242 113 C179 113 136 146 136 197 C136 240 166 260 241 275 C314 290 356 311 356 359 C356 410 310 441 243 441 C190 441 145 420 112 386" fill="none" stroke="#E9F5EC" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="356" cy="157" r="13" fill="#9FE3B2"/>

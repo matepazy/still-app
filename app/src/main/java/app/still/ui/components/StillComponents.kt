@@ -49,7 +49,6 @@ fun StillMark(
         Box(
             modifier = modifier
                 .size(size)
-                .clip(RoundedCornerShape(size * .28f))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) { mark() }
