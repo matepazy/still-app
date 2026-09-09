@@ -2,7 +2,11 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:pathData="M73,31 C64,22 43,23 36,34 C28,47 42,52 55,54 C70,56 80,62 72,75 C65,87 42,87 33,76"
-        android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFF"
-        android:strokeWidth="6" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M73,35.5 C67.5,30 60,27 51.75,27 C40,27 31.75,33 31.75,41.75 C31.75,49.75 37.5,53.25 52,56.25 C66.25,59.25 72.75,63 72.75,71.5 C72.75,80.75 64.25,86.75 52,86.75 C42.75,86.75 34.5,83.25 28.75,77"
+        android:fillColor="@android:color/transparent" android:strokeColor="#000000"
+        android:strokeWidth="8.75" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M73,35.5 L73.01,35.5" android:strokeColor="#000000" android:strokeWidth="5.5"
+        android:strokeLineCap="round" />
+    <path android:pathData="M28.75,77 L28.76,77" android:strokeColor="#000000" android:strokeWidth="5.5"
+        android:strokeLineCap="round" />
 </vector>

@@ -46,6 +46,7 @@ import app.still.ui.appdetail.AppDetailScreen
 import app.still.ui.appdetail.AppDetailTopBar
 import app.still.ui.apps.AppsScreen
 import app.still.ui.apps.AppsTopBar
+import app.still.ui.components.StillMark
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
@@ -121,7 +122,6 @@ private fun MainNavigation(
         bottomBar = {
             if (currentRoute in primaryRoutes) {
                 NavigationBar(
-                    modifier = Modifier.height(68.dp),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     tonalElevation = 0.dp,
                 ) {
@@ -214,7 +214,7 @@ internal fun PermissionRequiredScreen(onOpenSettings: () -> Unit) {
             Modifier.size(88.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Default.BarChart, contentDescription = null, modifier = Modifier.size(42.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            StillMark(size = 42.dp)
         }
         Text("No usage access yet", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = StillSpacing.large))
         Text(

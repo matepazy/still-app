@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="branding/still_icon_master.svg" width="96" height="96" alt="Still app icon">
+</p>
+
 # Still
 
 Still is a privacy-first Android screen-time app focused on understanding usage patterns without judgment. It reconstructs local usage events into phone sessions, app activity, check-ins, breaks, and same-time-of-day comparisons.

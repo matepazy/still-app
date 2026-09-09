@@ -38,6 +38,7 @@ import app.still.BuildConfig
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.UserSettings
 import app.still.ui.components.TonalPanel
+import app.still.ui.components.StillWordmark
 import app.still.ui.theme.StillSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,7 +106,7 @@ fun SettingsScreen(
         SectionTitle("About")
         TonalPanel(Modifier.fillMaxWidth()) {
             Column {
-                Text("Still", style = MaterialTheme.typography.bodyMedium)
+                StillWordmark(markSize = 24.dp)
                 Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

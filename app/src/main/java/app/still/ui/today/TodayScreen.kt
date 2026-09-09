@@ -34,6 +34,7 @@ import app.still.domain.model.DailyUsage
 import app.still.domain.model.UsageDashboard
 import app.still.ui.components.AppIcon
 import app.still.ui.components.Dayline
+import app.still.ui.components.StillWordmark
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.clockTime
 import app.still.ui.components.compactDuration
@@ -46,7 +47,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TodayTopBar(onSettings: () -> Unit) {
     TopAppBar(
-        title = { Text("Still", style = MaterialTheme.typography.titleLarge) },
+        title = { StillWordmark() },
         actions = {
             IconButton(onClick = onSettings) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings")

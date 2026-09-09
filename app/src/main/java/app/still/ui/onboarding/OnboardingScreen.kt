@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.still.ui.UsageUiState
 import app.still.ui.components.StillMark
+import app.still.ui.components.StillWordmark
 import app.still.ui.theme.StillSpacing
 
 @Composable
@@ -92,6 +92,8 @@ private fun IntroPage() {
         StillMark(size = 184.dp)
         Spacer(Modifier.height(36.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+            StillWordmark(markSize = 28.dp)
+            Spacer(Modifier.height(StillSpacing.medium))
             Text("Understand\nyour screen time.", style = MaterialTheme.typography.headlineLarge)
             Spacer(Modifier.height(StillSpacing.large))
             Text(
@@ -106,7 +108,7 @@ private fun IntroPage() {
 @Composable
 private fun PermissionPage(usageState: UsageUiState) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp))
+        StillMark(size = 42.dp)
         Spacer(Modifier.height(StillSpacing.large))
         Text("Allow usage access", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(StillSpacing.medium))

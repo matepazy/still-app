@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108"><rect width="108" height="108" rx="24" fill="#111713"/><path d="M73 31C64 22 43 23 36 34c-8 13 6 18 19 20 15 2 25 8 17 21-7 12-30 12-39 1" fill="none" stroke="#E9F5EC" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="73" cy="31" r="4" fill="#9FE3B2"/><circle cx="33" cy="76" r="4" fill="#9FE3B2"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Still app icon</title>
+  <desc>Primary brand icon for Still, a screen-time context app.</desc>
+  <rect width="512" height="512" rx="112" fill="#111713"/>
+  <path d="M349 168 C323 142 287 128 247 128 C190 128 151 157 151 199 C151 237 178 254 248 268 C316 282 347 300 347 340 C347 385 306 413 248 413 C203 413 164 397 136 367" fill="none" stroke="#E9F5EC" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="349" cy="168" r="13" fill="#9FE3B2"/>
+  <circle cx="136" cy="367" r="13" fill="#9FE3B2"/>
+</svg>
