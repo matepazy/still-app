@@ -6,10 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -20,10 +16,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.UserSettings
 import app.still.ui.PermissionRequiredScreen
+import app.still.ui.components.StillIcons
 import app.still.ui.UsageUiState
 import app.still.ui.appdetail.AppDetailScreen
 import app.still.ui.appdetail.AppDetailTopBar
@@ -101,14 +99,14 @@ private fun PreviewNavigationBar(selected: String) {
         tonalElevation = 0.dp,
     ) {
         listOf(
-            Triple("today", "Today", Icons.Default.Home),
-            Triple("timeline", "Timeline", Icons.Default.BarChart),
-            Triple("apps", "Apps", Icons.Default.Apps),
+            Triple("today", "Today", StillIcons.Today),
+            Triple("timeline", "Timeline", StillIcons.Timeline),
+            Triple("apps", "Apps", StillIcons.Apps),
         ).forEach { (route, label, icon) ->
             NavigationBarItem(
                 selected = selected == route,
                 onClick = {},
-                icon = { Icon(icon, contentDescription = null) },
+                icon = { Icon(painterResource(icon), contentDescription = null) },
                 label = { Text(label) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,

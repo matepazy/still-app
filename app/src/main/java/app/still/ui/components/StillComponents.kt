@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,11 +17,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.still.R
@@ -57,34 +51,22 @@ fun StillMark(
     }
 }
 
-/**
- * The app wordmark pairs the Still tile with the product name. The tile is an
- * Android vector conversion of the master SVG geometry, so it stays crisp at every density.
- */
+/** Path-only Still wordmark, shared by app chrome and brand information surfaces. */
 @Composable
 fun StillWordmark(
     modifier: Modifier = Modifier,
     markSize: Dp = 28.dp,
 ) {
-    Row(
-        modifier = modifier.semantics {
-            contentDescription = "Still"
-            role = Role.Image
-        },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Image(
-            painter = painterResource(R.drawable.ic_still_brand_mark),
-            contentDescription = null,
-            modifier = Modifier.size(markSize),
-        )
-        androidx.compose.material3.Text(
-            "Still",
-            modifier = Modifier.padding(start = 8.dp),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-        )
+    val wordmarkResource = if (MaterialTheme.colorScheme.background.luminance() > 0.5f) {
+        R.drawable.ic_still_wordmark
+    } else {
+        R.drawable.ic_still_wordmark_inverse
     }
+    Image(
+        painter = painterResource(wordmarkResource),
+        contentDescription = "Still",
+        modifier = modifier.size(width = markSize * 2.04f, height = markSize),
+    )
 }
 
 @Composable

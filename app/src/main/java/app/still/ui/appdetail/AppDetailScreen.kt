@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +22,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -35,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.AppDetail
 import app.still.ui.components.AppIcon
+import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.clockTime
 import app.still.ui.components.compactDuration
@@ -48,8 +47,8 @@ import java.time.format.TextStyle
 fun AppDetailTopBar(@Suppress("UNUSED_PARAMETER") title: String, onBack: () -> Unit) {
     TopAppBar(
         title = {},
-        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
-        actions = { IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, contentDescription = "More options") } },
+        navigationIcon = { IconButton(onClick = onBack) { Icon(painterResource(StillIcons.Back), contentDescription = "Back") } },
+        actions = { IconButton(onClick = {}) { Icon(painterResource(StillIcons.More), contentDescription = "More options") } },
     )
 }
 

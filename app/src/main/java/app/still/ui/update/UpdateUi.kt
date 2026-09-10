@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,12 +40,13 @@ import app.still.ui.MainViewModel
 import app.still.ui.components.TonalPanel
 import app.still.ui.theme.StillSpacing
 import app.still.update.UpdateState
+import app.still.ui.components.StillIcons
 
 @Composable
 fun VersionOptInDialog(onDecision: (Boolean) -> Unit) {
     AlertDialog(
         onDismissRequest = {},
-        icon = { Icon(Icons.Default.CloudDownload, contentDescription = null) },
+        icon = { Icon(painterResource(StillIcons.Download), contentDescription = null) },
         title = { Text("Automatic updates") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
@@ -99,7 +97,7 @@ fun UpdateDetailsSheet(
                 .padding(bottom = StillSpacing.large),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                Icon(Icons.Default.NewReleases, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(painterResource(StillIcons.Update), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text("Update to ${update.version}", style = MaterialTheme.typography.titleLarge)
             }
             Spacer(Modifier.height(StillSpacing.large))
@@ -122,7 +120,7 @@ fun UpdateDetailsSheet(
                 }
                 is UpdateState.Error -> {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(44.dp))
+                        Icon(painterResource(StillIcons.Error), contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(44.dp))
                         Spacer(Modifier.height(StillSpacing.small))
                         Text("Update failed", style = MaterialTheme.typography.titleMedium)
                         Text(current.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
@@ -183,7 +181,7 @@ fun UpdateDetailsSheet(
 @Composable
 private fun StatusMessage(title: String, body: String) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Default.CloudDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
+        Icon(painterResource(StillIcons.Download), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
         Spacer(Modifier.height(StillSpacing.small))
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

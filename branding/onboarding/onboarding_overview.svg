@@ -1,11 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img">
   <title>Screen-time overview</title>
-  <desc>A quiet clock encircled by a dayline of phone-use sessions.</desc>
-  <circle cx="80" cy="72" r="47" fill="none" stroke="#303A33" stroke-width="10"/>
-  <path d="M80 25a47 47 0 0 1 40.7 23.5" fill="none" stroke="#9FE3B2" stroke-width="10" stroke-linecap="round"/>
-  <path d="M80 43v30l21 13" fill="none" stroke="#E9F5EC" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="80" cy="73" r="6" fill="#9FE3B2"/>
-  <path d="M25 131h14M48 131h27M84 131h10M103 131h32" fill="none" stroke="#E9F5EC" stroke-width="9" stroke-linecap="round"/>
-  <circle cx="25" cy="131" r="4.5" fill="#9FE3B2"/>
-  <circle cx="135" cy="131" r="4.5" fill="#9FE3B2"/>
+  <desc>A concise usage chart beside a clock.</desc>
+  <rect x="28" y="20" width="92" height="120" rx="18" fill="#13231D" stroke="#395047" stroke-width="4"/>
+  <path d="M48 52h52M48 72h32M48 92h43" fill="none" stroke="#F1F7F3" stroke-width="8" stroke-linecap="round"/>
+  <path d="M48 52h19M48 72h11M48 92h27" fill="none" stroke="#79E6AA" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="111" cy="111" r="27" fill="#0D1B17" stroke="#79E6AA" stroke-width="4"/>
+  <path d="M111 96v16l10 6" fill="none" stroke="#F1F7F3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

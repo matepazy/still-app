@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432" role="img">
+  <title>Still round monochrome icon</title>
+  <desc>An inset single-color Still signal for circular themed icons.</desc>
+  <path d="M286.52 130.72H197.96C166.8 130.72 147.94 147.94 147.94 174.18C147.94 198.78 163.52 211.08 193.88 211.08H240.6C270.12 211.08 288.96 228.32 288.96 255.36C288.96 284.06 266.84 301.28 234.04 301.28H145.48" fill="none" stroke="#000" stroke-width="24.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="286.52" cy="130.72" r="9.84"/><circle cx="145.48" cy="301.28" r="9.84"/>
+</svg>

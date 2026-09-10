@@ -1,11 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="448" height="176" viewBox="0 0 448 176" role="img">
-  <title>Still horizontal lockup</title>
-  <desc>Compatibility copy of the primary Still symbol and wordmark lockup.</desc>
-  <rect x="0" y="0" width="176" height="176" fill="#111713"/>
-  <g transform="translate(9 -10.5)">
-    <path d="M122 55C111 45 97 39 82 39C60 39 45 51 45 69C45 84 55 91 81 96C106 101 122 108 122 125C122 143 106 158 82 158C64 158 48 151 36 139" fill="none" stroke="#E9F5EC" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="122" cy="55" r="5" fill="#9FE3B2"/>
-    <circle cx="36" cy="139" r="5" fill="#9FE3B2"/>
-  </g>
-  <text x="220" y="112" fill="#172019" font-family="Inter, Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="84" font-weight="600" letter-spacing="-3">Still</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img">
+  <title>Still compact brand mark</title>
+  <desc>The centered Still signal on its rounded deep-green tile.</desc>
+  <rect x="5" y="5" width="150" height="150" rx="34" fill="#0D1B17"/>
+  <path d="M112 41H72C58 41 49 49 49 61C49 72 57 78 70 78H91C105 78 113 86 113 98C113 111 103 119 89 119H48" fill="none" stroke="#F1F7F3" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="112" cy="41" r="4" fill="#79E6AA"/><circle cx="48" cy="119" r="4" fill="#79E6AA"/>
 </svg>

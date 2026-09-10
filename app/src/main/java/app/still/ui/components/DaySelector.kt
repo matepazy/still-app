@@ -1,8 +1,6 @@
 package app.still.ui.components
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -15,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalLocale
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -38,7 +37,7 @@ fun DaySelector(
                 if (selectedDate == latestDate) "Today" else selectedDate.format(formatter),
                 style = MaterialTheme.typography.titleSmall,
             )
-            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Choose day")
+            Icon(painterResource(StillIcons.ChevronDown), contentDescription = "Choose day")
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             orderedDates.forEach { date ->

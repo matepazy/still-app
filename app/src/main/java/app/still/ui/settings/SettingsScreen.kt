@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.still.BuildConfig
 import app.still.data.settings.ThemePreference
@@ -41,6 +38,7 @@ import app.still.data.settings.UserSettings
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.StillWordmark
 import app.still.ui.theme.StillSpacing
+import app.still.ui.components.StillIcons
 import app.still.update.UpdateState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +46,7 @@ import app.still.update.UpdateState
 fun SettingsTopBar(onBack: () -> Unit) {
     TopAppBar(
         title = { Text("Settings", style = MaterialTheme.typography.titleLarge) },
-        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
+        navigationIcon = { IconButton(onClick = onBack) { Icon(painterResource(StillIcons.Back), contentDescription = "Back") } },
     )
 }
 
@@ -97,7 +95,7 @@ fun SettingsScreen(
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
             Row(Modifier.fillMaxWidth().clickable(onClick = onRefresh).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Refresh usage data", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(painterResource(StillIcons.Refresh), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -227,7 +225,7 @@ private fun SettingRow(title: String, supporting: String, onClick: () -> Unit) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
             Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(painterResource(StillIcons.ChevronRight), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

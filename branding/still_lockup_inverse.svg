@@ -1,11 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="448" height="176" viewBox="0 0 448 176" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="144" viewBox="0 0 360 144" role="img">
   <title>Still horizontal lockup for dark surfaces</title>
-  <desc>The Still symbol in a solid square tile paired with an inverse Still wordmark.</desc>
-  <rect x="0" y="0" width="176" height="176" fill="#111713"/>
-  <g transform="translate(9 -10.5)">
-    <path d="M122 55C111 45 97 39 82 39C60 39 45 51 45 69C45 84 55 91 81 96C106 101 122 108 122 125C122 143 106 158 82 158C64 158 48 151 36 139" fill="none" stroke="#E9F5EC" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="122" cy="55" r="5" fill="#9FE3B2"/>
-    <circle cx="36" cy="139" r="5" fill="#9FE3B2"/>
+  <desc>The Still app tile beside a custom light vector wordmark.</desc>
+  <rect width="144" height="144" rx="32" fill="#0D1B17"/>
+  <path d="M101 37H65C52 37 44 44 44 55C44 65 51 70 63 70H82C95 70 102 77 102 88C102 100 93 107 80 107H43" fill="none" stroke="#F1F7F3" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="101" cy="37" r="4.5" fill="#79E6AA"/><circle cx="43" cy="107" r="4.5" fill="#79E6AA"/>
+  <g transform="translate(166 29) scale(.78)" fill="none" stroke="#F1F7F3" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M65 28H31c-12 0-19 7-19 17s7 15 19 15h15c12 0 19 7 19 18 0 12-9 18-23 18H11"/>
+    <path d="M92 20v62c0 9 5 14 14 14M80 49h29M128 49v47M154 20v62c0 9 5 14 14 14M187 20v62c0 9 5 14 14 14"/>
   </g>
-  <text x="220" y="112" fill="#E9F5EC" font-family="Inter, Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="84" font-weight="600" letter-spacing="-3">Still</text>
+  <circle cx="265.84" cy="50.06" r="4.68" fill="#79E6AA"/>
 </svg>

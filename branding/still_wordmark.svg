@@ -1,5 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="96" viewBox="0 0 256 96" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="108" viewBox="0 0 220 108" role="img">
   <title>Still wordmark</title>
-  <desc>The Still name set in a quiet, sturdy sans-serif wordmark.</desc>
-  <text x="0" y="69" fill="#172019" font-family="Inter, Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="72" font-weight="600" letter-spacing="-2">Still</text>
+  <desc>A custom monoline Still wordmark drawn entirely as vectors.</desc>
+  <g fill="none" stroke="#102019" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M65 28H31c-12 0-19 7-19 17s7 15 19 15h15c12 0 19 7 19 18 0 12-9 18-23 18H11"/>
+    <path d="M92 20v62c0 9 5 14 14 14M80 49h29M128 49v47M154 20v62c0 9 5 14 14 14M187 20v62c0 9 5 14 14 14"/>
+  </g>
+  <circle cx="128" cy="27" r="6" fill="#24734A"/>
 </svg>

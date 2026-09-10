@@ -1,11 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img">
-  <title>Private usage timeline</title>
-  <desc>A phone-use dayline entering a protected on-device timeline.</desc>
-  <path d="M39 17h82c8 0 14 6 14 14v98c0 8-6 14-14 14H39c-8 0-14-6-14-14V31c0-8 6-14 14-14Z" fill="#18201B" stroke="#303A33" stroke-width="4"/>
-  <path d="M63 31h34" stroke="#AAB7AD" stroke-width="5" stroke-linecap="round"/>
-  <path d="M45 60h18M72 60h30M111 60h4M45 82h9M63 82h20M92 82h23M45 104h28M82 104h8M99 104h16" fill="none" stroke="#E9F5EC" stroke-width="9" stroke-linecap="round"/>
-  <circle cx="45" cy="60" r="4.5" fill="#9FE3B2"/>
-  <circle cx="115" cy="104" r="4.5" fill="#9FE3B2"/>
-  <path d="M70 126c4-10 16-14 25-8 4 3 7 7 8 12" fill="none" stroke="#9FE3B2" stroke-width="5" stroke-linecap="round"/>
-  <path d="M80 127h15v12H80Z" fill="#203D2A" stroke="#9FE3B2" stroke-width="3"/>
+  <title>Private usage access</title>
+  <desc>A local usage timeline protected by a shield.</desc>
+  <rect x="28" y="18" width="92" height="124" rx="18" fill="#13231D" stroke="#395047" stroke-width="4"/>
+  <path d="M48 48h44M48 70h28M48 92h50" fill="none" stroke="#F1F7F3" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="48" cy="48" r="4" fill="#79E6AA"/><circle cx="98" cy="92" r="4" fill="#79E6AA"/>
+  <path d="M108 78l24 9v18c0 17-10 29-24 35-14-6-24-18-24-35V87l24-9Z" fill="#0D1B17" stroke="#79E6AA" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m97 108 8 8 15-17" fill="none" stroke="#F1F7F3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

@@ -1,9 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img">
   <title>Still symbol</title>
-  <desc>A rounded monoline S with two mint anchor points.</desc>
-  <g transform="translate(22 -21)">
-    <path d="M356 157C326 129 286 113 242 113C179 113 136 146 136 197C136 240 166 260 241 275C314 290 356 311 356 359C356 410 310 441 243 441C190 441 145 420 112 386" fill="none" stroke="#E9F5EC" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="356" cy="157" r="13" fill="#9FE3B2"/>
-    <circle cx="112" cy="386" r="13" fill="#9FE3B2"/>
-  </g>
+  <desc>A light continuous S signal with two mint endpoints.</desc>
+  <path d="M358 133H230C185 133 158 158 158 196C158 231 181 249 224 249H291C334 249 361 274 361 313C361 354 329 379 282 379H154" fill="none" stroke="#F1F7F3" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="358" cy="133" r="14" fill="#79E6AA"/><circle cx="154" cy="379" r="14" fill="#79E6AA"/>
 </svg>

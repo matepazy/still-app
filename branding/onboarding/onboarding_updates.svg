@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img">
+  <title>App updates</title>
+  <desc>A clean release card with a download action.</desc>
+  <rect x="20" y="28" width="120" height="104" rx="18" fill="#13231D" stroke="#395047" stroke-width="4"/>
+  <path d="M40 52h42M40 72h25" fill="none" stroke="#F1F7F3" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="104" cy="82" r="28" fill="#0D1B17" stroke="#79E6AA" stroke-width="4"/>
+  <path d="M104 65v30m-11-11 11 11 11-11M88 105h32" fill="none" stroke="#F1F7F3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -9,10 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +49,7 @@ import app.still.ui.appdetail.AppDetailTopBar
 import app.still.ui.apps.AppsScreen
 import app.still.ui.apps.AppsTopBar
 import app.still.ui.components.StillMark
+import app.still.ui.components.StillIcons
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
@@ -169,9 +167,9 @@ private fun MainNavigation(
                     tonalElevation = 0.dp,
                 ) {
                     listOf(
-                        Triple(TodayRoute, "Today", Icons.Default.Home),
-                        Triple(TimelineRoute, "Timeline", Icons.Default.BarChart),
-                        Triple(AppsRoute, "Apps", Icons.Default.Apps),
+                        Triple(TodayRoute, "Today", StillIcons.Today),
+                        Triple(TimelineRoute, "Timeline", StillIcons.Timeline),
+                        Triple(AppsRoute, "Apps", StillIcons.Apps),
                     ).forEach { (route, label, icon) ->
                         NavigationBarItem(
                             selected = backStackEntry?.destination?.hierarchy?.any { it.route == route } == true,
@@ -185,7 +183,7 @@ private fun MainNavigation(
                                     }
                                 }
                             },
-                            icon = { Icon(icon, contentDescription = null) },
+                            icon = { Icon(painterResource(icon), contentDescription = null) },
                             label = { Text(label) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,

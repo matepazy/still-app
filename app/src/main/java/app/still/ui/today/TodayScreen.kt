@@ -12,13 +12,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,11 +21,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.UsageDashboard
 import app.still.ui.components.AppIcon
+import app.still.ui.components.StillIcons
 import app.still.ui.components.Dayline
 import app.still.ui.components.StillWordmark
 import app.still.ui.components.TonalPanel
@@ -50,7 +45,7 @@ fun TodayTopBar(onSettings: () -> Unit) {
         title = { StillWordmark() },
         actions = {
             IconButton(onClick = onSettings) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                Icon(painterResource(StillIcons.Settings), contentDescription = "Settings")
             }
         },
     )
@@ -94,14 +89,14 @@ fun TodayScreen(dashboard: UsageDashboard, onDaylineClick: () -> Unit, modifier:
                 value = "${today.sessions.size}",
                 label = "check-ins",
                 detail = quickCheckText(today),
-                icon = { Icon(Icons.Default.History, contentDescription = null) },
+                icon = { Icon(painterResource(StillIcons.History), contentDescription = null) },
                 modifier = Modifier.weight(1f),
             )
             MetricPanel(
                 value = today.longestBreak?.compactDuration() ?: "—",
                 label = "longest break",
                 detail = if (today.longestBreak == null) "After first use" else "Today",
-                icon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                icon = { Icon(painterResource(StillIcons.Calendar), contentDescription = null) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -128,7 +123,7 @@ fun TodayScreen(dashboard: UsageDashboard, onDaylineClick: () -> Unit, modifier:
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "View app details", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(painterResource(StillIcons.ChevronRight), contentDescription = "View app details", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -146,7 +141,7 @@ private fun Comparison(dashboard: UsageDashboard) {
     val less = comparison.difference.isNegative
     Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
         Icon(
-            if (less) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+            painterResource(if (less) StillIcons.ChevronDown else StillIcons.ChevronUp),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
         )
