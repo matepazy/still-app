@@ -16,6 +16,9 @@ Still uses one responsive symbol: a soft monoline `S` held between two mint poin
 | `still_stacked.svg` | Vertical lockup for splash, onboarding, and narrow placements |
 | `still_wordmark.svg` / `still_wordmark_inverse.svg` | Wordmark-only fallback when the symbol is already present |
 | `still_brand_mark.svg` | Backwards-compatible alias of `still_lockup.svg` |
+| `onboarding/onboarding_overview.svg` | Screen-time overview onboarding artwork |
+| `onboarding/onboarding_restricted_settings.svg` | Restricted-settings onboarding artwork |
+| `onboarding/onboarding_usage_access.svg` | Usage Access onboarding artwork |
 
 ## Core colors
 

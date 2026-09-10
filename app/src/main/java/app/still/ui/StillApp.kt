@@ -85,7 +85,8 @@ fun StillApp(viewModel: MainViewModel) {
             } else if (!settings.onboardingComplete) {
                 OnboardingScreen(
                     usageState = state.usage,
-                    onOpenSettings = { context.startActivity(viewModel.usageSettingsIntent()) },
+                    onOpenRestrictedSettings = { context.startActivity(viewModel.restrictedSettingsIntent()) },
+                    onOpenUsageSettings = { context.startActivity(viewModel.usageSettingsIntent()) },
                     onComplete = viewModel::completeOnboarding,
                 )
             } else {

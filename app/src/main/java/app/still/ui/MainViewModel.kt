@@ -70,7 +70,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun setTheme(value: ThemePreference) = viewModelScope.launch { container.settingsRepository.setTheme(value) }
     fun setDynamicColors(value: Boolean) = viewModelScope.launch { container.settingsRepository.setDynamicColors(value) }
     fun setDailyTargetMinutes(value: Long?) = viewModelScope.launch { container.settingsRepository.setDailyTargetMinutes(value) }
-    fun usageSettingsIntent() = container.permissionManager.settingsIntent()
+    fun usageSettingsIntent() = container.permissionManager.usageSettingsIntent()
+
+    fun restrictedSettingsIntent() = container.permissionManager.restrictedSettingsIntent()
 
     class Factory(private val container: AppContainer) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

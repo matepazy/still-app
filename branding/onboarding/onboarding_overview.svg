@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img">
+  <title>Screen-time overview</title>
+  <desc>A quiet clock encircled by a dayline of phone-use sessions.</desc>
+  <circle cx="80" cy="72" r="47" fill="none" stroke="#303A33" stroke-width="10"/>
+  <path d="M80 25a47 47 0 0 1 40.7 23.5" fill="none" stroke="#9FE3B2" stroke-width="10" stroke-linecap="round"/>
+  <path d="M80 43v30l21 13" fill="none" stroke="#E9F5EC" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="80" cy="73" r="6" fill="#9FE3B2"/>
+  <path d="M25 131h14M48 131h27M84 131h10M103 131h32" fill="none" stroke="#E9F5EC" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="25" cy="131" r="4.5" fill="#9FE3B2"/>
+  <circle cx="135" cy="131" r="4.5" fill="#9FE3B2"/>
+</svg>

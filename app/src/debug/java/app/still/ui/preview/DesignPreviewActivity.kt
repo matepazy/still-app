@@ -55,7 +55,7 @@ class DesignPreviewActivity : ComponentActivity() {
 @Composable
 private fun DesignScreen(screen: String) {
     when (screen) {
-        "onboarding" -> OnboardingScreen(UsageUiState.PermissionRequired, {}, {})
+        "onboarding" -> OnboardingScreen(UsageUiState.PermissionRequired, {}, {}, {})
         "permission" -> PermissionRequiredScreen {}
         "detail" -> Scaffold(topBar = { AppDetailTopBar("Instagram", {}) }) { padding ->
             AppDetailScreen(PreviewFixtures.appDetail, Modifier.padding(padding))

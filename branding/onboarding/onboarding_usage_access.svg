@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img">
+  <title>Private usage timeline</title>
+  <desc>A phone-use dayline entering a protected on-device timeline.</desc>
+  <path d="M39 17h82c8 0 14 6 14 14v98c0 8-6 14-14 14H39c-8 0-14-6-14-14V31c0-8 6-14 14-14Z" fill="#18201B" stroke="#303A33" stroke-width="4"/>
+  <path d="M63 31h34" stroke="#AAB7AD" stroke-width="5" stroke-linecap="round"/>
+  <path d="M45 60h18M72 60h30M111 60h4M45 82h9M63 82h20M92 82h23M45 104h28M82 104h8M99 104h16" fill="none" stroke="#E9F5EC" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="45" cy="60" r="4.5" fill="#9FE3B2"/>
+  <circle cx="115" cy="104" r="4.5" fill="#9FE3B2"/>
+  <path d="M70 126c4-10 16-14 25-8 4 3 7 7 8 12" fill="none" stroke="#9FE3B2" stroke-width="5" stroke-linecap="round"/>
+  <path d="M80 127h15v12H80Z" fill="#203D2A" stroke="#9FE3B2" stroke-width="3"/>
+</svg>
