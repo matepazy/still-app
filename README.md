@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="branding/still_lockup.svg" width="320" alt="Still">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/still_wordmark_inverse.svg">
+    <source media="(prefers-color-scheme: light)" srcset="branding/still_wordmark.svg">
+    <img src="branding/still_wordmark.svg" width="220" alt="Still">
+  </picture>
 </p>
 
 # Still
@@ -10,9 +14,14 @@ Still is a privacy-first Android screen-time app focused on understanding usage 
 
 ## Screenshots
 
-![Still interface gallery](docs/screenshots/implementation-grid.png)
+<p align="center">
+  <img src="docs/screenshots/emulator-today.png" width="23%" alt="Still Today screen showing screen time and the Dayline">
+  <img src="docs/screenshots/emulator-timeline.png" width="23%" alt="Still Timeline screen showing reconstructed phone sessions">
+  <img src="docs/screenshots/emulator-apps.png" width="23%" alt="Still Apps screen showing daily app usage">
+  <img src="docs/screenshots/emulator-app-detail.png" width="23%" alt="Still app detail screen showing usage history and sessions">
+</p>
 
-The gallery shows onboarding, permission guidance, Today, Timeline, Apps, app detail, Settings, light theme, and the no-access state. These captures use preview-only fixture data rendered by the production Compose screens; fake analytics are not included in runtime builds.
+Captured from the connected Android emulator running Still 0.9.0 with Usage Access enabled. The values shown come from that emulator's local usage history.
 
 ## Features
 
