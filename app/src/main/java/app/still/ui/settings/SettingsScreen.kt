@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +41,7 @@ import app.still.data.settings.UserSettings
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.StillWordmark
 import app.still.ui.theme.StillSpacing
+import app.still.update.UpdateState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,9 +60,14 @@ fun SettingsScreen(
     onTargetChange: (Long?) -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
+    updateState: UpdateState = UpdateState.Idle,
+    onVersionCheckChange: (Boolean) -> Unit = {},
+    onUpdateChannelChange: (String) -> Unit = {},
+    onCheckForUpdates: () -> Unit = {},
 ) {
     var targetDialog by remember { mutableStateOf(false) }
     var themeDialog by remember { mutableStateOf(false) }
+    var updateChannelDialog by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium)) {
         SectionTitle("Appearance")
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
@@ -91,6 +98,47 @@ fun SettingsScreen(
             Row(Modifier.fillMaxWidth().clickable(onClick = onRefresh).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Refresh usage data", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                 Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        SectionTitle("Updates")
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            Column {
+                SettingSwitch(
+                    title = "Automatically check for updates",
+                    supporting = "Check GitHub when Still starts",
+                    checked = settings.versionCheckEnabled == true,
+                    enabled = true,
+                    onCheckedChange = onVersionCheckChange,
+                )
+                Hairline()
+                SettingRow(
+                    title = "Update channel",
+                    supporting = if (settings.updateChannel == "pre-release") "Beta" else "Stable",
+                    onClick = { updateChannelDialog = true },
+                )
+                Hairline()
+                Row(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Manual check", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            when (updateState) {
+                                UpdateState.Checking -> "Checking…"
+                                is UpdateState.UpdateAvailable -> "Update available: ${updateState.version}"
+                                is UpdateState.Downloading -> "Downloading… ${(updateState.progress * 100).toInt()}%"
+                                is UpdateState.Completed -> "Ready to install"
+                                is UpdateState.Error -> "Check failed"
+                                UpdateState.Idle -> "Up to date"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Button(onClick = onCheckForUpdates, enabled = updateState !is UpdateState.Checking) { Text("Check") }
+                }
             }
         }
 
@@ -130,6 +178,17 @@ fun SettingsScreen(
             },
             selected = settings.dailyTargetMinutes?.let { "${it / 60} h${if (it % 60 > 0) " ${it % 60} min" else ""}" } ?: "No reference",
             onDismiss = { targetDialog = false },
+        )
+    }
+    if (updateChannelDialog) {
+        ChoiceDialog(
+            title = "Update channel",
+            options = listOf(
+                "Stable" to { onUpdateChannelChange("release") },
+                "Beta" to { onUpdateChannelChange("pre-release") },
+            ),
+            selected = if (settings.updateChannel == "pre-release") "Beta" else "Stable",
+            onDismiss = { updateChannelDialog = false },
         )
     }
 }

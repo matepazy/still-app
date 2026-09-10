@@ -16,8 +16,8 @@ class StillApplication : Application() {
     }
 }
 
-class AppContainer(application: Application) {
-    val permissionManager = UsagePermissionManager(application)
-    val settingsRepository = SettingsRepository(application)
-    val usageRepository = UsageRepository(application, UsageStatsDataSource(application))
+class AppContainer(val applicationContext: Application) {
+    val permissionManager = UsagePermissionManager(applicationContext)
+    val settingsRepository = SettingsRepository(applicationContext)
+    val usageRepository = UsageRepository(applicationContext, UsageStatsDataSource(applicationContext))
 }

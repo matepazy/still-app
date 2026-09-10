@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +49,7 @@ private enum class OnboardingPage {
     Intro,
     RestrictedSettings,
     UsageAccess,
+    Updates,
 }
 
 @Composable
@@ -55,7 +57,7 @@ fun OnboardingScreen(
     usageState: UsageUiState,
     onOpenRestrictedSettings: () -> Unit,
     onOpenUsageSettings: () -> Unit,
-    onComplete: () -> Unit,
+    onComplete: (Boolean) -> Unit,
     showRestrictedSettings: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
 ) {
     val pages = remember(showRestrictedSettings) {
@@ -63,13 +65,14 @@ fun OnboardingScreen(
             add(OnboardingPage.Intro)
             if (showRestrictedSettings) add(OnboardingPage.RestrictedSettings)
             add(OnboardingPage.UsageAccess)
+            add(OnboardingPage.Updates)
         }
     }
     var pageIndex by rememberSaveable { mutableIntStateOf(0) }
     val page = pages[pageIndex.coerceIn(0, pages.lastIndex)]
 
     LaunchedEffect(page, usageState) {
-        if (page == OnboardingPage.UsageAccess && usageState is UsageUiState.Ready) onComplete()
+        if (page == OnboardingPage.UsageAccess && usageState is UsageUiState.Ready) pageIndex++
     }
 
     Column(
@@ -81,6 +84,7 @@ fun OnboardingScreen(
                 OnboardingPage.Intro -> IntroPage()
                 OnboardingPage.RestrictedSettings -> RestrictedSettingsPage()
                 OnboardingPage.UsageAccess -> UsageAccessPage(usageState)
+                OnboardingPage.Updates -> UpdatesPage()
             }
         }
         PageDots(pageIndex, pages.size)
@@ -91,6 +95,7 @@ fun OnboardingScreen(
                     OnboardingPage.Intro -> pageIndex++
                     OnboardingPage.RestrictedSettings -> onOpenRestrictedSettings()
                     OnboardingPage.UsageAccess -> onOpenUsageSettings()
+                    OnboardingPage.Updates -> onComplete(true)
                 }
             },
             modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -101,13 +106,22 @@ fun OnboardingScreen(
                     OnboardingPage.Intro -> "Continue"
                     OnboardingPage.RestrictedSettings -> "Open Still app info"
                     OnboardingPage.UsageAccess -> "Open Usage Access"
+                    OnboardingPage.Updates -> "Stay up to date"
                 },
             )
         }
         when (page) {
             OnboardingPage.Intro -> Spacer(Modifier.height(48.dp))
             OnboardingPage.RestrictedSettings -> SecondaryAction("Continue to Usage Access") { pageIndex++ }
-            OnboardingPage.UsageAccess -> SecondaryAction("I’ll do this later", onComplete)
+            OnboardingPage.UsageAccess -> SecondaryAction("I’ll do this later") { pageIndex++ }
+            OnboardingPage.Updates -> {
+                Spacer(Modifier.height(StillSpacing.small))
+                OutlinedButton(
+                    onClick = { onComplete(false) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(24.dp),
+                ) { Text("I don't want the latest version") }
+            }
         }
     }
 }
@@ -144,7 +158,7 @@ private fun UsageAccessPage(usageState: UsageUiState) {
     OnboardingPageLayout(
         icon = R.drawable.ic_onboarding_usage_access,
         artworkDescription = "A private app-usage timeline",
-        eyebrow = "FINAL STEP",
+        eyebrow = "USAGE ACCESS",
         title = "Allow Usage Access",
         body = "Turn on Still in Usage Access so it can read Android’s app-usage history and build your timeline.",
     ) {
@@ -152,6 +166,20 @@ private fun UsageAccessPage(usageState: UsageUiState) {
         PrivacyNote("Your usage data is processed on this device and is never uploaded.")
         Spacer(Modifier.height(StillSpacing.medium))
         PermissionStatus(usageState)
+    }
+}
+
+@Composable
+private fun UpdatesPage() {
+    OnboardingPageLayout(
+        icon = R.drawable.ic_onboarding_updates,
+        artworkDescription = "A download arrow on a Still update card",
+        eyebrow = "FINAL STEP",
+        title = "Stay on the latest version",
+        body = "Still can check GitHub for new releases when the app starts, then let you review the release notes before downloading anything.",
+    ) {
+        Spacer(Modifier.height(StillSpacing.large))
+        PrivacyNote("Version checks contact GitHub, which receives standard network information such as your IP address. Still sends no usage data.")
     }
 }
 

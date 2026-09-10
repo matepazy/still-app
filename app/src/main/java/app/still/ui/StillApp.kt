@@ -57,6 +57,9 @@ import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.theme.StillSpacing
 import app.still.ui.theme.StillTheme
+import app.still.ui.update.UpdateDetailsSheet
+import app.still.ui.update.VersionOptInDialog
+import app.still.update.UpdateState
 import app.still.ui.timeline.TimelineScreen
 import app.still.ui.timeline.TimelineTopBar
 import app.still.ui.today.TodayScreen
@@ -74,7 +77,12 @@ private const val AppDetailRoute = "app/{packageName}"
 fun StillApp(viewModel: MainViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
+    val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var activeUpdate by remember { mutableStateOf<UpdateState.UpdateAvailable?>(null) }
+    LaunchedEffect(updateState) {
+        if (updateState is UpdateState.UpdateAvailable) activeUpdate = updateState as UpdateState.UpdateAvailable
+    }
     StillTheme(
         themePreference = if (settings?.onboardingComplete == false) ThemePreference.Dark else settings?.theme ?: ThemePreference.System,
         useDynamicColors = settings?.useDynamicColors ?: false,
@@ -94,8 +102,25 @@ fun StillApp(viewModel: MainViewModel) {
                     UsageUiState.Loading -> LoadingScreen()
                     UsageUiState.PermissionRequired -> PermissionRequiredScreen { context.startActivity(viewModel.usageSettingsIntent()) }
                     is UsageUiState.Error -> ErrorScreen(usage.message, viewModel::refresh)
-                    is UsageUiState.Ready -> MainNavigation(usage.dashboard, settings, viewModel)
+                    is UsageUiState.Ready -> MainNavigation(usage.dashboard, settings, updateState, viewModel)
                 }
+            }
+        }
+
+        if (settings?.onboardingComplete == true && settings.versionCheckEnabled == null) {
+            VersionOptInDialog(onDecision = viewModel::setVersionCheckEnabled)
+        }
+
+        activeUpdate?.let { update ->
+            if (settings?.onboardingComplete == true) {
+                UpdateDetailsSheet(
+                    update = update,
+                    viewModel = viewModel,
+                    onDismiss = {
+                        activeUpdate = null
+                        viewModel.resetUpdateState()
+                    },
+                )
             }
         }
     }
@@ -105,6 +130,7 @@ fun StillApp(viewModel: MainViewModel) {
 private fun MainNavigation(
     dashboard: UsageDashboard,
     settings: app.still.data.settings.UserSettings,
+    updateState: UpdateState,
     viewModel: MainViewModel,
 ) {
     val navController = rememberNavController()
@@ -201,6 +227,10 @@ private fun MainNavigation(
                     onDynamicChange = viewModel::setDynamicColors,
                     onTargetChange = viewModel::setDailyTargetMinutes,
                     onRefresh = viewModel::refresh,
+                    updateState = updateState,
+                    onVersionCheckChange = viewModel::setVersionCheckEnabled,
+                    onUpdateChannelChange = viewModel::setUpdateChannel,
+                    onCheckForUpdates = viewModel::triggerVersionCheck,
                 )
             }
         }

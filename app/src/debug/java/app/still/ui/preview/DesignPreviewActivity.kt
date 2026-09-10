@@ -55,13 +55,20 @@ class DesignPreviewActivity : ComponentActivity() {
 @Composable
 private fun DesignScreen(screen: String) {
     when (screen) {
-        "onboarding" -> OnboardingScreen(UsageUiState.PermissionRequired, {}, {}, {})
+        "onboarding" -> OnboardingScreen(UsageUiState.PermissionRequired, {}, {}, { _ -> })
         "permission" -> PermissionRequiredScreen {}
         "detail" -> Scaffold(topBar = { AppDetailTopBar("Instagram", {}) }) { padding ->
             AppDetailScreen(PreviewFixtures.appDetail, Modifier.padding(padding))
         }
         "settings" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
-            SettingsScreen(UserSettings(true, ThemePreference.Dark, false, null), {}, {}, {}, {}, Modifier.padding(padding))
+            SettingsScreen(
+                settings = UserSettings(true, ThemePreference.Dark, false, null),
+                onThemeChange = {},
+                onDynamicChange = {},
+                onTargetChange = {},
+                onRefresh = {},
+                modifier = Modifier.padding(padding),
+            )
         }
         else -> PreviewMainScaffold(screen)
     }
