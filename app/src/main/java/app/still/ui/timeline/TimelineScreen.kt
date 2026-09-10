@@ -38,11 +38,12 @@ import androidx.compose.ui.unit.dp
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.UsageSession
 import app.still.ui.components.AppIcon
+import app.still.ui.components.DaySelector
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.clockTime
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
-import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,30 +55,34 @@ fun TimelineTopBar(onSettings: () -> Unit) {
 }
 
 @Composable
-fun TimelineScreen(today: DailyUsage, modifier: Modifier = Modifier) {
-    if (today.sessions.isEmpty()) {
+fun TimelineScreen(
+    day: DailyUsage,
+    availableDates: List<LocalDate> = listOf(day.date),
+    onDateSelected: (LocalDate) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    if (day.sessions.isEmpty()) {
         Column(modifier.fillMaxSize().padding(StillSpacing.large), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("No sessions yet", style = MaterialTheme.typography.headlineSmall)
+            DaySelector(day.date, availableDates, onDateSelected)
+            Spacer(Modifier.height(StillSpacing.large))
+            Text("No sessions recorded", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(StillSpacing.small))
-            Text("Your first phone-use session today will appear here.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Choose another day or check back after Android records foreground use.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
+    val sessions = day.sessions.sortedByDescending { it.start }
     LazyColumn(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = StillSpacing.medium, end = StillSpacing.medium, bottom = StillSpacing.large),
     ) {
         item {
-            Text(
-                today.date.format(DateTimeFormatter.ofPattern("EEE, MMM d")),
-                modifier = Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            )
+            Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium), horizontalArrangement = Arrangement.Center) {
+                DaySelector(day.date, availableDates, onDateSelected)
+            }
         }
-        itemsIndexed(today.sessions, key = { _, session -> session.start.toEpochMilli() }) { index, session ->
-            SessionRow(session, isLast = index == today.sessions.lastIndex)
+        itemsIndexed(sessions, key = { _, session -> session.start.toEpochMilli() }) { index, session ->
+            SessionRow(session, isLast = index == sessions.lastIndex)
         }
     }
 }

@@ -25,6 +25,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +62,7 @@ import app.still.ui.timeline.TimelineTopBar
 import app.still.ui.today.TodayScreen
 import app.still.ui.today.TodayTopBar
 import java.time.Duration
+import java.time.LocalDate
 
 private const val TodayRoute = "today"
 private const val TimelineRoute = "timeline"
@@ -104,6 +110,16 @@ private fun MainNavigation(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val primaryRoutes = setOf(TodayRoute, TimelineRoute, AppsRoute)
+    val availableDays = remember(dashboard) {
+        (listOf(dashboard.today) + dashboard.history).distinctBy { it.date }.sortedByDescending { it.date }
+    }
+    var selectedDateValue by rememberSaveable { mutableStateOf(dashboard.today.date.toString()) }
+    LaunchedEffect(availableDays) {
+        if (availableDays.none { it.date.toString() == selectedDateValue }) selectedDateValue = dashboard.today.date.toString()
+    }
+    val selectedDate = runCatching { LocalDate.parse(selectedDateValue) }.getOrDefault(dashboard.today.date)
+    val selectedDay = availableDays.firstOrNull { it.date == selectedDate } ?: dashboard.today
+    val selectDate: (LocalDate) -> Unit = { selectedDateValue = it.toString() }
 
     Scaffold(
         topBar = {
@@ -114,7 +130,7 @@ private fun MainNavigation(
                 SettingsRoute -> SettingsTopBar { navController.popBackStack() }
                 AppDetailRoute -> {
                     val packageName = backStackEntry?.arguments?.getString("packageName")
-                    val title = dashboard.today.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
+                    val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
                     AppDetailTopBar(title) { navController.popBackStack() }
                 }
             }
@@ -133,10 +149,13 @@ private fun MainNavigation(
                         NavigationBarItem(
                             selected = backStackEntry?.destination?.hierarchy?.any { it.route == route } == true,
                             onClick = {
-                                navController.navigate(route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                val returnedHome = route == TodayRoute && navController.popBackStack(TodayRoute, inclusive = false)
+                                if (!returnedHome) {
+                                    navController.navigate(route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = route != TodayRoute
+                                    }
                                 }
                             },
                             icon = { Icon(icon, contentDescription = null) },
@@ -158,14 +177,21 @@ private fun MainNavigation(
             composable(TodayRoute) {
                 TodayScreen(dashboard, onDaylineClick = { navController.navigate(TimelineRoute) })
             }
-            composable(TimelineRoute) { TimelineScreen(dashboard.today) }
+            composable(TimelineRoute) {
+                TimelineScreen(selectedDay, availableDays.map { it.date }, selectDate)
+            }
             composable(AppsRoute) {
-                AppsScreen(dashboard.today, onAppClick = { packageName -> navController.navigate("app/$packageName") })
+                AppsScreen(
+                    selectedDay,
+                    onAppClick = { packageName -> navController.navigate("app/$packageName") },
+                    availableDates = availableDays.map { it.date },
+                    onDateSelected = selectDate,
+                )
             }
             composable(AppDetailRoute) { entry ->
                 val packageName = entry.arguments?.getString("packageName").orEmpty()
-                buildAppDetail(packageName, dashboard)?.let { AppDetailScreen(it) }
-                    ?: ErrorScreen("This app has no usage information today.") { navController.popBackStack() }
+                buildAppDetail(packageName, dashboard, selectedDate)?.let { AppDetailScreen(it) }
+                    ?: ErrorScreen("This app has no usage information for the selected day.") { navController.popBackStack() }
             }
             composable(SettingsRoute) {
                 SettingsScreen(
@@ -180,19 +206,24 @@ private fun MainNavigation(
     }
 }
 
-private fun buildAppDetail(packageName: String, dashboard: UsageDashboard): AppDetail? {
-    val usage = dashboard.today.apps.firstOrNull { it.app.packageName == packageName } ?: return null
-    val daily = dashboard.history.sortedBy { it.date }.map { day ->
+private fun buildAppDetail(packageName: String, dashboard: UsageDashboard, selectedDate: LocalDate): AppDetail? {
+    val allDays = (dashboard.history + dashboard.today).distinctBy { it.date }.sortedBy { it.date }
+    val selectedDay = allDays.firstOrNull { it.date == selectedDate } ?: return null
+    val usage = selectedDay.apps.firstOrNull { it.app.packageName == packageName } ?: return null
+    val daily = allDays.filter { !it.date.isAfter(selectedDate) }.takeLast(7).map { day ->
         val available = day.total > Duration.ZERO || day.unlocks > 0 || day.wakeups > 0
         DailyAppUsage(day.date, if (available) day.apps.firstOrNull { it.app.packageName == packageName }?.duration ?: Duration.ZERO else null)
     }
-    val valid = daily.mapNotNull { it.duration }
+    val valid = daily.dropLast(1).mapNotNull { it.duration }
     val average = valid.takeIf { it.isNotEmpty() }?.map { it.toMillis() }?.average()?.toLong()?.let(Duration::ofMillis)
     return AppDetail(
+        date = selectedDate,
         usage = usage,
         dailyUsage = daily,
         averageDaily = average,
-        sessions = dashboard.today.sessions.filter { session -> session.apps.any { it.app.packageName == packageName } },
+        sessions = selectedDay.sessions
+            .filter { session -> session.apps.any { it.app.packageName == packageName } }
+            .sortedByDescending { it.start },
     )
 }
 

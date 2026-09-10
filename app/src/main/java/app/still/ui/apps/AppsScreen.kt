@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,9 +29,11 @@ import androidx.compose.ui.unit.dp
 import app.still.domain.model.AppUsage
 import app.still.domain.model.DailyUsage
 import app.still.ui.components.AppIcon
+import app.still.ui.components.DaySelector
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,10 +45,18 @@ fun AppsTopBar(onSettings: () -> Unit) {
 }
 
 @Composable
-fun AppsScreen(today: DailyUsage, onAppClick: (String) -> Unit, modifier: Modifier = Modifier) {
-    if (today.apps.isEmpty()) {
+fun AppsScreen(
+    day: DailyUsage,
+    onAppClick: (String) -> Unit,
+    availableDates: List<LocalDate> = listOf(day.date),
+    onDateSelected: (LocalDate) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    if (day.apps.isEmpty()) {
         Column(modifier.fillMaxSize().padding(StillSpacing.large), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("No app usage yet", style = MaterialTheme.typography.headlineSmall)
+            DaySelector(day.date, availableDates, onDateSelected)
+            Spacer(Modifier.height(StillSpacing.large))
+            Text("No app usage recorded", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(StillSpacing.small))
             Text("Apps will appear after Android records foreground use.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -61,17 +70,14 @@ fun AppsScreen(today: DailyUsage, onAppClick: (String) -> Unit, modifier: Modifi
         item {
             Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.small), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Today", style = MaterialTheme.typography.titleSmall)
-                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Choose period")
-                    }
+                    DaySelector(day.date, availableDates, onDateSelected)
                     Text("Ordered by usage time", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text(today.total.compactDuration(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(day.total.compactDuration(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        items(today.apps, key = { it.app.packageName }) { usage ->
-            AppUsageRow(usage, today.total.toMillis(), onAppClick)
+        items(day.apps, key = { it.app.packageName }) { usage ->
+            AppUsageRow(usage, day.total.toMillis(), onAppClick)
         }
     }
 }

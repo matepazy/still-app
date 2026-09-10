@@ -89,4 +89,10 @@ class UsageAnalyticsTest {
     @Test fun insufficientBaselineDoesNotManufactureComparison() {
         assertEquals(null, BaselineCalculator.compare(Duration.ofMinutes(10), listOf(Duration.ofMinutes(20), Duration.ofMinutes(30))))
     }
+
+    @Test fun systemLaunchersAreRecognizedWithoutFilteringOrdinaryApps() {
+        assertTrue(SystemPackageFilter.isLauncher("com.google.android.apps.nexuslauncher"))
+        assertTrue(SystemPackageFilter.isLauncher("com.example.customhome", setOf("com.example.customhome")))
+        assertFalse(SystemPackageFilter.isLauncher("com.google.android.youtube"))
+    }
 }

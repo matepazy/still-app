@@ -107,6 +107,7 @@ object PreviewFixtures {
     )
 
     val appDetail = AppDetail(
+        date = date,
         usage = apps.first(),
         dailyUsage = listOf(25, 58, 34, 47, 61, 38, 48).mapIndexed { index, minutes ->
             DailyAppUsage(date.minusDays((6 - index).toLong()), Duration.ofMinutes(minutes.toLong()))

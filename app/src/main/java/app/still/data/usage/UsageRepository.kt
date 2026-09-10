@@ -10,6 +10,7 @@ import app.still.domain.analytics.BaselineCalculator
 import app.still.domain.analytics.DaylineBuilder
 import app.still.domain.analytics.ForegroundIntervalReconstructor
 import app.still.domain.analytics.SessionAnalyzer
+import app.still.domain.analytics.SystemPackageFilter
 import app.still.domain.model.AppDetail
 import app.still.domain.model.AppInfo
 import app.still.domain.model.DailyUsage
@@ -34,6 +35,14 @@ class UsageRepository(
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
     }
+    private val launcherPackages: Set<String> by lazy {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        buildSet {
+            homePackage?.let(::add)
+            packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+                .mapNotNullTo(this) { it.activityInfo?.packageName }
+        }
+    }
 
     suspend fun dashboard(): Result<UsageDashboard> = withContext(Dispatchers.Default) {
         runCatching {
@@ -46,10 +55,15 @@ class UsageRepository(
             val current = buildDay(today, now, zone, allEvents)
             val history = (1L..7L).map { offset ->
                 val date = today.minusDays(offset)
+                val end = date.plusDays(1).atStartOfDay(zone).toInstant()
+                buildDay(date, end, zone, allEvents)
+            }
+            val sameTimeHistory = (1L..7L).map { offset ->
+                val date = today.minusDays(offset)
                 val cutoff = date.atTime(localTime).atZone(zone).toInstant()
                 buildDay(date, cutoff, zone, allEvents)
             }
-            val valid = history.filter { it.total > Duration.ZERO || it.unlocks > 0 || it.wakeups > 0 }
+            val valid = sameTimeHistory.filter { it.total > Duration.ZERO || it.unlocks > 0 || it.wakeups > 0 }
             UsageDashboard(
                 today = current,
                 comparison = BaselineCalculator.compare(current.total, valid.map { it.total }),
@@ -68,6 +82,7 @@ class UsageRepository(
         val validPast = daily.mapNotNull { it.duration }
         val average = validPast.takeIf { it.isNotEmpty() }?.map { it.toMillis() }?.average()?.toLong()?.let(Duration::ofMillis)
         AppDetail(
+            date = dashboard.today.date,
             usage = usage,
             dailyUsage = daily,
             averageDaily = average,
@@ -90,7 +105,7 @@ class UsageRepository(
         val intervals = rawIntervals.filterNot { interval ->
             interval.packageName == context.packageName ||
                 interval.packageName == "com.android.systemui" ||
-                (interval.packageName == homePackage && interval.duration < Duration.ofSeconds(10))
+                SystemPackageFilter.isLauncher(interval.packageName, launcherPackages)
         }
         val info: (String) -> AppInfo = ::resolveApp
         val sessions = SessionAnalyzer.groupSessions(intervals, events, info)

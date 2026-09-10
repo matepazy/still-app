@@ -20,6 +20,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -62,23 +64,24 @@ fun Dayline(
                 val bandTop = 36.dp.toPx()
                 val bandHeight = 31.dp.toPx()
                 val nowX = size.width * nowProgress
-                drawRoundRect(track, Offset(0f, bandTop), Size(size.width, bandHeight), CornerRadius(5.dp.toPx()))
-                drawRoundRect(elapsed, Offset(0f, bandTop), Size(nowX, bandHeight), CornerRadius(5.dp.toPx()))
-
-                segments.forEachIndexed { index, segment ->
-                    val leftProgress = (Duration.between(start, segment.start).toMillis() / fullDayMillis).coerceIn(0f, 1f)
-                    val rightProgress = (Duration.between(start, segment.end).toMillis() / fullDayMillis).coerceIn(leftProgress, 1f)
-                    val left = size.width * leftProgress
-                    val rawWidth = size.width * (rightProgress - leftProgress) * reveal
-                    when (segment.kind) {
-                        DaylineKind.Active -> {
-                            val width = rawWidth.coerceAtLeast(2.dp.toPx())
-                            drawRoundRect(if (index % 3 == 1) accent else active, Offset(left, 25.dp.toPx()), Size(width, 42.dp.toPx()), CornerRadius(2.dp.toPx()))
+                val outline = Path().apply {
+                    addRoundRect(androidx.compose.ui.geometry.RoundRect(0f, bandTop, size.width, bandTop + bandHeight, CornerRadius(5.dp.toPx())))
+                }
+                clipPath(outline) {
+                    drawRect(track, Offset(0f, bandTop), Size(size.width, bandHeight))
+                    drawRect(elapsed, Offset(0f, bandTop), Size(nowX, bandHeight))
+                    var activeIndex = 0
+                    segments.forEach { segment ->
+                        val leftProgress = (Duration.between(start, segment.start).toMillis() / fullDayMillis).coerceIn(0f, 1f)
+                        val rightProgress = (Duration.between(start, segment.end).toMillis() / fullDayMillis).coerceIn(leftProgress, 1f)
+                        val left = size.width * leftProgress
+                        val width = size.width * (rightProgress - leftProgress) * reveal
+                        val color = when (segment.kind) {
+                            DaylineKind.Active -> if (activeIndex++ % 3 == 1) accent else active
+                            DaylineKind.ScreenOff -> off
+                            DaylineKind.Idle -> elapsed
                         }
-                        DaylineKind.ScreenOff -> if (rawWidth > 0f) {
-                            drawRoundRect(off, Offset(left, bandTop), Size(rawWidth, bandHeight), CornerRadius(3.dp.toPx()))
-                        }
-                        DaylineKind.Idle -> Unit
+                        if (width > 0f) drawRect(color, Offset(left, bandTop), Size(width, bandHeight))
                     }
                 }
                 drawLine(now, Offset(nowX, 17.dp.toPx()), Offset(nowX, 75.dp.toPx()), 1.dp.toPx(), StrokeCap.Round)

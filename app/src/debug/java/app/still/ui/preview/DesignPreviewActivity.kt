@@ -80,8 +80,8 @@ private fun PreviewMainScaffold(screen: String) {
         bottomBar = { PreviewNavigationBar(screen) },
     ) { padding ->
         when (screen) {
-            "timeline" -> TimelineScreen(PreviewFixtures.today, Modifier.padding(padding))
-            "apps" -> AppsScreen(PreviewFixtures.today, {}, Modifier.padding(padding))
+            "timeline" -> TimelineScreen(PreviewFixtures.today, modifier = Modifier.padding(padding))
+            "apps" -> AppsScreen(PreviewFixtures.today, {}, modifier = Modifier.padding(padding))
             else -> TodayScreen(PreviewFixtures.dashboard, {}, Modifier.padding(padding))
         }
     }

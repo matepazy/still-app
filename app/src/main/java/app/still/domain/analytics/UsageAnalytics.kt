@@ -141,6 +141,24 @@ object AppUsageAggregator {
             .sortedByDescending { it.duration }
 }
 
+object SystemPackageFilter {
+    private val knownLauncherPackages = setOf(
+        "com.android.launcher",
+        "com.android.launcher2",
+        "com.android.launcher3",
+        "com.google.android.apps.nexuslauncher",
+        "com.huawei.android.launcher",
+        "com.miui.home",
+        "com.motorola.launcher3",
+        "com.oneplus.launcher",
+        "com.oppo.launcher",
+        "com.sec.android.app.launcher",
+    )
+
+    fun isLauncher(packageName: String, detectedLauncherPackages: Set<String> = emptySet()): Boolean =
+        packageName in detectedLauncherPackages || packageName in knownLauncherPackages
+}
+
 object BaselineCalculator {
     fun compare(today: Duration, validPreviousDaysAtSameTime: List<Duration>): UsageComparison? {
         if (validPreviousDaysAtSameTime.size < 3) return null

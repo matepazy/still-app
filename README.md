@@ -18,8 +18,8 @@ The gallery shows onboarding, permission guidance, Today, Timeline, Apps, app de
 
 - **Today** — current screen time, a same-time seven-day comparison, check-ins, quick checks, longest break, and one meaningful app change.
 - **Dayline** — a compact timeline that makes fragmented use and longer sessions visually distinct.
-- **Timeline** — chronological phone sessions with app duration and switch sequence.
-- **Apps** — usage, opens, share of screen time, and per-app detail with seven-day history.
+- **Timeline** — reverse-chronological phone sessions with app duration, switch sequence, and day selection.
+- **Apps** — selectable daily usage, opens, share of screen time, and per-app detail with usage history.
 - **Appearance** — system, light, and dark themes, with optional Android 12+ wallpaper colors.
 - **Local-only processing** — no account, network permission, telemetry, analytics SDK, or cloud service.
 

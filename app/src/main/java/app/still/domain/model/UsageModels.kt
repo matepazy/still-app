@@ -86,6 +86,7 @@ data class DailyUsage(
 )
 
 data class AppDetail(
+    val date: LocalDate,
     val usage: AppUsage,
     val dailyUsage: List<DailyAppUsage>,
     val averageDaily: Duration?,

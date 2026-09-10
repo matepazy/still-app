@@ -64,7 +64,7 @@ fun AppDetailScreen(detail: AppDetail, modifier: Modifier = Modifier) {
         Text(detail.usage.app.label, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(StillSpacing.large))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            HeroStat(detail.usage.duration.compactDuration(), "today")
+            HeroStat(detail.usage.duration.compactDuration(), detail.date.dayOfWeek.getDisplayName(TextStyle.SHORT, LocalLocale.current.platformLocale))
             Spacer(Modifier.width(56.dp))
             HeroStat(detail.usage.opens.toString(), "opens")
         }
@@ -73,12 +73,12 @@ fun AppDetailScreen(detail: AppDetail, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(StillSpacing.medium))
         SummaryPanel(detail)
         Spacer(Modifier.height(StillSpacing.large))
-        Text("Today’s sessions", modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleSmall)
+        Text("Sessions", modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleSmall)
         Spacer(Modifier.height(StillSpacing.small))
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
             Column {
                 if (detail.sessions.isEmpty()) {
-                    Text("No sessions today", modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("No sessions on this day", modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else detail.sessions.forEach { session ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("${session.start.clockTime()} – ${session.end.clockTime()}", style = MaterialTheme.typography.bodyMedium)
@@ -128,7 +128,7 @@ private fun SevenDayChart(detail: AppDetail) {
         "${day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)}: ${day.duration?.compactDuration() ?: "unavailable"}"
     }
     Column(Modifier.fillMaxWidth().semantics { contentDescription = "Seven day usage chart. $description" }) {
-        Text("Previous 7 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Usage history", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(StillSpacing.small))
         Canvas(Modifier.fillMaxWidth().height(116.dp)) {
             val chartTop = 4.dp.toPx()
@@ -137,10 +137,10 @@ private fun SevenDayChart(detail: AppDetail) {
                 val y = chartTop + (chartBottom - chartTop) * index / 2f
                 drawLine(grid, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
             }
-            val gap = 12.dp.toPx()
-            val barWidth = (size.width - gap * (detail.dailyUsage.size - 1)) / detail.dailyUsage.size.coerceAtLeast(1)
+            val slotWidth = size.width / detail.dailyUsage.size.coerceAtLeast(1)
+            val barWidth = slotWidth * .62f
             detail.dailyUsage.forEachIndexed { index, day ->
-                val left = index * (barWidth + gap)
+                val left = index * slotWidth + (slotWidth - barWidth) / 2f
                 val height = day.duration?.let { (chartBottom - chartTop) * (it.toMillis().toFloat() / max) } ?: 3.dp.toPx()
                 drawRoundRect(
                     color = if (day.duration == null) unavailable else primary.copy(alpha = if (index == detail.dailyUsage.lastIndex) 1f else .45f),
@@ -150,10 +150,12 @@ private fun SevenDayChart(detail: AppDetail) {
                 )
             }
         }
-        Row(Modifier.fillMaxWidth().padding(top = StillSpacing.xSmall), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth().padding(top = StillSpacing.xSmall)) {
             detail.dailyUsage.forEach { day ->
                 Text(
                     day.date.dayOfWeek.getDisplayName(TextStyle.NARROW, locale),
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
