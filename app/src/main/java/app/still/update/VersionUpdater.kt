@@ -65,6 +65,10 @@ object SemanticVersion {
 
 object VersionUpdater {
     private const val ReleasesUrl = "https://api.github.com/repos/matepazy/still-app/releases"
+    private val stillApkName = Regex(
+        "^still-v\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?\\.apk$",
+        RegexOption.IGNORE_CASE,
+    )
 
     private val client = OkHttpClient()
     private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -105,7 +109,11 @@ object VersionUpdater {
                             return
                         }
 
+                        // Prefer Still's release contract when a release contains multiple APKs.
+                        // Keep the generic APK fallback for older releases that predate this name.
                         val apkAsset = targetRelease.assets.firstOrNull { asset ->
+                            isStillApkAssetName(asset.name)
+                        } ?: targetRelease.assets.firstOrNull { asset ->
                             asset.name.endsWith(".apk", ignoreCase = true)
                         }
                         if (!SemanticVersion.isNewer(targetRelease.tag_name, currentVersion)) {
@@ -128,6 +136,8 @@ object VersionUpdater {
             }
         })
     }
+
+    internal fun isStillApkAssetName(name: String): Boolean = stillApkName.matches(name)
 
     fun downloadApk(
         context: Context,
