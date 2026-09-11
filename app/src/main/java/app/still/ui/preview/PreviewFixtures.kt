@@ -121,11 +121,11 @@ object PreviewFixtures {
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun TodayPreview() {
-    StillTheme(ThemePreference.Dark, false) { TodayScreen(PreviewFixtures.dashboard, {}) }
+    StillTheme(ThemePreference.Dark, false) { TodayScreen(PreviewFixtures.dashboard, {}, {}) }
 }
 
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun TodayLightPreview() {
-    StillTheme(ThemePreference.Light, false) { TodayScreen(PreviewFixtures.dashboard, {}) }
+    StillTheme(ThemePreference.Light, false) { TodayScreen(PreviewFixtures.dashboard, {}, {}) }
 }

@@ -1,5 +1,6 @@
 package app.still.ui.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -52,7 +53,12 @@ fun TodayTopBar(onSettings: () -> Unit) {
 }
 
 @Composable
-fun TodayScreen(dashboard: UsageDashboard, onDaylineClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TodayScreen(
+    dashboard: UsageDashboard,
+    onDaylineClick: () -> Unit,
+    onAppClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val today = dashboard.today
     Column(
         modifier
@@ -105,7 +111,15 @@ fun TodayScreen(dashboard: UsageDashboard, onDaylineClick: () -> Unit, modifier:
         Text("Most changed", style = MaterialTheme.typography.titleSmall)
         Spacer(Modifier.height(StillSpacing.small))
         val changed = dashboard.mostChanged
-        TonalPanel(Modifier.fillMaxWidth().heightIn(min = 80.dp), contentPadding = PaddingValues(12.dp)) {
+        val changedPanelModifier = if (changed == null) {
+            Modifier.fillMaxWidth().heightIn(min = 80.dp)
+        } else {
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 80.dp)
+                .clickable { onAppClick(changed.app.packageName) }
+        }
+        TonalPanel(changedPanelModifier, contentPadding = PaddingValues(12.dp)) {
             if (changed == null) {
                 Column {
                     Text("Building your app baseline", style = MaterialTheme.typography.titleMedium)

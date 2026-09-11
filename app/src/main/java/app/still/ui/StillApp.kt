@@ -200,7 +200,14 @@ private fun MainNavigation(
     ) { padding ->
         NavHost(navController, startDestination = TodayRoute, modifier = Modifier.padding(padding)) {
             composable(TodayRoute) {
-                TodayScreen(dashboard, onDaylineClick = { navController.navigate(TimelineRoute) })
+                TodayScreen(
+                    dashboard,
+                    onDaylineClick = { navController.navigate(TimelineRoute) },
+                    onAppClick = { packageName ->
+                        selectedDateValue = dashboard.today.date.toString()
+                        navController.navigate("app/$packageName")
+                    },
+                )
             }
             composable(TimelineRoute) {
                 TimelineScreen(selectedDay, availableDays.map { it.date }, selectDate)

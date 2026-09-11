@@ -87,7 +87,7 @@ private fun PreviewMainScaffold(screen: String) {
         when (screen) {
             "timeline" -> TimelineScreen(PreviewFixtures.today, modifier = Modifier.padding(padding))
             "apps" -> AppsScreen(PreviewFixtures.today, {}, modifier = Modifier.padding(padding))
-            else -> TodayScreen(PreviewFixtures.dashboard, {}, Modifier.padding(padding))
+            else -> TodayScreen(PreviewFixtures.dashboard, {}, {}, Modifier.padding(padding))
         }
     }
 }
