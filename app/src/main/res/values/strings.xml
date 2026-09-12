@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Still</string>
+    <string name="widget_name">Screen time</string>
+    <string name="widget_description">Today’s screen time at a glance</string>
+    <string name="widget_screen_time">Screen time</string>
+    <string name="widget_loading">Updating…</string>
+    <string name="widget_permission_needed">Usage access needed</string>
+    <string name="widget_open_still">Open Still</string>
+    <string name="widget_unavailable">Unavailable</string>
+    <string name="widget_refresh">Refresh screen time</string>
+    <string name="widget_open_app">Open Still</string>
 </resources>
