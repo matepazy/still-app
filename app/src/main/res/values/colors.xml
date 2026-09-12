@@ -3,4 +3,10 @@
     <color name="widget_background">#F1F5F1</color>
     <color name="widget_primary">#172019</color>
     <color name="widget_secondary">#526057</color>
+    <color name="widget_background_light">#F1F5F1</color>
+    <color name="widget_primary_light">#172019</color>
+    <color name="widget_secondary_light">#526057</color>
+    <color name="widget_background_dark">#18201B</color>
+    <color name="widget_primary_dark">#E9F5EC</color>
+    <color name="widget_secondary_dark">#AAB7AD</color>
 </resources>

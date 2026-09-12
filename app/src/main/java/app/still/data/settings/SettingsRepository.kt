@@ -13,6 +13,10 @@ private val Context.settingsDataStore by preferencesDataStore("still_settings")
 
 enum class ThemePreference { System, Light, Dark }
 
+enum class WidgetAppearance { System, Light, Dark }
+
+enum class WidgetLabel { ScreenTime, Today, Hidden }
+
 data class UserSettings(
     val onboardingComplete: Boolean = false,
     val theme: ThemePreference = ThemePreference.System,
@@ -20,6 +24,9 @@ data class UserSettings(
     val dailyTargetMinutes: Long? = null,
     val versionCheckEnabled: Boolean? = null,
     val updateChannel: String = "release",
+    val widgetAppearance: WidgetAppearance = WidgetAppearance.System,
+    val widgetLabel: WidgetLabel = WidgetLabel.ScreenTime,
+    val widgetShowRefresh: Boolean = true,
 )
 
 class SettingsRepository(private val context: Context) {
@@ -30,6 +37,9 @@ class SettingsRepository(private val context: Context) {
         val target = longPreferencesKey("daily_target_minutes")
         val versionCheckEnabled = booleanPreferencesKey("version_check_enabled")
         val updateChannel = stringPreferencesKey("version_check_channel")
+        val widgetAppearance = stringPreferencesKey("widget_appearance")
+        val widgetLabel = stringPreferencesKey("widget_label")
+        val widgetShowRefresh = booleanPreferencesKey("widget_show_refresh")
     }
 
     val settings: Flow<UserSettings> = context.settingsDataStore.data.map { preferences ->
@@ -41,6 +51,13 @@ class SettingsRepository(private val context: Context) {
             dailyTargetMinutes = preferences[Keys.target],
             versionCheckEnabled = preferences[Keys.versionCheckEnabled],
             updateChannel = preferences[Keys.updateChannel] ?: "release",
+            widgetAppearance = preferences[Keys.widgetAppearance]
+                ?.let { runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
+                ?: WidgetAppearance.System,
+            widgetLabel = preferences[Keys.widgetLabel]
+                ?.let { runCatching { WidgetLabel.valueOf(it) }.getOrNull() }
+                ?: WidgetLabel.ScreenTime,
+            widgetShowRefresh = preferences[Keys.widgetShowRefresh] ?: true,
         )
     }
 
@@ -58,5 +75,14 @@ class SettingsRepository(private val context: Context) {
     }
     suspend fun setUpdateChannel(value: String) = context.settingsDataStore.edit {
         it[Keys.updateChannel] = value
+    }
+    suspend fun setWidgetAppearance(value: WidgetAppearance) = context.settingsDataStore.edit {
+        it[Keys.widgetAppearance] = value.name
+    }
+    suspend fun setWidgetLabel(value: WidgetLabel) = context.settingsDataStore.edit {
+        it[Keys.widgetLabel] = value.name
+    }
+    suspend fun setWidgetShowRefresh(value: Boolean) = context.settingsDataStore.edit {
+        it[Keys.widgetShowRefresh] = value
     }
 }

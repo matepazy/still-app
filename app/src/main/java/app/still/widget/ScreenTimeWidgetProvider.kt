@@ -6,15 +6,24 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.view.View
 import android.widget.RemoteViews
+import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
 import app.still.MainActivity
 import app.still.R
 import app.still.StillApplication
+import app.still.data.settings.UserSettings
+import app.still.data.settings.WidgetAppearance
+import app.still.data.settings.WidgetLabel
 import app.still.ui.components.compactDuration
 import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ScreenTimeWidgetProvider : AppWidgetProvider() {
@@ -23,7 +32,6 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
     ) {
-        render(context, appWidgetManager, appWidgetIds, WidgetContent.Loading)
         load(context, appWidgetManager, appWidgetIds)
     }
 
@@ -44,6 +52,8 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
             try {
                 val application = context.applicationContext as StillApplication
                 val container = application.container
+                val settings = container.settingsRepository.settings.first()
+                render(context, appWidgetManager, appWidgetIds, WidgetContent.Loading, settings)
                 val content = if (!container.permissionManager.hasUsageAccess()) {
                     WidgetContent.PermissionRequired
                 } else {
@@ -52,7 +62,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
                         onFailure = { WidgetContent.Unavailable },
                     )
                 }
-                render(context, appWidgetManager, appWidgetIds, content)
+                render(context, appWidgetManager, appWidgetIds, content, settings)
             } finally {
                 pendingResult.finish()
             }
@@ -64,11 +74,19 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
         content: WidgetContent,
+        settings: UserSettings,
     ) {
+        val palette = WidgetPalette.resolve(context, settings.widgetAppearance)
         appWidgetIds.forEach { appWidgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_screen_time).apply {
-                setTextViewText(R.id.widget_label, content.label(context))
+                setInt(R.id.widget_root, "setBackgroundResource", palette.background)
+                setTextColor(R.id.widget_label, ContextCompat.getColor(context, palette.secondary))
+                setTextColor(R.id.widget_value, ContextCompat.getColor(context, palette.primary))
+                setInt(R.id.widget_refresh, "setColorFilter", ContextCompat.getColor(context, palette.secondary))
+                setTextViewText(R.id.widget_label, content.label(context, settings.widgetLabel))
                 setTextViewText(R.id.widget_value, content.value(context))
+                setViewVisibility(R.id.widget_label, if (content.showsLabel(settings.widgetLabel)) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.widget_refresh, if (settings.widgetShowRefresh) View.VISIBLE else View.GONE)
                 setOnClickPendingIntent(R.id.widget_root, openAppIntent(context))
                 setOnClickPendingIntent(R.id.widget_refresh, refreshIntent(context))
             }
@@ -109,17 +127,44 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
     }
 }
 
+private data class WidgetPalette(
+    @param:DrawableRes val background: Int,
+    @param:ColorRes val primary: Int,
+    @param:ColorRes val secondary: Int,
+) {
+    companion object {
+        fun resolve(context: Context, appearance: WidgetAppearance): WidgetPalette {
+            val dark = when (appearance) {
+                WidgetAppearance.System -> context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+                WidgetAppearance.Light -> false
+                WidgetAppearance.Dark -> true
+            }
+            return if (dark) {
+                WidgetPalette(R.drawable.widget_background_dark, R.color.widget_primary_dark, R.color.widget_secondary_dark)
+            } else {
+                WidgetPalette(R.drawable.widget_background_light, R.color.widget_primary_light, R.color.widget_secondary_light)
+            }
+        }
+    }
+}
+
 private sealed interface WidgetContent {
     data object Loading : WidgetContent
     data class Ready(val duration: Duration) : WidgetContent
     data object PermissionRequired : WidgetContent
     data object Unavailable : WidgetContent
 
-    fun label(context: Context): String = when (this) {
-        Loading, is Ready -> context.getString(R.string.widget_screen_time)
+    fun label(context: Context, preference: WidgetLabel): String = when (this) {
+        Loading, is Ready -> when (preference) {
+            WidgetLabel.ScreenTime -> context.getString(R.string.widget_screen_time)
+            WidgetLabel.Today -> context.getString(R.string.widget_today)
+            WidgetLabel.Hidden -> ""
+        }
         PermissionRequired -> context.getString(R.string.widget_permission_needed)
         Unavailable -> context.getString(R.string.widget_unavailable)
     }
+
+    fun showsLabel(preference: WidgetLabel): Boolean = this !is Loading && this !is Ready || preference != WidgetLabel.Hidden
 
     fun value(context: Context): String = when (this) {
         Loading -> context.getString(R.string.widget_loading)

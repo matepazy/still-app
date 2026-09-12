@@ -6,11 +6,14 @@ import androidx.lifecycle.viewModelScope
 import app.still.AppContainer
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.UserSettings
+import app.still.data.settings.WidgetAppearance
+import app.still.data.settings.WidgetLabel
 import app.still.domain.model.UsageDashboard
 import app.still.BuildConfig
 import app.still.update.ApkInstaller
 import app.still.update.UpdateState
 import app.still.update.VersionUpdater
+import app.still.widget.ScreenTimeWidgetProvider
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -88,6 +91,18 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun setTheme(value: ThemePreference) = viewModelScope.launch { container.settingsRepository.setTheme(value) }
     fun setDynamicColors(value: Boolean) = viewModelScope.launch { container.settingsRepository.setDynamicColors(value) }
     fun setDailyTargetMinutes(value: Long?) = viewModelScope.launch { container.settingsRepository.setDailyTargetMinutes(value) }
+    fun setWidgetAppearance(value: WidgetAppearance) = viewModelScope.launch {
+        container.settingsRepository.setWidgetAppearance(value)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setWidgetLabel(value: WidgetLabel) = viewModelScope.launch {
+        container.settingsRepository.setWidgetLabel(value)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setWidgetShowRefresh(value: Boolean) = viewModelScope.launch {
+        container.settingsRepository.setWidgetShowRefresh(value)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
     fun setVersionCheckEnabled(value: Boolean) = viewModelScope.launch {
         container.settingsRepository.setVersionCheckEnabled(value)
         if (value) {
