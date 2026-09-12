@@ -16,6 +16,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.still.data.settings.ThemePreference
@@ -63,7 +65,6 @@ private fun DesignScreen(screen: String) {
                 settings = UserSettings(true, ThemePreference.Dark, false, null),
                 onThemeChange = {},
                 onDynamicChange = {},
-                onTargetChange = {},
                 onRefresh = {},
                 modifier = Modifier.padding(padding),
             )
@@ -95,6 +96,7 @@ private fun PreviewMainScaffold(screen: String) {
 @Composable
 private fun PreviewNavigationBar(selected: String) {
     NavigationBar(
+        modifier = Modifier.clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
     ) {

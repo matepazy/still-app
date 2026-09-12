@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -163,6 +164,7 @@ private fun MainNavigation(
         bottomBar = {
             if (currentRoute in primaryRoutes) {
                 NavigationBar(
+                    modifier = Modifier.clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     tonalElevation = 0.dp,
                 ) {
@@ -232,7 +234,6 @@ private fun MainNavigation(
                     settings = settings,
                     onThemeChange = viewModel::setTheme,
                     onDynamicChange = viewModel::setDynamicColors,
-                    onTargetChange = viewModel::setDailyTargetMinutes,
                     onRefresh = viewModel::refresh,
                     updateState = updateState,
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,

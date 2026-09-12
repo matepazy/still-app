@@ -130,8 +130,8 @@ fun UpdateDetailsSheet(
                     Text("Release notes", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(StillSpacing.small))
                     TonalPanel(Modifier.fillMaxWidth().heightIn(max = 220.dp)) {
-                        Text(
-                            update.notes,
+                        MarkdownText(
+                            markdown = update.notes,
                             modifier = Modifier.verticalScroll(rememberScrollState()),
                             style = MaterialTheme.typography.bodySmall,
                         )

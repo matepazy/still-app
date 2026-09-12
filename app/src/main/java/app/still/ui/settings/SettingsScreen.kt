@@ -55,7 +55,6 @@ fun SettingsScreen(
     settings: UserSettings,
     onThemeChange: (ThemePreference) -> Unit,
     onDynamicChange: (Boolean) -> Unit,
-    onTargetChange: (Long?) -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
     updateState: UpdateState = UpdateState.Idle,
@@ -63,7 +62,6 @@ fun SettingsScreen(
     onUpdateChannelChange: (String) -> Unit = {},
     onCheckForUpdates: () -> Unit = {},
 ) {
-    var targetDialog by remember { mutableStateOf(false) }
     var themeDialog by remember { mutableStateOf(false) }
     var updateChannelDialog by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium)) {
@@ -80,15 +78,6 @@ fun SettingsScreen(
                     onCheckedChange = onDynamicChange,
                 )
             }
-        }
-
-        SectionTitle("Screen time")
-        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-            SettingRow(
-                "Daily screen-time target",
-                settings.dailyTargetMinutes?.let { "${it / 60} h ${it % 60} min" } ?: "Optional",
-                onClick = { targetDialog = true },
-            )
         }
 
         SectionTitle("Data")
@@ -165,17 +154,6 @@ fun SettingsScreen(
             options = ThemePreference.entries.map { it.name to { onThemeChange(it) } },
             selected = settings.theme.name,
             onDismiss = { themeDialog = false },
-        )
-    }
-    if (targetDialog) {
-        val options = listOf<Long?>(null, 60, 120, 180, 240, 300)
-        ChoiceDialog(
-            title = "Daily reference",
-            options = options.map { minutes ->
-                (minutes?.let { "${it / 60} h${if (it % 60 > 0) " ${it % 60} min" else ""}" } ?: "No reference") to { onTargetChange(minutes) }
-            },
-            selected = settings.dailyTargetMinutes?.let { "${it / 60} h${if (it % 60 > 0) " ${it % 60} min" else ""}" } ?: "No reference",
-            onDismiss = { targetDialog = false },
         )
     }
     if (updateChannelDialog) {
