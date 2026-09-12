@@ -18,6 +18,8 @@ object StillIcons {
     @DrawableRes val ChevronRight = R.drawable.ic_ui_chevron_right
     @DrawableRes val ChevronDown = R.drawable.ic_ui_chevron_down
     @DrawableRes val ChevronUp = R.drawable.ic_ui_chevron_up
+    @DrawableRes val ArrowDown = R.drawable.ic_ui_arrow_down
+    @DrawableRes val ArrowUp = R.drawable.ic_ui_arrow_up
     @DrawableRes val History = R.drawable.ic_ui_history
     @DrawableRes val Calendar = R.drawable.ic_ui_calendar
     @DrawableRes val Download = R.drawable.ic_ui_download

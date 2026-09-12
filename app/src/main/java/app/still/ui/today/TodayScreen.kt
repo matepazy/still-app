@@ -155,7 +155,7 @@ private fun Comparison(dashboard: UsageDashboard) {
     val less = comparison.difference.isNegative
     Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
         Icon(
-            painterResource(if (less) StillIcons.ChevronDown else StillIcons.ChevronUp),
+            painterResource(if (less) StillIcons.ArrowDown else StillIcons.ArrowUp),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
         )
