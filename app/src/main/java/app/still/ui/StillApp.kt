@@ -222,7 +222,9 @@ private fun MainNavigation(
             }
             composable(AppDetailRoute) { entry ->
                 val packageName = entry.arguments?.getString("packageName").orEmpty()
-                buildAppDetail(packageName, dashboard, selectedDate)?.let { AppDetailScreen(it) }
+                buildAppDetail(packageName, dashboard, selectedDate)?.let {
+                    AppDetailScreen(it, onDateSelected = selectDate)
+                }
                     ?: ErrorScreen("This app has no usage information for the selected day.") { navController.popBackStack() }
             }
             composable(SettingsRoute) {
@@ -242,15 +244,27 @@ private fun MainNavigation(
     }
 }
 
-private fun buildAppDetail(packageName: String, dashboard: UsageDashboard, selectedDate: LocalDate): AppDetail? {
+internal fun buildAppDetail(packageName: String, dashboard: UsageDashboard, selectedDate: LocalDate): AppDetail? {
     val allDays = (dashboard.history + dashboard.today).distinctBy { it.date }.sortedBy { it.date }
     val selectedDay = allDays.firstOrNull { it.date == selectedDate } ?: return null
-    val usage = selectedDay.apps.firstOrNull { it.app.packageName == packageName } ?: return null
-    val daily = allDays.filter { !it.date.isAfter(selectedDate) }.takeLast(7).map { day ->
-        val available = day.total > Duration.ZERO || day.unlocks > 0 || day.wakeups > 0
-        DailyAppUsage(day.date, if (available) day.apps.firstOrNull { it.app.packageName == packageName }?.duration ?: Duration.ZERO else null)
+    val knownUsage = allDays.asReversed().asSequence()
+        .flatMap { it.apps.asSequence() }
+        .firstOrNull { it.app.packageName == packageName }
+        ?: return null
+    val usage = selectedDay.apps.firstOrNull { it.app.packageName == packageName }
+        ?: knownUsage.copy(duration = Duration.ZERO, opens = 0)
+    val daysByDate = allDays.associateBy { it.date }
+    val windowStart = dashboard.today.date.minusDays(6)
+    val daily = (0L..6L).map { offset ->
+        val date = windowStart.plusDays(offset)
+        val day = daysByDate[date]
+        val available = day != null && (day.total > Duration.ZERO || day.unlocks > 0 || day.wakeups > 0)
+        DailyAppUsage(
+            date,
+            if (available) day.apps.firstOrNull { it.app.packageName == packageName }?.duration ?: Duration.ZERO else null,
+        )
     }
-    val valid = daily.dropLast(1).mapNotNull { it.duration }
+    val valid = daily.filter { it.date.isBefore(selectedDate) }.mapNotNull { it.duration }
     val average = valid.takeIf { it.isNotEmpty() }?.map { it.toMillis() }?.average()?.toLong()?.let(Duration::ofMillis)
     return AppDetail(
         date = selectedDate,

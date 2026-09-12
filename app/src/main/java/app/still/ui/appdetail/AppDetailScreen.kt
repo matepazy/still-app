@@ -1,7 +1,9 @@
 package app.still.ui.appdetail
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,12 +24,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,6 +44,8 @@ import app.still.ui.components.compactDuration
 import app.still.ui.components.signedCompactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.Duration
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +59,11 @@ fun AppDetailTopBar(@Suppress("UNUSED_PARAMETER") title: String, onBack: () -> U
 }
 
 @Composable
-fun AppDetailScreen(detail: AppDetail, modifier: Modifier = Modifier) {
+fun AppDetailScreen(
+    detail: AppDetail,
+    modifier: Modifier = Modifier,
+    onDateSelected: (LocalDate) -> Unit = {},
+) {
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -63,12 +73,15 @@ fun AppDetailScreen(detail: AppDetail, modifier: Modifier = Modifier) {
         Text(detail.usage.app.label, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(StillSpacing.large))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            HeroStat(detail.usage.duration.compactDuration(), detail.date.dayOfWeek.getDisplayName(TextStyle.SHORT, LocalLocale.current.platformLocale))
+            HeroStat(
+                detail.usage.duration.compactDuration(),
+                detail.date.format(DateTimeFormatter.ofPattern("EEE, MMM d", LocalLocale.current.platformLocale)),
+            )
             Spacer(Modifier.width(56.dp))
             HeroStat(detail.usage.opens.toString(), "opens")
         }
         Spacer(Modifier.height(StillSpacing.large))
-        SevenDayChart(detail)
+        SevenDayChart(detail, onDateSelected)
         Spacer(Modifier.height(StillSpacing.medium))
         SummaryPanel(detail)
         Spacer(Modifier.height(StillSpacing.large))
@@ -117,48 +130,94 @@ private fun SummaryPanel(detail: AppDetail) {
 }
 
 @Composable
-private fun SevenDayChart(detail: AppDetail) {
+private fun SevenDayChart(detail: AppDetail, onDateSelected: (LocalDate) -> Unit) {
     val locale = LocalLocale.current.platformLocale
     val primary = MaterialTheme.colorScheme.primary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val unavailable = MaterialTheme.colorScheme.surfaceContainerHighest
     val max = detail.dailyUsage.mapNotNull { it.duration?.toMillis() }.maxOrNull()?.coerceAtLeast(Duration.ofMinutes(1).toMillis()) ?: 1L
-    val description = detail.dailyUsage.joinToString { day ->
-        "${day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)}: ${day.duration?.compactDuration() ?: "unavailable"}"
-    }
-    Column(Modifier.fillMaxWidth().semantics { contentDescription = "Seven day usage chart. $description" }) {
+    val scaleValues = listOf(max, max / 2, 0L)
+    Column(Modifier.fillMaxWidth()) {
         Text("Usage history", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(StillSpacing.small))
-        Canvas(Modifier.fillMaxWidth().height(116.dp)) {
-            val chartTop = 4.dp.toPx()
-            val chartBottom = size.height - 4.dp.toPx()
-            repeat(3) { index ->
-                val y = chartTop + (chartBottom - chartTop) * index / 2f
-                drawLine(grid, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+        Row(Modifier.fillMaxWidth().height(116.dp)) {
+            Column(
+                Modifier.width(48.dp).fillMaxSize().padding(end = 8.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.End,
+            ) {
+                scaleValues.forEach { value ->
+                    Text(
+                        axisDuration(value),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            val slotWidth = size.width / detail.dailyUsage.size.coerceAtLeast(1)
-            val barWidth = slotWidth * .62f
-            detail.dailyUsage.forEachIndexed { index, day ->
-                val left = index * slotWidth + (slotWidth - barWidth) / 2f
-                val height = day.duration?.let { (chartBottom - chartTop) * (it.toMillis().toFloat() / max) } ?: 3.dp.toPx()
-                drawRoundRect(
-                    color = if (day.duration == null) unavailable else primary.copy(alpha = if (index == detail.dailyUsage.lastIndex) 1f else .45f),
-                    topLeft = Offset(left, chartBottom - height),
-                    size = Size(barWidth, height),
-                    cornerRadius = CornerRadius(2.dp.toPx()),
-                )
+            Box(Modifier.weight(1f).fillMaxSize()) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val chartTop = 4.dp.toPx()
+                    val chartBottom = size.height - 4.dp.toPx()
+                    repeat(3) { index ->
+                        val y = chartTop + (chartBottom - chartTop) * index / 2f
+                        drawLine(grid, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                    }
+                    val slotWidth = size.width / detail.dailyUsage.size.coerceAtLeast(1)
+                    val barWidth = slotWidth * .62f
+                    detail.dailyUsage.forEachIndexed { index, day ->
+                        val left = index * slotWidth + (slotWidth - barWidth) / 2f
+                        val height = day.duration?.let { (chartBottom - chartTop) * (it.toMillis().toFloat() / max) } ?: 3.dp.toPx()
+                        drawRoundRect(
+                            color = if (day.duration == null) unavailable else primary.copy(alpha = if (day.date == detail.date) 1f else .45f),
+                            topLeft = Offset(left, chartBottom - height),
+                            size = Size(barWidth, height),
+                            cornerRadius = CornerRadius(2.dp.toPx()),
+                        )
+                    }
+                }
+                Row(Modifier.fillMaxSize()) {
+                    detail.dailyUsage.forEach { day ->
+                        val durationLabel = day.duration?.compactDuration() ?: "unavailable"
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxSize()
+                                .semantics {
+                                    selected = day.date == detail.date
+                                    contentDescription = "${day.date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", locale))}, $durationLabel"
+                                }
+                                .clickable(
+                                    enabled = day.duration != null,
+                                    role = Role.Button,
+                                    onClickLabel = "Show usage for this date",
+                                ) { onDateSelected(day.date) },
+                        )
+                    }
+                }
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = StillSpacing.xSmall)) {
+            Spacer(Modifier.width(48.dp))
             detail.dailyUsage.forEach { day ->
                 Text(
-                    day.date.dayOfWeek.getDisplayName(TextStyle.NARROW, locale),
+                    "${day.date.dayOfWeek.getDisplayName(TextStyle.NARROW, locale)}\n${day.date.dayOfMonth}",
                     modifier = Modifier.weight(1f),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (day.date == detail.date) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
+    }
+}
+
+private fun axisDuration(milliseconds: Long): String {
+    val totalMinutes = Duration.ofMillis(milliseconds).toMinutes().coerceAtLeast(0)
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    return when {
+        hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
+        hours > 0 -> "${hours}h"
+        else -> "${minutes}m"
     }
 }
