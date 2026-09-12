@@ -103,9 +103,7 @@ class UsageRepository(
         val events = eventsWithLookback.filter { !it.timestamp.isBefore(start) }
         val rawIntervals = ForegroundIntervalReconstructor.reconstruct(eventsWithLookback, start, end)
         val intervals = rawIntervals.filterNot { interval ->
-            interval.packageName == context.packageName ||
-                interval.packageName == "com.android.systemui" ||
-                SystemPackageFilter.isLauncher(interval.packageName, launcherPackages)
+            SystemPackageFilter.shouldExcludeFromUsage(interval.packageName, launcherPackages)
         }
         val info: (String) -> AppInfo = ::resolveApp
         val sessions = SessionAnalyzer.groupSessions(intervals, events, info)

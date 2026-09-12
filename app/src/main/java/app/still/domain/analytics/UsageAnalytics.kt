@@ -157,6 +157,11 @@ object SystemPackageFilter {
 
     fun isLauncher(packageName: String, detectedLauncherPackages: Set<String> = emptySet()): Boolean =
         packageName in detectedLauncherPackages || packageName in knownLauncherPackages
+
+    fun shouldExcludeFromUsage(
+        packageName: String,
+        detectedLauncherPackages: Set<String> = emptySet(),
+    ): Boolean = packageName == "com.android.systemui" || isLauncher(packageName, detectedLauncherPackages)
 }
 
 object BaselineCalculator {

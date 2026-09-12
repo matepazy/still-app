@@ -95,4 +95,11 @@ class UsageAnalyticsTest {
         assertTrue(SystemPackageFilter.isLauncher("com.example.customhome", setOf("com.example.customhome")))
         assertFalse(SystemPackageFilter.isLauncher("com.google.android.youtube"))
     }
+
+    @Test fun stillIsIncludedInUsageAlongsideOtherUserApps() {
+        assertFalse(SystemPackageFilter.shouldExcludeFromUsage("app.still"))
+        assertFalse(SystemPackageFilter.shouldExcludeFromUsage("com.google.android.youtube"))
+        assertTrue(SystemPackageFilter.shouldExcludeFromUsage("com.android.systemui"))
+        assertTrue(SystemPackageFilter.shouldExcludeFromUsage("com.example.customhome", setOf("com.example.customhome")))
+    }
 }
