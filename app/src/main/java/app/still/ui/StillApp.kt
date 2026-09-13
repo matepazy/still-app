@@ -254,6 +254,8 @@ private fun MainNavigation(
                     onWidgetAppearanceChange = viewModel::setWidgetAppearance,
                     onWidgetColorChange = viewModel::setWidgetColor,
                     onWidgetLabelChange = viewModel::setWidgetLabel,
+                    onWidgetFontSizeChange = viewModel::setWidgetFontSize,
+                    onWidgetFontStyleChange = viewModel::setWidgetFontStyle,
                     onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
                     modifier = Modifier.padding(padding),
                 )

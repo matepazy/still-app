@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import app.still.ui.MainViewModel
 import app.still.ui.StillApp
+import app.still.widget.ScreenTimeWidgetProvider
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -22,5 +23,6 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.onResume()
+        ScreenTimeWidgetProvider.updateAll(applicationContext)
     }
 }

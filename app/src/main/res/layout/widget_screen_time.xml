@@ -40,7 +40,33 @@
                 android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/widget_value"
+                android:id="@+id/widget_value_regular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans"
+                android:maxLines="1"
+                android:text="@string/widget_loading"
+                android:textColor="@color/widget_primary"
+                android:textSize="24sp"
+                android:textStyle="normal"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_value_medium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:text="@string/widget_loading"
+                android:textColor="@color/widget_primary"
+                android:textSize="24sp"
+                android:textStyle="normal"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_value_bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"

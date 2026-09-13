@@ -7,6 +7,8 @@ import app.still.AppContainer
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
+import app.still.data.settings.WidgetFontSize
+import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
 import app.still.domain.model.UsageDashboard
 import app.still.BuildConfig
@@ -101,6 +103,14 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
     fun setWidgetLabel(value: WidgetLabel) = viewModelScope.launch {
         container.settingsRepository.setWidgetLabel(value)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setWidgetFontSize(value: WidgetFontSize) = viewModelScope.launch {
+        container.settingsRepository.setWidgetFontSize(value)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setWidgetFontStyle(value: WidgetFontStyle) = viewModelScope.launch {
+        container.settingsRepository.setWidgetFontStyle(value)
         ScreenTimeWidgetProvider.updateAll(container.applicationContext)
     }
     fun setWidgetShowRefresh(value: Boolean) = viewModelScope.launch {

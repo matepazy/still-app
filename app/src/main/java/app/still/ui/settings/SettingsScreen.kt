@@ -55,11 +55,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import app.still.BuildConfig
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
+import app.still.data.settings.WidgetFontSize
+import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
 import app.still.data.settings.parseWidgetColor
 import app.still.data.settings.widgetContrastColors
@@ -212,12 +216,16 @@ fun WidgetSettingsScreen(
     onWidgetAppearanceChange: (WidgetAppearance) -> Unit,
     onWidgetColorChange: (String?) -> Unit,
     onWidgetLabelChange: (WidgetLabel) -> Unit,
+    onWidgetFontSizeChange: (WidgetFontSize) -> Unit,
+    onWidgetFontStyleChange: (WidgetFontStyle) -> Unit,
     onWidgetShowRefreshChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var appearanceDialog by remember { mutableStateOf(false) }
     var colorDialog by remember { mutableStateOf(false) }
     var labelDialog by remember { mutableStateOf(false) }
+    var fontSizeDialog by remember { mutableStateOf(false) }
+    var fontStyleDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier
@@ -248,6 +256,18 @@ fun WidgetSettingsScreen(
                     title = "Title",
                     supporting = settings.widgetLabel.displayName,
                     onClick = { labelDialog = true },
+                )
+                Hairline()
+                SettingRow(
+                    title = "Text size",
+                    supporting = settings.widgetFontSize.displayName,
+                    onClick = { fontSizeDialog = true },
+                )
+                Hairline()
+                SettingRow(
+                    title = "Text style",
+                    supporting = settings.widgetFontStyle.displayName,
+                    onClick = { fontStyleDialog = true },
                 )
                 Hairline()
                 SettingSwitch(
@@ -289,6 +309,26 @@ fun WidgetSettingsScreen(
             onDismiss = { labelDialog = false },
         )
     }
+    if (fontSizeDialog) {
+        ChoiceDialog(
+            title = "Widget text size",
+            options = WidgetFontSize.entries.map { size ->
+                size.displayName to { onWidgetFontSizeChange(size) }
+            },
+            selected = settings.widgetFontSize.displayName,
+            onDismiss = { fontSizeDialog = false },
+        )
+    }
+    if (fontStyleDialog) {
+        ChoiceDialog(
+            title = "Widget text style",
+            options = WidgetFontStyle.entries.map { style ->
+                style.displayName to { onWidgetFontStyleChange(style) }
+            },
+            selected = settings.widgetFontStyle.displayName,
+            onDismiss = { fontStyleDialog = false },
+        )
+    }
 }
 
 private val WidgetAppearance.displayName: String
@@ -310,6 +350,27 @@ private val WidgetLabel.displayName: String
         WidgetLabel.ScreenTime -> "Screen time"
         WidgetLabel.Today -> "Today"
         WidgetLabel.Hidden -> "Hidden"
+    }
+
+private val WidgetFontSize.displayName: String
+    get() = when (this) {
+        WidgetFontSize.Small -> "Small"
+        WidgetFontSize.Medium -> "Standard"
+        WidgetFontSize.Large -> "Large"
+    }
+
+private val WidgetFontStyle.displayName: String
+    get() = when (this) {
+        WidgetFontStyle.Regular -> "Regular"
+        WidgetFontStyle.Medium -> "Medium"
+        WidgetFontStyle.Bold -> "Bold"
+    }
+
+private val WidgetFontStyle.fontWeight: FontWeight
+    get() = when (this) {
+        WidgetFontStyle.Regular -> FontWeight.Normal
+        WidgetFontStyle.Medium -> FontWeight.Medium
+        WidgetFontStyle.Bold -> FontWeight.Bold
     }
 
 private val String?.displayWidgetColor: String
@@ -358,7 +419,12 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
             label?.let {
                 Text(it, style = MaterialTheme.typography.labelMedium, color = secondary)
             }
-            Text(duration.compactDuration(), style = MaterialTheme.typography.headlineSmall, color = primary)
+            Text(
+                text = duration.compactDuration(),
+                color = primary,
+                fontSize = settings.widgetFontSize.valueSp.sp,
+                fontWeight = settings.widgetFontStyle.fontWeight,
+            )
         }
         if (settings.widgetShowRefresh) {
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {

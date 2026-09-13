@@ -16,6 +16,7 @@ import app.still.R
 import app.still.StillApplication
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
+import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
 import app.still.data.settings.parseWidgetColor
 import app.still.data.settings.widgetContrastColors
@@ -82,10 +83,14 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_screen_time).apply {
                 setInt(R.id.widget_background, "setColorFilter", palette.background)
                 setTextColor(R.id.widget_label, palette.secondary)
-                setTextColor(R.id.widget_value, palette.primary)
                 setInt(R.id.widget_refresh, "setColorFilter", palette.secondary)
                 setTextViewText(R.id.widget_label, content.label(context, settings.widgetLabel))
-                setTextViewText(R.id.widget_value, content.value(context))
+                VALUE_VIEW_IDS.forEach { viewId ->
+                    setTextColor(viewId, palette.primary)
+                    setTextViewText(viewId, content.value(context))
+                    setTextViewTextSize(viewId, android.util.TypedValue.COMPLEX_UNIT_SP, settings.widgetFontSize.valueSp)
+                    setViewVisibility(viewId, if (viewId == settings.widgetFontStyle.valueViewId) View.VISIBLE else View.GONE)
+                }
                 setViewVisibility(R.id.widget_label, if (content.showsLabel(settings.widgetLabel)) View.VISIBLE else View.GONE)
                 setViewVisibility(R.id.widget_refresh, if (settings.widgetShowRefresh) View.VISIBLE else View.GONE)
                 setOnClickPendingIntent(R.id.widget_root, openAppIntent(context))
@@ -97,6 +102,11 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val ACTION_REFRESH = "app.still.widget.action.REFRESH"
+        private val VALUE_VIEW_IDS = intArrayOf(
+            R.id.widget_value_regular,
+            R.id.widget_value_medium,
+            R.id.widget_value_bold,
+        )
 
         fun updateAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
@@ -127,6 +137,13 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
         )
     }
 }
+
+private val WidgetFontStyle.valueViewId: Int
+    get() = when (this) {
+        WidgetFontStyle.Regular -> R.id.widget_value_regular
+        WidgetFontStyle.Medium -> R.id.widget_value_medium
+        WidgetFontStyle.Bold -> R.id.widget_value_bold
+    }
 
 private data class WidgetPalette(
     @param:ColorInt val background: Int,
