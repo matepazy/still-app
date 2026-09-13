@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -105,11 +104,6 @@ fun UpdateDetailsSheet(
             when (val current = updateState) {
                 is UpdateState.Downloading -> {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(
-                            progress = { current.progress },
-                            modifier = Modifier.size(56.dp),
-                        )
-                        Spacer(Modifier.height(StillSpacing.medium))
                         Text("Downloading update… ${(current.progress * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(StillSpacing.small))
                         LinearProgressIndicator(progress = { current.progress }, modifier = Modifier.fillMaxWidth())
