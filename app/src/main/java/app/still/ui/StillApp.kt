@@ -74,6 +74,7 @@ import java.time.Duration
 import java.time.LocalDate
 
 private const val AppDetailRoute = "app/{packageName}"
+private val PredictiveBackShape = RoundedCornerShape(28.dp)
 
 @Composable
 fun StillApp(
@@ -293,8 +294,8 @@ private fun MainNavigation(
                 WidgetSettingsScreen(
                     settings = settings,
                     widgetPreviewDuration = dashboard.today.total,
-                    onWidgetAppearanceChange = viewModel::setWidgetAppearance,
                     onWidgetColorChange = viewModel::setWidgetColor,
+                    onWidgetThemeChange = viewModel::setWidgetTheme,
                     onWidgetLabelChange = viewModel::setWidgetLabel,
                     onWidgetFontSizeChange = viewModel::setWidgetFontSize,
                     onWidgetFontStyleChange = viewModel::setWidgetFontStyle,
@@ -337,7 +338,9 @@ private fun DestinationScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(PredictiveBackShape),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = topBar,
         bottomBar = bottomBar,

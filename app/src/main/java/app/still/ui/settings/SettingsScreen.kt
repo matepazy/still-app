@@ -32,6 +32,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -213,19 +216,15 @@ fun SettingsScreen(
 fun WidgetSettingsScreen(
     settings: UserSettings,
     widgetPreviewDuration: Duration,
-    onWidgetAppearanceChange: (WidgetAppearance) -> Unit,
     onWidgetColorChange: (String?) -> Unit,
+    onWidgetThemeChange: (WidgetAppearance) -> Unit,
     onWidgetLabelChange: (WidgetLabel) -> Unit,
     onWidgetFontSizeChange: (WidgetFontSize) -> Unit,
     onWidgetFontStyleChange: (WidgetFontStyle) -> Unit,
     onWidgetShowRefreshChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var appearanceDialog by remember { mutableStateOf(false) }
     var colorDialog by remember { mutableStateOf(false) }
-    var labelDialog by remember { mutableStateOf(false) }
-    var fontSizeDialog by remember { mutableStateOf(false) }
-    var fontStyleDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier
@@ -235,39 +234,81 @@ fun WidgetSettingsScreen(
     ) {
         SectionTitle("Preview")
         WidgetPreview(settings, widgetPreviewDuration)
+        Text(
+            "Changes are saved automatically and appear on your home screen.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = StillSpacing.small),
+        )
 
-        SectionTitle("Options")
-        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-            Column {
-                WidgetColorSettingRow(
-                    color = settings.widgetColor,
-                    onClick = { colorDialog = true },
+        SectionTitle("Background")
+        TonalPanel(Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                DirectChoice(
+                    title = "Color",
+                    options = listOf(
+                        DirectChoiceOption("Theme", settings.widgetColor == null) {
+                            onWidgetColorChange(null)
+                        },
+                        DirectChoiceOption("Custom", settings.widgetColor != null) {
+                            colorDialog = true
+                        },
+                    ),
                 )
-                Hairline()
                 if (settings.widgetColor == null) {
-                    SettingRow(
-                        title = "Appearance",
-                        supporting = settings.widgetAppearance.displayName,
-                        onClick = { appearanceDialog = true },
+                    DirectChoice(
+                        title = "Theme",
+                        options = WidgetAppearance.entries.map { appearance ->
+                            DirectChoiceOption(
+                                label = appearance.shortDisplayName,
+                                selected = settings.widgetAppearance == appearance,
+                                onClick = { onWidgetThemeChange(appearance) },
+                            )
+                        },
                     )
-                    Hairline()
+                } else {
+                    WidgetCustomColorRow(
+                        color = settings.widgetColor,
+                        onClick = { colorDialog = true },
+                    )
                 }
-                SettingRow(
+            }
+        }
+
+        SectionTitle("Content")
+        TonalPanel(Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                DirectChoice(
                     title = "Title",
-                    supporting = settings.widgetLabel.displayName,
-                    onClick = { labelDialog = true },
+                    options = WidgetLabel.entries.map { label ->
+                        DirectChoiceOption(
+                            label = label.directDisplayName,
+                            selected = settings.widgetLabel == label,
+                            onClick = { onWidgetLabelChange(label) },
+                        )
+                    },
                 )
                 Hairline()
-                SettingRow(
+                DirectChoice(
                     title = "Text size",
-                    supporting = settings.widgetFontSize.displayName,
-                    onClick = { fontSizeDialog = true },
+                    options = WidgetFontSize.entries.map { size ->
+                        DirectChoiceOption(
+                            label = size.displayName,
+                            selected = settings.widgetFontSize == size,
+                            onClick = { onWidgetFontSizeChange(size) },
+                        )
+                    },
                 )
                 Hairline()
-                SettingRow(
-                    title = "Text style",
-                    supporting = settings.widgetFontStyle.displayName,
-                    onClick = { fontStyleDialog = true },
+                DirectChoice(
+                    title = "Weight",
+                    options = WidgetFontStyle.entries.map { style ->
+                        DirectChoiceOption(
+                            label = style.displayName,
+                            selected = settings.widgetFontStyle == style,
+                            onClick = { onWidgetFontStyleChange(style) },
+                        )
+                    },
                 )
                 Hairline()
                 SettingSwitch(
@@ -282,16 +323,6 @@ fun WidgetSettingsScreen(
         Spacer(Modifier.height(StillSpacing.large))
     }
 
-    if (appearanceDialog) {
-        ChoiceDialog(
-            title = "Widget appearance",
-            options = WidgetAppearance.entries.map { appearance ->
-                appearance.displayName to { onWidgetAppearanceChange(appearance) }
-            },
-            selected = settings.widgetAppearance.displayName,
-            onDismiss = { appearanceDialog = false },
-        )
-    }
     if (colorDialog) {
         WidgetColorDialog(
             current = settings.widgetColor,
@@ -299,41 +330,42 @@ fun WidgetSettingsScreen(
             onDismiss = { colorDialog = false },
         )
     }
-    if (labelDialog) {
-        ChoiceDialog(
-            title = "Widget title",
-            options = WidgetLabel.entries.map { label ->
-                label.displayName to { onWidgetLabelChange(label) }
-            },
-            selected = settings.widgetLabel.displayName,
-            onDismiss = { labelDialog = false },
-        )
-    }
-    if (fontSizeDialog) {
-        ChoiceDialog(
-            title = "Widget text size",
-            options = WidgetFontSize.entries.map { size ->
-                size.displayName to { onWidgetFontSizeChange(size) }
-            },
-            selected = settings.widgetFontSize.displayName,
-            onDismiss = { fontSizeDialog = false },
-        )
-    }
-    if (fontStyleDialog) {
-        ChoiceDialog(
-            title = "Widget text style",
-            options = WidgetFontStyle.entries.map { style ->
-                style.displayName to { onWidgetFontStyleChange(style) }
-            },
-            selected = settings.widgetFontStyle.displayName,
-            onDismiss = { fontStyleDialog = false },
-        )
+}
+
+private data class DirectChoiceOption(
+    val label: String,
+    val selected: Boolean,
+    val onClick: () -> Unit,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DirectChoice(title: String, options: List<DirectChoiceOption>) {
+    Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = option.selected,
+                    onClick = option.onClick,
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    label = { Text(option.label, maxLines = 1) },
+                )
+            }
+        }
     }
 }
 
 private val WidgetAppearance.displayName: String
     get() = when (this) {
         WidgetAppearance.System -> "Follow system"
+        WidgetAppearance.Light -> "Light"
+        WidgetAppearance.Dark -> "Dark"
+    }
+
+private val WidgetAppearance.shortDisplayName: String
+    get() = when (this) {
+        WidgetAppearance.System -> "System"
         WidgetAppearance.Light -> "Light"
         WidgetAppearance.Dark -> "Dark"
     }
@@ -350,6 +382,13 @@ private val WidgetLabel.displayName: String
         WidgetLabel.ScreenTime -> "Screen time"
         WidgetLabel.Today -> "Today"
         WidgetLabel.Hidden -> "Hidden"
+    }
+
+private val WidgetLabel.directDisplayName: String
+    get() = when (this) {
+        WidgetLabel.ScreenTime -> "Screen time"
+        WidgetLabel.Today -> "Today"
+        WidgetLabel.Hidden -> "None"
     }
 
 private val WidgetFontSize.displayName: String
@@ -373,13 +412,12 @@ private val WidgetFontStyle.fontWeight: FontWeight
         WidgetFontStyle.Bold -> FontWeight.Bold
     }
 
-private val String?.displayWidgetColor: String
-    get() = when (this) {
-        null -> "Automatic · follows appearance"
-        "#FFFFFF" -> "White"
-        "#000000" -> "Black"
-        else -> this
-    }
+private fun displayWidgetColor(color: String?): String = when (color) {
+    null -> "Custom color"
+    "#FFFFFF" -> "White"
+    "#000000" -> "Black"
+    else -> color
+}
 
 @Composable
 private fun WidgetPreview(settings: UserSettings, duration: Duration) {
@@ -440,13 +478,16 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
 }
 
 @Composable
-private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDismiss: () -> Unit) {
+private fun WidgetColorDialog(
+    current: String?,
+    onApply: (String?) -> Unit,
+    onDismiss: () -> Unit,
+) {
     val initialColor = parseWidgetColor(current) ?: 0xFF315A41.toInt()
     val initialHsv = remember(current) { FloatArray(3).also { AndroidColor.colorToHSV(initialColor, it) } }
     var hue by remember(current) { mutableStateOf(initialHsv[0]) }
     var saturation by remember(current) { mutableStateOf(initialHsv[1]) }
     var brightness by remember(current) { mutableStateOf(initialHsv[2]) }
-    var useAutomatic by remember(current) { mutableStateOf(current == null) }
     val chosenColor = AndroidColor.HSVToColor(floatArrayOf(hue, saturation, brightness))
     val chosenHex = chosenColor.toHexColor()
 
@@ -455,7 +496,6 @@ private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDi
         hue = hsv[0]
         saturation = hsv[1]
         brightness = hsv[2]
-        useAutomatic = false
     }
 
     AlertDialog(
@@ -467,7 +507,7 @@ private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDi
                 verticalArrangement = Arrangement.spacedBy(StillSpacing.medium),
             ) {
                 Text(
-                    "Choose a background. Still picks readable text automatically.",
+                    "Pick a background. Still keeps the text readable automatically.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -476,23 +516,16 @@ private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDi
                     horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
                 ) {
                     WidgetColorChoice(
-                        label = "Automatic",
-                        color = null,
-                        isSelected = useAutomatic,
-                        onClick = { useAutomatic = true },
-                        modifier = Modifier.weight(1f),
-                    )
-                    WidgetColorChoice(
                         label = "White",
                         color = Color.White,
-                        isSelected = !useAutomatic && chosenHex == "#FFFFFF",
+                        isSelected = chosenHex == "#FFFFFF",
                         onClick = { selectColor(0xFFFFFFFF.toInt()) },
                         modifier = Modifier.weight(1f),
                     )
                     WidgetColorChoice(
                         label = "Black",
                         color = Color.Black,
-                        isSelected = !useAutomatic && chosenHex == "#000000",
+                        isSelected = chosenHex == "#000000",
                         onClick = { selectColor(0xFF000000.toInt()) },
                         modifier = Modifier.weight(1f),
                     )
@@ -506,14 +539,12 @@ private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDi
                     onChange = { newSaturation, newBrightness ->
                         saturation = newSaturation
                         brightness = newBrightness
-                        useAutomatic = false
                     },
                 )
                 HuePicker(
                     hue = hue,
                     onChange = {
                         hue = it
-                        useAutomatic = false
                     },
                 )
                 Row(
@@ -525,13 +556,14 @@ private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDi
                         Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(Color(chosenColor))
                             .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
-                    )
+                    ) {
+                        Box(Modifier.fillMaxSize().background(Color(chosenColor)))
+                    }
                     Column {
-                        Text(if (useAutomatic) "Automatic" else chosenHex, style = MaterialTheme.typography.bodyMedium)
+                        Text(chosenHex, style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            if (useAutomatic) "Uses the selected appearance" else "Custom background",
+                            "Custom background",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -543,7 +575,7 @@ private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDi
         confirmButton = {
             Button(
                 onClick = {
-                    onApply(if (useAutomatic) null else chosenHex)
+                    onApply(chosenHex)
                     onDismiss()
                 },
             ) { Text("Apply") }
@@ -554,7 +586,7 @@ private fun WidgetColorDialog(current: String?, onApply: (String?) -> Unit, onDi
 @Composable
 private fun WidgetColorChoice(
     label: String,
-    color: Color?,
+    color: Color,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -581,14 +613,7 @@ private fun WidgetColorChoice(
                     shape = CircleShape,
                 ),
         ) {
-            if (color == null) {
-                Canvas(Modifier.fillMaxSize()) {
-                    drawArc(Color(0xFFF1F5F1), 90f, 180f, true)
-                    drawArc(Color(0xFF18201B), 270f, 180f, true)
-                }
-            } else {
-                Box(Modifier.fillMaxSize().background(color))
-            }
+            Box(Modifier.fillMaxSize().background(color))
         }
         Text(label, style = MaterialTheme.typography.labelMedium)
     }
@@ -668,7 +693,7 @@ private fun Modifier.colorPickerInput(onPosition: (Offset, Float, Float) -> Unit
 private fun Int.toHexColor(): String = "#" + (this and 0xFFFFFF).toString(16).padStart(6, '0').uppercase()
 
 @Composable
-private fun WidgetColorSettingRow(color: String?, onClick: () -> Unit) {
+private fun WidgetCustomColorRow(color: String?, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -677,8 +702,12 @@ private fun WidgetColorSettingRow(color: String?, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text("Color", style = MaterialTheme.typography.bodyMedium)
-            Text(color.displayWidgetColor, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Custom color", style = MaterialTheme.typography.titleMedium)
+            Text(
+                displayWidgetColor(color),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Box(
             Modifier

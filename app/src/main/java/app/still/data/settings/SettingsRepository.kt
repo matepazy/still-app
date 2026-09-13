@@ -106,6 +106,10 @@ class SettingsRepository(private val context: Context) {
     suspend fun setWidgetColor(value: String?) = context.settingsDataStore.edit {
         normalizeWidgetColor(value)?.let { color -> it[Keys.widgetColor] = color } ?: it.remove(Keys.widgetColor)
     }
+    suspend fun setWidgetTheme(value: WidgetAppearance) = context.settingsDataStore.edit {
+        it[Keys.widgetAppearance] = value.name
+        it.remove(Keys.widgetColor)
+    }
     suspend fun setWidgetLabel(value: WidgetLabel) = context.settingsDataStore.edit {
         it[Keys.widgetLabel] = value.name
     }
