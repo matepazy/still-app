@@ -1,8 +1,11 @@
 package app.still.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,16 +33,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.still.data.settings.ThemePreference
 import app.still.domain.model.AppDetail
@@ -135,9 +138,6 @@ private fun MainNavigation(
     viewModel: MainViewModel,
 ) {
     val navController = rememberNavController()
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
-    val primaryRoutes = setOf(TodayRoute, TimelineRoute, AppsRoute)
     val availableDays = remember(dashboard) {
         (listOf(dashboard.today) + dashboard.history).distinctBy { it.date }.sortedByDescending { it.date }
     }
@@ -149,62 +149,23 @@ private fun MainNavigation(
     val selectedDay = availableDays.firstOrNull { it.date == selectedDate } ?: dashboard.today
     val selectDate: (LocalDate) -> Unit = { selectedDateValue = it.toString() }
 
-    Scaffold(
-        topBar = {
-            when (currentRoute) {
-                TodayRoute -> TodayTopBar { navController.navigate(SettingsRoute) }
-                TimelineRoute -> TimelineTopBar { navController.navigate(SettingsRoute) }
-                AppsRoute -> AppsTopBar { navController.navigate(SettingsRoute) }
-                SettingsRoute -> SettingsTopBar { navController.popBackStack() }
-                WidgetSettingsRoute -> SettingsTopBar(title = "Widget") { navController.popBackStack() }
-                AppDetailRoute -> {
-                    val packageName = backStackEntry?.arguments?.getString("packageName")
-                    val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
-                    AppDetailTopBar(title) { navController.popBackStack() }
-                }
-            }
+    NavHost(
+        navController = navController,
+        startDestination = TodayRoute,
+        modifier = Modifier.fillMaxSize(),
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = {
+            scaleOut(
+                targetScale = 0.9f,
+                transformOrigin = TransformOrigin.Center,
+            )
         },
-        bottomBar = {
-            if (currentRoute in primaryRoutes) {
-                NavigationBar(
-                    modifier = Modifier.clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    tonalElevation = 0.dp,
-                ) {
-                    listOf(
-                        Triple(TodayRoute, "Today", StillIcons.Today),
-                        Triple(TimelineRoute, "Timeline", StillIcons.Timeline),
-                        Triple(AppsRoute, "Apps", StillIcons.Apps),
-                    ).forEach { (route, label, icon) ->
-                        NavigationBarItem(
-                            selected = backStackEntry?.destination?.hierarchy?.any { it.route == route } == true,
-                            onClick = {
-                                val returnedHome = route == TodayRoute && navController.popBackStack(TodayRoute, inclusive = false)
-                                if (!returnedHome) {
-                                    navController.navigate(route) {
-                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = route != TodayRoute
-                                    }
-                                }
-                            },
-                            icon = { Icon(painterResource(icon), contentDescription = null) },
-                            label = { Text(label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                        )
-                    }
-                }
-            }
-        },
-    ) { padding ->
-        NavHost(navController, startDestination = TodayRoute, modifier = Modifier.padding(padding)) {
-            composable(TodayRoute) {
+    ) {
+        composable(TodayRoute) {
+            DestinationScaffold(
+                topBar = { TodayTopBar { navController.navigate(SettingsRoute) } },
+                bottomBar = { StillNavigationBar(TodayRoute, navController) },
+            ) { padding ->
                 TodayScreen(
                     dashboard,
                     onDaylineClick = { navController.navigate(TimelineRoute) },
@@ -212,27 +173,60 @@ private fun MainNavigation(
                         selectedDateValue = dashboard.today.date.toString()
                         navController.navigate("app/$packageName")
                     },
+                    modifier = Modifier.padding(padding),
                 )
             }
-            composable(TimelineRoute) {
-                TimelineScreen(selectedDay, availableDays.map { it.date }, selectDate)
+        }
+        composable(TimelineRoute) {
+            DestinationScaffold(
+                topBar = { TimelineTopBar { navController.navigate(SettingsRoute) } },
+                bottomBar = { StillNavigationBar(TimelineRoute, navController) },
+            ) { padding ->
+                TimelineScreen(
+                    selectedDay,
+                    availableDays.map { it.date },
+                    selectDate,
+                    modifier = Modifier.padding(padding),
+                )
             }
-            composable(AppsRoute) {
+        }
+        composable(AppsRoute) {
+            DestinationScaffold(
+                topBar = { AppsTopBar { navController.navigate(SettingsRoute) } },
+                bottomBar = { StillNavigationBar(AppsRoute, navController) },
+            ) { padding ->
                 AppsScreen(
                     selectedDay,
                     onAppClick = { packageName -> navController.navigate("app/$packageName") },
                     availableDates = availableDays.map { it.date },
                     onDateSelected = selectDate,
+                    modifier = Modifier.padding(padding),
                 )
             }
-            composable(AppDetailRoute) { entry ->
-                val packageName = entry.arguments?.getString("packageName").orEmpty()
+        }
+        composable(AppDetailRoute) { entry ->
+            val packageName = entry.arguments?.getString("packageName").orEmpty()
+            val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
+            DestinationScaffold(
+                topBar = { AppDetailTopBar(title) { navController.popBackStack() } },
+            ) { padding ->
                 buildAppDetail(packageName, dashboard, selectedDate)?.let {
-                    AppDetailScreen(it, onDateSelected = selectDate)
+                    AppDetailScreen(
+                        it,
+                        modifier = Modifier.padding(padding),
+                        onDateSelected = selectDate,
+                    )
                 }
-                    ?: ErrorScreen("This app has no usage information for the selected day.") { navController.popBackStack() }
+                    ?: ErrorScreen(
+                        "This app has no usage information for the selected day.",
+                        navController::popBackStack,
+                    )
             }
-            composable(SettingsRoute) {
+        }
+        composable(SettingsRoute) {
+            DestinationScaffold(
+                topBar = { SettingsTopBar { navController.popBackStack() } },
+            ) { padding ->
                 SettingsScreen(
                     settings = settings,
                     onThemeChange = viewModel::setTheme,
@@ -243,9 +237,14 @@ private fun MainNavigation(
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
                     onCheckForUpdates = viewModel::triggerVersionCheck,
+                    modifier = Modifier.padding(padding),
                 )
             }
-            composable(WidgetSettingsRoute) {
+        }
+        composable(WidgetSettingsRoute) {
+            DestinationScaffold(
+                topBar = { SettingsTopBar(title = "Widget") { navController.popBackStack() } },
+            ) { padding ->
                 WidgetSettingsScreen(
                     settings = settings,
                     widgetPreviewDuration = dashboard.today.total,
@@ -253,8 +252,62 @@ private fun MainNavigation(
                     onWidgetColorChange = viewModel::setWidgetColor,
                     onWidgetLabelChange = viewModel::setWidgetLabel,
                     onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
+                    modifier = Modifier.padding(padding),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun DestinationScaffold(
+    topBar: @Composable () -> Unit,
+    bottomBar: @Composable () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = topBar,
+        bottomBar = bottomBar,
+        content = content,
+    )
+}
+
+@Composable
+private fun StillNavigationBar(currentRoute: String, navController: NavHostController) {
+    NavigationBar(
+        modifier = Modifier.clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 0.dp,
+    ) {
+        listOf(
+            Triple(TodayRoute, "Today", StillIcons.Today),
+            Triple(TimelineRoute, "Timeline", StillIcons.Timeline),
+            Triple(AppsRoute, "Apps", StillIcons.Apps),
+        ).forEach { (route, label, icon) ->
+            NavigationBarItem(
+                selected = currentRoute == route,
+                onClick = {
+                    val returnedHome = route == TodayRoute && navController.popBackStack(TodayRoute, inclusive = false)
+                    if (!returnedHome) {
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = route != TodayRoute
+                        }
+                    }
+                },
+                icon = { Icon(painterResource(icon), contentDescription = null) },
+                label = { Text(label) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            )
         }
     }
 }
