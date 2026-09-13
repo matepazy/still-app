@@ -24,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -40,11 +41,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.still.data.settings.ThemePreference
+import app.still.data.settings.LastDestination
 import app.still.domain.model.AppDetail
 import app.still.domain.model.DailyAppUsage
 import app.still.domain.model.UsageDashboard
@@ -70,15 +73,14 @@ import app.still.ui.today.TodayTopBar
 import java.time.Duration
 import java.time.LocalDate
 
-private const val TodayRoute = "today"
-private const val TimelineRoute = "timeline"
-private const val AppsRoute = "apps"
-private const val SettingsRoute = "settings"
-private const val WidgetSettingsRoute = "settings/widget"
 private const val AppDetailRoute = "app/{packageName}"
 
 @Composable
-fun StillApp(viewModel: MainViewModel) {
+fun StillApp(
+    viewModel: MainViewModel,
+    navigationRequest: NavigationRequest? = null,
+    onNavigationRequestHandled: (Int) -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
@@ -109,7 +111,14 @@ fun StillApp(viewModel: MainViewModel) {
                         onOpenAppInfo = { context.startActivity(viewModel.restrictedSettingsIntent()) },
                     )
                     is UsageUiState.Error -> ErrorScreen(usage.message, viewModel::refresh)
-                    is UsageUiState.Ready -> MainNavigation(usage.dashboard, settings, updateState, viewModel)
+                    is UsageUiState.Ready -> MainNavigation(
+                        usage.dashboard,
+                        settings,
+                        updateState,
+                        viewModel,
+                        navigationRequest,
+                        onNavigationRequestHandled,
+                    )
                 }
             }
         }
@@ -139,8 +148,33 @@ private fun MainNavigation(
     settings: app.still.data.settings.UserSettings,
     updateState: UpdateState,
     viewModel: MainViewModel,
+    navigationRequest: NavigationRequest?,
+    onNavigationRequestHandled: (Int) -> Unit,
 ) {
     val navController = rememberNavController()
+    val initialDestination = remember { navigationRequest?.destination ?: settings.lastDestination }
+    val initialRequestId = remember { navigationRequest?.id }
+    var navigationReady by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.setLastDestination(initialDestination)
+        initialRequestId?.let(onNavigationRequestHandled)
+        navigationReady = true
+    }
+    LaunchedEffect(navigationRequest) {
+        if (navigationReady && navigationRequest != null && navigationRequest.id != initialRequestId) {
+            navController.navigateTo(navigationRequest.destination)
+            onNavigationRequestHandled(navigationRequest.id)
+        }
+    }
+    DisposableEffect(navController, navigationReady) {
+        if (!navigationReady) return@DisposableEffect onDispose { }
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            lastDestinationForRoute(destination.route)?.let(viewModel::setLastDestination)
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
+    }
     val availableDays = remember(dashboard) {
         (listOf(dashboard.today) + dashboard.history).distinctBy { it.date }.sortedByDescending { it.date }
     }
@@ -154,7 +188,7 @@ private fun MainNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = TodayRoute,
+        startDestination = initialDestination.route,
         modifier = Modifier.fillMaxSize(),
         popEnterTransition = { EnterTransition.None },
         popExitTransition = {
@@ -228,7 +262,11 @@ private fun MainNavigation(
         }
         composable(SettingsRoute) {
             DestinationScaffold(
-                topBar = { SettingsTopBar { navController.popBackStack() } },
+                topBar = {
+                    SettingsTopBar {
+                        if (!navController.popBackStack()) navController.navigate(TodayRoute)
+                    }
+                },
             ) { padding ->
                 SettingsScreen(
                     settings = settings,
@@ -246,7 +284,11 @@ private fun MainNavigation(
         }
         composable(WidgetSettingsRoute) {
             DestinationScaffold(
-                topBar = { SettingsTopBar(title = "Widget") { navController.popBackStack() } },
+                topBar = {
+                    SettingsTopBar(title = "Widget") {
+                        if (!navController.popBackStack()) navController.navigate(SettingsRoute)
+                    }
+                },
             ) { padding ->
                 WidgetSettingsScreen(
                     settings = settings,
@@ -260,6 +302,30 @@ private fun MainNavigation(
                     modifier = Modifier.padding(padding),
                 )
             }
+        }
+    }
+}
+
+private fun NavHostController.navigateTo(destination: LastDestination) {
+    when (destination) {
+        LastDestination.Today -> {
+            val returnedHome = popBackStack(TodayRoute, inclusive = false)
+            if (!returnedHome && currentDestination?.route != TodayRoute) {
+                navigate(TodayRoute) {
+                    popUpTo(graph.findStartDestination().id) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
+        LastDestination.Timeline, LastDestination.Apps -> navigate(destination.route) {
+            popUpTo(graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+        LastDestination.Settings -> navigate(SettingsRoute) { launchSingleTop = true }
+        LastDestination.WidgetSettings -> {
+            navigate(SettingsRoute) { launchSingleTop = true }
+            navigate(WidgetSettingsRoute) { launchSingleTop = true }
         }
     }
 }

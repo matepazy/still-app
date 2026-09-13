@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.still.AppContainer
 import app.still.data.settings.ThemePreference
+import app.still.data.settings.LastDestination
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetFontSize
@@ -93,6 +94,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun setTheme(value: ThemePreference) = viewModelScope.launch { container.settingsRepository.setTheme(value) }
     fun setDynamicColors(value: Boolean) = viewModelScope.launch { container.settingsRepository.setDynamicColors(value) }
     fun setDailyTargetMinutes(value: Long?) = viewModelScope.launch { container.settingsRepository.setDailyTargetMinutes(value) }
+    fun setLastDestination(value: LastDestination) = viewModelScope.launch {
+        container.settingsRepository.setLastDestination(value)
+    }
     fun setWidgetAppearance(value: WidgetAppearance) = viewModelScope.launch {
         container.settingsRepository.setWidgetAppearance(value)
         ScreenTimeWidgetProvider.updateAll(container.applicationContext)

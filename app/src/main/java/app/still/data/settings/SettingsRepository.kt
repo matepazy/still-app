@@ -21,6 +21,8 @@ enum class WidgetFontSize(val valueSp: Float) { Small(20f), Medium(24f), Large(2
 
 enum class WidgetFontStyle { Regular, Medium, Bold }
 
+enum class LastDestination { Today, Timeline, Apps, Settings, WidgetSettings }
+
 data class UserSettings(
     val onboardingComplete: Boolean = false,
     val theme: ThemePreference = ThemePreference.System,
@@ -34,6 +36,7 @@ data class UserSettings(
     val widgetFontSize: WidgetFontSize = WidgetFontSize.Medium,
     val widgetFontStyle: WidgetFontStyle = WidgetFontStyle.Bold,
     val widgetShowRefresh: Boolean = true,
+    val lastDestination: LastDestination = LastDestination.Today,
 )
 
 class SettingsRepository(private val context: Context) {
@@ -50,6 +53,7 @@ class SettingsRepository(private val context: Context) {
         val widgetFontSize = stringPreferencesKey("widget_font_size")
         val widgetFontStyle = stringPreferencesKey("widget_font_style")
         val widgetShowRefresh = booleanPreferencesKey("widget_show_refresh")
+        val lastDestination = stringPreferencesKey("last_destination")
     }
 
     val settings: Flow<UserSettings> = context.settingsDataStore.data.map { preferences ->
@@ -75,6 +79,9 @@ class SettingsRepository(private val context: Context) {
                 ?.let { runCatching { WidgetFontStyle.valueOf(it) }.getOrNull() }
                 ?: WidgetFontStyle.Bold,
             widgetShowRefresh = preferences[Keys.widgetShowRefresh] ?: true,
+            lastDestination = preferences[Keys.lastDestination]
+                ?.let { runCatching { LastDestination.valueOf(it) }.getOrNull() }
+                ?: LastDestination.Today,
         )
     }
 
@@ -110,5 +117,8 @@ class SettingsRepository(private val context: Context) {
     }
     suspend fun setWidgetShowRefresh(value: Boolean) = context.settingsDataStore.edit {
         it[Keys.widgetShowRefresh] = value
+    }
+    suspend fun setLastDestination(value: LastDestination) = context.settingsDataStore.edit {
+        it[Keys.lastDestination] = value.name
     }
 }

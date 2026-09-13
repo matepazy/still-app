@@ -12,6 +12,7 @@ import android.widget.RemoteViews
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import app.still.MainActivity
+import app.still.MainActivity.Companion.EXTRA_OPEN_TODAY
 import app.still.R
 import app.still.StillApplication
 import app.still.data.settings.UserSettings
@@ -124,7 +125,8 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
             context,
             0,
             Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(EXTRA_OPEN_TODAY, true)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
