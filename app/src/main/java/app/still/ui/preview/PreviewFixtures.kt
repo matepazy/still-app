@@ -80,7 +80,7 @@ object PreviewFixtures {
     )
 
     private val dayline = buildList {
-        add(DaylineSegment(start, instant(9, 42), DaylineKind.ScreenOff))
+        add(DaylineSegment(start, instant(9, 42), DaylineKind.Inactive))
         sessions.sortedBy { it.start }.forEach { value ->
             add(DaylineSegment(value.start, value.end, DaylineKind.Active))
         }

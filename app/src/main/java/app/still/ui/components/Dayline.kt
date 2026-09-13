@@ -56,8 +56,7 @@ fun Dayline(
     modifier: Modifier = Modifier,
 ) {
     val active = MaterialTheme.colorScheme.primary
-    val idle = MaterialTheme.colorScheme.outline.copy(alpha = .55f)
-    val off = MaterialTheme.colorScheme.surfaceContainerHighest
+    val inactive = MaterialTheme.colorScheme.outline.copy(alpha = .55f)
     val future = MaterialTheme.colorScheme.surfaceContainerLow
     val guide = MaterialTheme.colorScheme.onSurface.copy(alpha = .14f)
     val now = MaterialTheme.colorScheme.onSurface
@@ -96,12 +95,11 @@ fun Dayline(
                         }
                         val color = when (segment.kind) {
                             DaylineKind.Active -> active
-                            DaylineKind.ScreenOff -> off
-                            DaylineKind.Idle -> idle
+                            DaylineKind.Inactive -> inactive
                         }
                         if (width > 0f) drawRect(color, Offset(left, bandTop), Size(width, bandHeight))
                     }
-                    listOf(.25f, .5f, .75f).forEach { progress ->
+                    elapsedDaylineGuides(nowProgress).forEach { progress ->
                         val x = size.width * progress
                         drawLine(guide, Offset(x, bandTop), Offset(x, bandTop + bandHeight), 1.dp.toPx())
                     }
@@ -144,11 +142,13 @@ fun Dayline(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             DaylineLegendItem("Screen use", active)
-            DaylineLegendItem("Idle", idle)
-            DaylineLegendItem("Screen off", off)
+            DaylineLegendItem("Not in use", inactive)
         }
     }
 }
+
+internal fun elapsedDaylineGuides(nowProgress: Float): List<Float> =
+    listOf(.25f, .5f, .75f).filter { it <= nowProgress }
 
 @Composable
 private fun DaylineLegendItem(label: String, color: androidx.compose.ui.graphics.Color) {

@@ -1,6 +1,8 @@
 package app.still.domain.analytics
 
 import app.still.domain.model.AppInfo
+import app.still.domain.model.DaylineKind
+import app.still.domain.model.ForegroundInterval
 import app.still.domain.model.UsageEventRecord
 import app.still.domain.model.UsageEventType
 import org.junit.Assert.assertEquals
@@ -84,6 +86,18 @@ class UsageAnalyticsTest {
         val comparison = BaselineCalculator.compare(Duration.ofMinutes(120), listOf(Duration.ofMinutes(150), Duration.ofMinutes(180), Duration.ofMinutes(120)))
         assertEquals(Duration.ofMinutes(150), comparison?.baseline)
         assertEquals(Duration.ofMinutes(-30), comparison?.difference)
+    }
+
+    @Test fun daylineUsesOnlyActiveAndInactiveSegmentsAndStopsAtRangeEnd() {
+        val rangeEnd = at(180)
+        val segments = DaylineBuilder.build(
+            rangeStart = start,
+            rangeEnd = rangeEnd,
+            intervals = listOf(ForegroundInterval("app.one", at(60), at(90))),
+        )
+
+        assertEquals(listOf(DaylineKind.Inactive, DaylineKind.Active, DaylineKind.Inactive), segments.map { it.kind })
+        assertEquals(rangeEnd, segments.last().end)
     }
 
     @Test fun insufficientBaselineDoesNotManufactureComparison() {

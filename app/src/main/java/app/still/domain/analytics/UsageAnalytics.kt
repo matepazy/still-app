@@ -193,35 +193,18 @@ object DaylineBuilder {
         rangeStart: Instant,
         rangeEnd: Instant,
         intervals: List<ForegroundInterval>,
-        events: List<UsageEventRecord>,
     ): List<DaylineSegment> {
         if (!rangeEnd.isAfter(rangeStart)) return emptyList()
-        val offRanges = mutableListOf<Pair<Instant, Instant>>()
-        var offStart: Instant? = null
-        events.sortedBy { it.timestamp }.forEach { event ->
-            when (event.type) {
-                UsageEventType.ScreenNonInteractive -> if (offStart == null) offStart = maxOf(event.timestamp, rangeStart)
-                UsageEventType.ScreenInteractive -> offStart?.let {
-                    if (event.timestamp > it) offRanges += it to minOf(event.timestamp, rangeEnd)
-                    offStart = null
-                }
-                else -> Unit
-            }
-        }
-        offStart?.let { if (rangeEnd > it) offRanges += it to rangeEnd }
-
         val points = buildSet {
             add(rangeStart); add(rangeEnd)
             intervals.forEach { add(maxOf(it.start, rangeStart)); add(minOf(it.end, rangeEnd)) }
-            offRanges.forEach { add(it.first); add(it.second) }
         }.sorted()
         val raw = points.zipWithNext().mapNotNull { (start, end) ->
             if (!end.isAfter(start)) return@mapNotNull null
             val midpoint = start.plusMillis(Duration.between(start, end).toMillis() / 2)
             val kind = when {
                 intervals.any { midpoint >= it.start && midpoint < it.end } -> DaylineKind.Active
-                offRanges.any { midpoint >= it.first && midpoint < it.second } -> DaylineKind.ScreenOff
-                else -> DaylineKind.Idle
+                else -> DaylineKind.Inactive
             }
             DaylineSegment(start, end, kind)
         }

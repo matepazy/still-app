@@ -54,7 +54,7 @@ data class UsageSession(
     val isQuickCheck: Boolean get() = duration <= Duration.ofSeconds(60)
 }
 
-enum class DaylineKind { Active, ScreenOff, Idle }
+enum class DaylineKind { Active, Inactive }
 
 data class DaylineSegment(
     val start: Instant,

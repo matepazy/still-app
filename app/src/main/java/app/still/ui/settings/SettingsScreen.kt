@@ -57,9 +57,9 @@ import java.time.Duration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsTopBar(onBack: () -> Unit) {
+fun SettingsTopBar(title: String = "Settings", onBack: () -> Unit) {
     TopAppBar(
-        title = { Text("Settings", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = { IconButton(onClick = onBack) { Icon(painterResource(StillIcons.Back), contentDescription = "Back") } },
     )
 }
@@ -70,19 +70,14 @@ fun SettingsScreen(
     onThemeChange: (ThemePreference) -> Unit,
     onDynamicChange: (Boolean) -> Unit,
     onRefresh: () -> Unit,
+    onWidgetClick: () -> Unit,
     modifier: Modifier = Modifier,
-    widgetPreviewDuration: Duration = Duration.ZERO,
-    onWidgetAppearanceChange: (WidgetAppearance) -> Unit = {},
-    onWidgetLabelChange: (WidgetLabel) -> Unit = {},
-    onWidgetShowRefreshChange: (Boolean) -> Unit = {},
     updateState: UpdateState = UpdateState.Idle,
     onVersionCheckChange: (Boolean) -> Unit = {},
     onUpdateChannelChange: (String) -> Unit = {},
     onCheckForUpdates: () -> Unit = {},
 ) {
     var themeDialog by remember { mutableStateOf(false) }
-    var widgetAppearanceDialog by remember { mutableStateOf(false) }
-    var widgetLabelDialog by remember { mutableStateOf(false) }
     var updateChannelDialog by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium)) {
         SectionTitle("Appearance")
@@ -100,31 +95,13 @@ fun SettingsScreen(
             }
         }
 
-        SectionTitle("Widget")
-        WidgetPreview(settings, widgetPreviewDuration)
-        Spacer(Modifier.height(StillSpacing.small))
+        SectionTitle("Home screen")
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-            Column {
-                SettingRow(
-                    title = "Appearance",
-                    supporting = settings.widgetAppearance.displayName,
-                    onClick = { widgetAppearanceDialog = true },
-                )
-                Hairline()
-                SettingRow(
-                    title = "Title",
-                    supporting = settings.widgetLabel.displayName,
-                    onClick = { widgetLabelDialog = true },
-                )
-                Hairline()
-                SettingSwitch(
-                    title = "Show refresh button",
-                    supporting = "Refresh from your home screen",
-                    checked = settings.widgetShowRefresh,
-                    enabled = true,
-                    onCheckedChange = onWidgetShowRefreshChange,
-                )
-            }
+            SettingRow(
+                title = "Widget",
+                supporting = "Appearance, title and refresh button",
+                onClick = onWidgetClick,
+            )
         }
 
         SectionTitle("Data")
@@ -203,26 +180,6 @@ fun SettingsScreen(
             onDismiss = { themeDialog = false },
         )
     }
-    if (widgetAppearanceDialog) {
-        ChoiceDialog(
-            title = "Widget appearance",
-            options = WidgetAppearance.entries.map { appearance ->
-                appearance.displayName to { onWidgetAppearanceChange(appearance) }
-            },
-            selected = settings.widgetAppearance.displayName,
-            onDismiss = { widgetAppearanceDialog = false },
-        )
-    }
-    if (widgetLabelDialog) {
-        ChoiceDialog(
-            title = "Widget title",
-            options = WidgetLabel.entries.map { label ->
-                label.displayName to { onWidgetLabelChange(label) }
-            },
-            selected = settings.widgetLabel.displayName,
-            onDismiss = { widgetLabelDialog = false },
-        )
-    }
     if (updateChannelDialog) {
         ChoiceDialog(
             title = "Update channel",
@@ -232,6 +189,71 @@ fun SettingsScreen(
             ),
             selected = if (settings.updateChannel == "pre-release") "Beta" else "Stable",
             onDismiss = { updateChannelDialog = false },
+        )
+    }
+}
+
+@Composable
+fun WidgetSettingsScreen(
+    settings: UserSettings,
+    widgetPreviewDuration: Duration,
+    onWidgetAppearanceChange: (WidgetAppearance) -> Unit,
+    onWidgetLabelChange: (WidgetLabel) -> Unit,
+    onWidgetShowRefreshChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var appearanceDialog by remember { mutableStateOf(false) }
+    var labelDialog by remember { mutableStateOf(false) }
+
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium)) {
+        SectionTitle("Preview")
+        WidgetPreview(settings, widgetPreviewDuration)
+
+        SectionTitle("Options")
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            Column {
+                SettingRow(
+                    title = "Appearance",
+                    supporting = settings.widgetAppearance.displayName,
+                    onClick = { appearanceDialog = true },
+                )
+                Hairline()
+                SettingRow(
+                    title = "Title",
+                    supporting = settings.widgetLabel.displayName,
+                    onClick = { labelDialog = true },
+                )
+                Hairline()
+                SettingSwitch(
+                    title = "Show refresh button",
+                    supporting = "Refresh from your home screen",
+                    checked = settings.widgetShowRefresh,
+                    enabled = true,
+                    onCheckedChange = onWidgetShowRefreshChange,
+                )
+            }
+        }
+        Spacer(Modifier.height(StillSpacing.large))
+    }
+
+    if (appearanceDialog) {
+        ChoiceDialog(
+            title = "Widget appearance",
+            options = WidgetAppearance.entries.map { appearance ->
+                appearance.displayName to { onWidgetAppearanceChange(appearance) }
+            },
+            selected = settings.widgetAppearance.displayName,
+            onDismiss = { appearanceDialog = false },
+        )
+    }
+    if (labelDialog) {
+        ChoiceDialog(
+            title = "Widget title",
+            options = WidgetLabel.entries.map { label ->
+                label.displayName to { onWidgetLabelChange(label) }
+            },
+            selected = settings.widgetLabel.displayName,
+            onDismiss = { labelDialog = false },
         )
     }
 }

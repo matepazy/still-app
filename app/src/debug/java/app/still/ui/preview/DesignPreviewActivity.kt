@@ -37,7 +37,6 @@ import app.still.ui.timeline.TimelineScreen
 import app.still.ui.timeline.TimelineTopBar
 import app.still.ui.today.TodayScreen
 import app.still.ui.today.TodayTopBar
-import java.time.Duration
 
 class DesignPreviewActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,7 +66,7 @@ private fun DesignScreen(screen: String) {
                 onThemeChange = {},
                 onDynamicChange = {},
                 onRefresh = {},
-                widgetPreviewDuration = Duration.ofHours(2).plusMinutes(47),
+                onWidgetClick = {},
                 modifier = Modifier.padding(padding),
             )
         }

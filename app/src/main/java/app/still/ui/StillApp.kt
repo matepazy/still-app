@@ -54,6 +54,7 @@ import app.still.ui.components.StillIcons
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
+import app.still.ui.settings.WidgetSettingsScreen
 import app.still.ui.theme.StillSpacing
 import app.still.ui.theme.StillTheme
 import app.still.ui.update.UpdateDetailsSheet
@@ -70,6 +71,7 @@ private const val TodayRoute = "today"
 private const val TimelineRoute = "timeline"
 private const val AppsRoute = "apps"
 private const val SettingsRoute = "settings"
+private const val WidgetSettingsRoute = "settings/widget"
 private const val AppDetailRoute = "app/{packageName}"
 
 @Composable
@@ -154,6 +156,7 @@ private fun MainNavigation(
                 TimelineRoute -> TimelineTopBar { navController.navigate(SettingsRoute) }
                 AppsRoute -> AppsTopBar { navController.navigate(SettingsRoute) }
                 SettingsRoute -> SettingsTopBar { navController.popBackStack() }
+                WidgetSettingsRoute -> SettingsTopBar(title = "Widget") { navController.popBackStack() }
                 AppDetailRoute -> {
                     val packageName = backStackEntry?.arguments?.getString("packageName")
                     val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
@@ -235,14 +238,20 @@ private fun MainNavigation(
                     onThemeChange = viewModel::setTheme,
                     onDynamicChange = viewModel::setDynamicColors,
                     onRefresh = viewModel::refresh,
-                    widgetPreviewDuration = dashboard.today.total,
-                    onWidgetAppearanceChange = viewModel::setWidgetAppearance,
-                    onWidgetLabelChange = viewModel::setWidgetLabel,
-                    onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
+                    onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
                     updateState = updateState,
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
                     onCheckForUpdates = viewModel::triggerVersionCheck,
+                )
+            }
+            composable(WidgetSettingsRoute) {
+                WidgetSettingsScreen(
+                    settings = settings,
+                    widgetPreviewDuration = dashboard.today.total,
+                    onWidgetAppearanceChange = viewModel::setWidgetAppearance,
+                    onWidgetLabelChange = viewModel::setWidgetLabel,
+                    onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
                 )
             }
         }

@@ -118,7 +118,7 @@ class UsageRepository(
             unlocks = SessionAnalyzer.countUnlocks(events),
             wakeups = SessionAnalyzer.countWakeups(events),
             longestBreak = SessionAnalyzer.longestBreak(intervals, end),
-            dayline = DaylineBuilder.build(start, end, intervals, events),
+            dayline = DaylineBuilder.build(start, end, intervals),
         )
     }
 
