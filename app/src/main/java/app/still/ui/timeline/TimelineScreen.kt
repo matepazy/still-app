@@ -65,9 +65,19 @@ fun TimelineScreen(
         Column(modifier.fillMaxSize().padding(StillSpacing.large), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             DaySelector(day.date, availableDates, onDateSelected)
             Spacer(Modifier.height(StillSpacing.large))
-            Text("No sessions recorded", style = MaterialTheme.typography.headlineSmall)
+            Text(
+                if (day.detailsAvailable) "No sessions recorded" else "Daily total only",
+                style = MaterialTheme.typography.headlineSmall,
+            )
             Spacer(Modifier.height(StillSpacing.small))
-            Text("Choose another day or check back after Android records foreground use.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                if (day.detailsAvailable) {
+                    "Choose another day or check back after Android records foreground use."
+                } else {
+                    "Android had already removed this day’s session timeline, but Still recovered its app totals."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         return
     }

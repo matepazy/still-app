@@ -77,13 +77,18 @@ fun AppsScreen(
             }
         }
         items(day.apps, key = { it.app.packageName }) { usage ->
-            AppUsageRow(usage, day.total.toMillis(), onAppClick)
+            AppUsageRow(usage, day.total.toMillis(), day.detailsAvailable, onAppClick)
         }
     }
 }
 
 @Composable
-private fun AppUsageRow(usage: AppUsage, totalMillis: Long, onAppClick: (String) -> Unit) {
+private fun AppUsageRow(
+    usage: AppUsage,
+    totalMillis: Long,
+    detailsAvailable: Boolean,
+    onAppClick: (String) -> Unit,
+) {
     TonalPanel(
         Modifier.fillMaxWidth().clickable { onAppClick(usage.app.packageName) },
         contentPadding = PaddingValues(10.dp),
@@ -95,7 +100,11 @@ private fun AppUsageRow(usage: AppUsage, totalMillis: Long, onAppClick: (String)
                 Text(usage.app.label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
                 Column(horizontalAlignment = Alignment.End) {
                     Text(usage.duration.compactDuration(), style = MaterialTheme.typography.titleSmall)
-                    Text("${usage.opens} ${if (usage.opens == 1) "open" else "opens"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        if (detailsAvailable) "${usage.opens} ${if (usage.opens == 1) "open" else "opens"}" else "Daily total",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             Spacer(Modifier.height(StillSpacing.small))

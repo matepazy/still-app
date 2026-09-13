@@ -5,6 +5,7 @@ import app.still.data.settings.SettingsRepository
 import app.still.data.usage.UsagePermissionManager
 import app.still.data.usage.UsageRepository
 import app.still.data.usage.UsageStatsDataSource
+import app.still.data.usage.UsageHistoryScheduler
 
 class StillApplication : Application() {
     lateinit var container: AppContainer
@@ -13,6 +14,7 @@ class StillApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        UsageHistoryScheduler.schedule(this)
     }
 }
 

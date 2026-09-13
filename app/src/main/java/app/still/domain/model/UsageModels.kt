@@ -83,6 +83,7 @@ data class DailyUsage(
     val wakeups: Int,
     val longestBreak: Duration?,
     val dayline: List<DaylineSegment>,
+    val detailsAvailable: Boolean = true,
 )
 
 data class AppDetail(

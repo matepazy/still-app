@@ -30,13 +30,13 @@ Captured from the connected Android emulator running Still 0.9.0 with Usage Acce
 - **Timeline** — reverse-chronological phone sessions with app duration, switch sequence, and day selection.
 - **Apps** — selectable daily usage, opens, share of screen time, and per-app detail with usage history.
 - **Appearance** — system, light, and dark themes, with optional Android 12+ wallpaper colors.
-- **Local-only processing** — no account, network permission, telemetry, analytics SDK, or cloud service.
+- **Local usage archive** — imports the oldest daily usage Android still retains, preserves detailed recent events in compressed form, and keeps the database on-device for long-term statistics.
 
 ## Architecture
 
 Still uses Kotlin, Jetpack Compose, Material 3, Navigation Compose, Coroutines/Flow, and DataStore Preferences. Platform event collection lives in `data/usage`, pure calculation code in `domain/analytics`, immutable models in `domain/model`, and screen-focused composables under `ui`.
 
-`UsageStatsDataSource` converts Android `UsageEvents` into a small internal event model. Pure Kotlin analyzers reconstruct foreground intervals, group real phone-use sessions, distinguish wakeups from unlocks, aggregate app use, build the Dayline, and calculate same-time baselines. ViewModels perform queries outside composition and expose stable UI state.
+`UsageStatsDataSource` converts Android `UsageEvents` into a small internal event model. `LocalUsageArchive` stores normalized daily/app totals in SQLite and gzip-compresses the event streams that Android still exposes. A native periodic job refreshes the archive twice daily. Pure Kotlin analyzers reconstruct foreground intervals, group real phone-use sessions, distinguish wakeups from unlocks, aggregate app use, build the Dayline, and calculate same-time baselines. ViewModels perform queries outside composition and expose stable UI state.
 
 ## Usage access
 
@@ -44,7 +44,7 @@ Android exposes usage statistics through `UsageStatsManager`. Still declares `an
 
 ## Privacy model
 
-Still reads Android's local usage-event history and processes it on the device. The app does not declare the Internet permission and contains no telemetry, advertisements, account system, or remote SDK. Appearance and reference-target preferences are stored locally with DataStore.
+Still reads Android's local usage history and processes and archives it only on the device. The usage database is excluded from Android cloud backup and device transfer. Still contains no telemetry, advertisements, account system, or remote analytics SDK; its Internet permission is used only by the optional, consent-gated release updater. Appearance and reference-target preferences are stored locally with DataStore.
 
 ## Build
 
@@ -64,7 +64,7 @@ Open the project in Android Studio, let Gradle sync, then run the `app` configur
 
 ## Tests
 
-Unit tests cover ordinary resume/pause pairs, app switching, duplicate resumes, missing pauses, screen-off boundaries, quick checks, longer sessions, unlock debouncing, midnight boundaries, and same-time baseline calculations.
+Unit tests cover ordinary resume/pause pairs, app switching, duplicate resumes, missing pauses, screen-off boundaries, quick checks, longer sessions, unlock debouncing, midnight boundaries, same-time baseline calculations, and compressed event-archive round trips.
 
 ## Known Android and OEM limitations
 

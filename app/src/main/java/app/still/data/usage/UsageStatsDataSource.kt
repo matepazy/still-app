@@ -7,6 +7,12 @@ import app.still.domain.model.UsageEventRecord
 import app.still.domain.model.UsageEventType
 import java.time.Instant
 
+data class SystemDailyAppUsage(
+    val bucketStart: Instant,
+    val packageName: String,
+    val foregroundDurationMillis: Long,
+)
+
 class UsageStatsDataSource(context: Context) {
     private val manager = context.getSystemService(UsageStatsManager::class.java)
 
@@ -27,6 +33,28 @@ class UsageStatsDataSource(context: Context) {
             }
         }
     }
+
+    /**
+     * Android keeps coarser UsageStats buckets longer than it keeps UsageEvents.
+     * Reading daily buckets lets Still salvage the oldest history still present on
+     * the device even when session-level events have already been pruned.
+     */
+    fun dailyAppUsage(start: Instant, end: Instant): List<SystemDailyAppUsage> =
+        manager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+        ).orEmpty().mapNotNull { stats ->
+            val duration = stats.totalTimeInForeground
+            val packageName = stats.packageName
+            if (duration <= 0L || packageName.isNullOrBlank()) null else {
+                SystemDailyAppUsage(
+                    bucketStart = Instant.ofEpochMilli(stats.firstTimeStamp),
+                    packageName = packageName,
+                    foregroundDurationMillis = duration,
+                )
+            }
+        }
 
     private fun Int.toDomainType(): UsageEventType? = when (this) {
         UsageEvents.Event.ACTIVITY_RESUMED -> UsageEventType.ActivityResumed
