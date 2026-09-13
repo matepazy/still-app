@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -37,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.still.R
@@ -47,8 +47,8 @@ import app.still.ui.theme.StillSpacing
 
 private enum class OnboardingPage {
     Intro,
-    RestrictedSettings,
     UsageAccess,
+    PermissionRecovery,
     Updates,
 }
 
@@ -59,20 +59,23 @@ fun OnboardingScreen(
     onOpenUsageSettings: () -> Unit,
     onComplete: (Boolean) -> Unit,
     showRestrictedSettings: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+    manufacturer: String = Build.MANUFACTURER,
 ) {
-    val pages = remember(showRestrictedSettings) {
-        buildList {
-            add(OnboardingPage.Intro)
-            if (showRestrictedSettings) add(OnboardingPage.RestrictedSettings)
-            add(OnboardingPage.UsageAccess)
-            add(OnboardingPage.Updates)
-        }
-    }
+    val pages = remember { listOf(OnboardingPage.Intro, OnboardingPage.UsageAccess, OnboardingPage.Updates) }
     var pageIndex by rememberSaveable { mutableIntStateOf(0) }
-    val page = pages[pageIndex.coerceIn(0, pages.lastIndex)]
+    var showPermissionRecovery by rememberSaveable { mutableStateOf(false) }
+    val page = if (showPermissionRecovery) {
+        OnboardingPage.PermissionRecovery
+    } else {
+        pages[pageIndex.coerceIn(0, pages.lastIndex)]
+    }
 
     LaunchedEffect(page, usageState) {
-        if (page == OnboardingPage.UsageAccess && usageState is UsageUiState.Ready) pageIndex++
+        val permissionGranted = usageState is UsageUiState.Ready || usageState is UsageUiState.Error
+        if ((page == OnboardingPage.UsageAccess || page == OnboardingPage.PermissionRecovery) && permissionGranted) {
+            showPermissionRecovery = false
+            pageIndex++
+        }
     }
 
     Column(
@@ -82,8 +85,8 @@ fun OnboardingScreen(
         AnimatedContent(page, modifier = Modifier.weight(1f), label = "Onboarding page") { selected ->
             when (selected) {
                 OnboardingPage.Intro -> IntroPage()
-                OnboardingPage.RestrictedSettings -> RestrictedSettingsPage()
                 OnboardingPage.UsageAccess -> UsageAccessPage(usageState)
+                OnboardingPage.PermissionRecovery -> PermissionRecoveryPage(showRestrictedSettings, manufacturer)
                 OnboardingPage.Updates -> UpdatesPage()
             }
         }
@@ -93,8 +96,11 @@ fun OnboardingScreen(
             onClick = {
                 when (page) {
                     OnboardingPage.Intro -> pageIndex++
-                    OnboardingPage.RestrictedSettings -> onOpenRestrictedSettings()
-                    OnboardingPage.UsageAccess -> onOpenUsageSettings()
+                    OnboardingPage.UsageAccess -> {
+                        showPermissionRecovery = true
+                        onOpenUsageSettings()
+                    }
+                    OnboardingPage.PermissionRecovery -> onOpenUsageSettings()
                     OnboardingPage.Updates -> onComplete(true)
                 }
             },
@@ -104,16 +110,24 @@ fun OnboardingScreen(
             Text(
                 when (page) {
                     OnboardingPage.Intro -> "Continue"
-                    OnboardingPage.RestrictedSettings -> "Open Still app info"
                     OnboardingPage.UsageAccess -> "Open Usage Access"
+                    OnboardingPage.PermissionRecovery -> "Try Usage Access again"
                     OnboardingPage.Updates -> "Stay up to date"
                 },
             )
         }
         when (page) {
             OnboardingPage.Intro -> Spacer(Modifier.height(48.dp))
-            OnboardingPage.RestrictedSettings -> SecondaryAction("Continue to Usage Access") { pageIndex++ }
-            OnboardingPage.UsageAccess -> SecondaryAction("I’ll do this later") { pageIndex++ }
+            OnboardingPage.UsageAccess -> SecondaryAction("Not now") { pageIndex++ }
+            OnboardingPage.PermissionRecovery -> {
+                if (showRestrictedSettings) {
+                    SecondaryAction("Open Still app info") { onOpenRestrictedSettings() }
+                }
+                SecondaryAction("Not now") {
+                    showPermissionRecovery = false
+                    pageIndex++
+                }
+            }
             OnboardingPage.Updates -> {
                 Spacer(Modifier.height(StillSpacing.small))
                 OutlinedButton(
@@ -138,18 +152,25 @@ private fun IntroPage() {
 }
 
 @Composable
-private fun RestrictedSettingsPage() {
+private fun PermissionRecoveryPage(showRestrictedSettings: Boolean, manufacturer: String) {
     OnboardingPageLayout(
         icon = R.drawable.ic_onboarding_restricted_settings,
         artworkDescription = "An unlocked Still app settings card",
-        eyebrow = "ONE-TIME ANDROID STEP",
-        title = "Allow restricted settings",
-        body = "Android may block Usage Access for apps installed outside an app store. If “Restricted setting” appears, Still cannot remove it for you.",
+        title = "Usage Access is still off",
+        body = if (showRestrictedSettings) {
+            "If Android says this setting is restricted, allow it from Still’s App info, then return here."
+        } else {
+            "Return to Android Settings, find Still, and turn on Usage Access."
+        },
     ) {
         Spacer(Modifier.height(StillSpacing.large))
-        InstructionRow("1", "Tap the three-dot menu in the top-right")
-        InstructionRow("2", "Choose “Allow restricted settings”")
-        InstructionRow("3", "Return to Still and continue")
+        if (showRestrictedSettings) {
+            InstructionRow("1", "Open Still app info below")
+            InstructionRow("2", "Tap ⋮, then “Allow restricted settings”")
+            InstructionRow("3", "Return and try Usage Access again")
+        }
+        Spacer(Modifier.height(StillSpacing.medium))
+        PrivacyNote(oemUsageAccessHint(manufacturer))
     }
 }
 
@@ -158,9 +179,8 @@ private fun UsageAccessPage(usageState: UsageUiState) {
     OnboardingPageLayout(
         icon = R.drawable.ic_onboarding_usage_access,
         artworkDescription = "A private app-usage timeline",
-        eyebrow = "USAGE ACCESS",
-        title = "Allow Usage Access",
-        body = "Turn on Still in Usage Access so it can read Android’s app-usage history and build your timeline.",
+        title = "See your screen time",
+        body = "Still needs Usage Access to calculate how long you use each app. Android will open Settings; find Still and turn it on.",
     ) {
         Spacer(Modifier.height(StillSpacing.large))
         PrivacyNote("Your usage data is processed on this device and is never uploaded.")
@@ -174,7 +194,6 @@ private fun UpdatesPage() {
     OnboardingPageLayout(
         icon = R.drawable.ic_onboarding_updates,
         artworkDescription = "A download arrow on a Still update card",
-        eyebrow = "FINAL STEP",
         title = "Stay on the latest version",
         body = "Still can check GitHub for new releases when the app starts, then let you review the release notes before downloading anything.",
     ) {
@@ -189,7 +208,6 @@ private fun OnboardingPageLayout(
     artworkDescription: String,
     title: String,
     body: String,
-    eyebrow: String? = null,
     showWordmark: Boolean = false,
     content: @Composable () -> Unit = {},
 ) {
@@ -208,17 +226,6 @@ private fun OnboardingPageLayout(
             if (showWordmark) {
                 StillWordmark(markSize = 28.dp)
                 Spacer(Modifier.height(StillSpacing.medium))
-            }
-            eyebrow?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(StillSpacing.small))
             }
             Text(
                 title,
@@ -309,4 +316,12 @@ private fun PermissionStatus(state: UsageUiState) {
         is UsageUiState.Ready -> Text("Usage Access enabled", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
         is UsageUiState.Error -> Text("Access enabled · data unavailable", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
     }
+}
+
+private fun oemUsageAccessHint(manufacturer: String): String = when (manufacturer.trim().lowercase()) {
+    "samsung" -> "On Samsung, the setting may be called Usage data access."
+    "xiaomi", "redmi", "poco" -> "On Xiaomi, look under Privacy protection → Special permissions."
+    "oppo", "oneplus", "realme" -> "On this phone, look under Apps → Special app access."
+    "huawei", "honor" -> "If the page does not open, search Android Settings for “usage access”."
+    else -> "Your Settings screen may look slightly different. Search for “usage access” if needed."
 }

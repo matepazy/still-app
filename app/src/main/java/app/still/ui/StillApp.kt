@@ -104,7 +104,10 @@ fun StillApp(viewModel: MainViewModel) {
             } else {
                 when (val usage = state.usage) {
                     UsageUiState.Loading -> LoadingScreen()
-                    UsageUiState.PermissionRequired -> PermissionRequiredScreen { context.startActivity(viewModel.usageSettingsIntent()) }
+                    UsageUiState.PermissionRequired -> PermissionRequiredScreen(
+                        onOpenUsageSettings = { context.startActivity(viewModel.usageSettingsIntent()) },
+                        onOpenAppInfo = { context.startActivity(viewModel.restrictedSettingsIntent()) },
+                    )
                     is UsageUiState.Error -> ErrorScreen(usage.message, viewModel::refresh)
                     is UsageUiState.Ready -> MainNavigation(usage.dashboard, settings, updateState, viewModel)
                 }
@@ -353,7 +356,10 @@ private fun LoadingScreen() {
 }
 
 @Composable
-internal fun PermissionRequiredScreen(onOpenSettings: () -> Unit) {
+internal fun PermissionRequiredScreen(
+    onOpenUsageSettings: () -> Unit,
+    onOpenAppInfo: () -> Unit,
+) {
     Column(
         Modifier.fillMaxSize().padding(horizontal = 32.dp),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
@@ -367,18 +373,24 @@ internal fun PermissionRequiredScreen(onOpenSettings: () -> Unit) {
         }
         Text("No usage access yet", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = StillSpacing.large))
         Text(
-            "To show your screen time, Still needs usage access permission.",
+            "Still needs Usage Access to calculate how long you use each app. Your screen-time history stays on this device.",
             modifier = Modifier.padding(top = StillSpacing.medium, bottom = StillSpacing.large),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Button(
-            onClick = onOpenSettings,
+            onClick = onOpenUsageSettings,
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(25.dp),
-        ) { Text("Open settings") }
-        Text("Learn more", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = StillSpacing.large))
+        ) { Text("Open Usage Access") }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = onOpenAppInfo,
+                modifier = Modifier.padding(top = StillSpacing.small).fillMaxWidth().height(48.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+            ) { Text("Setting blocked? Open app info") }
+        }
     }
 }
 

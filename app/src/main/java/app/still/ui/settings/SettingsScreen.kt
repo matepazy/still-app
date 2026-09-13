@@ -6,6 +6,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -94,45 +95,54 @@ fun SettingsScreen(
 ) {
     var themeDialog by remember { mutableStateOf(false) }
     var updateChannelDialog by remember { mutableStateOf(false) }
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium)) {
-        SectionTitle("Appearance")
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = StillSpacing.large),
+    ) {
+        SectionTitle("Personalization")
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
             Column {
-                SettingRow("Theme", settings.theme.name, onClick = { themeDialog = true })
+                SettingRow(
+                    title = "Theme",
+                    supporting = settings.theme.displayName,
+                    onClick = { themeDialog = true },
+                )
                 Hairline()
                 SettingSwitch(
                     title = "Use wallpaper colors",
-                    supporting = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) null else "Android 12 and later",
+                    supporting = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        "Match Still to your wallpaper"
+                    } else {
+                        "Available on Android 12 and later"
+                    },
                     checked = settings.useDynamicColors,
                     enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
                     onCheckedChange = onDynamicChange,
                 )
+                Hairline()
+                SettingRow(
+                    title = "Home screen widget",
+                    supporting = "Color, appearance, title and refresh",
+                    onClick = onWidgetClick,
+                )
             }
         }
 
-        SectionTitle("Home screen")
-        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-            SettingRow(
-                title = "Widget",
-                supporting = "Appearance, title and refresh button",
-                onClick = onWidgetClick,
-            )
-        }
-
-        SectionTitle("Data")
-        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-            Row(Modifier.fillMaxWidth().clickable(onClick = onRefresh).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Refresh usage data", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                Icon(painterResource(StillIcons.Refresh), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        SectionTitle("Updates")
+        SectionTitle("Maintenance")
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
             Column {
+                SettingActionRow(
+                    title = "Refresh usage data",
+                    supporting = "Recalculate your local screen-time history",
+                    icon = StillIcons.Refresh,
+                    onClick = onRefresh,
+                )
+                Hairline()
                 SettingSwitch(
-                    title = "Automatically check for updates",
-                    supporting = "Check GitHub when Still starts",
+                    title = "Automatic update checks",
+                    supporting = "Check GitHub when Still opens",
                     checked = settings.versionCheckEnabled == true,
                     enabled = true,
                     onCheckedChange = onVersionCheckChange,
@@ -144,54 +154,41 @@ fun SettingsScreen(
                     onClick = { updateChannelDialog = true },
                 )
                 Hairline()
+                UpdateCheckRow(updateState = updateState, onCheckForUpdates = onCheckForUpdates)
+            }
+        }
+
+        SectionTitle("About Still")
+        TonalPanel(Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    "Your usage history stays on this device. Still only reads Android’s local usage statistics to calculate screen time.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(StillSpacing.large))
                 Row(
-                    Modifier.fillMaxWidth().padding(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Manual check", style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            when (updateState) {
-                                UpdateState.Checking -> "Checking…"
-                                is UpdateState.UpdateAvailable -> "Update available: ${updateState.version}"
-                                is UpdateState.Downloading -> "Downloading… ${(updateState.progress * 100).toInt()}%"
-                                is UpdateState.Completed -> "Ready to install"
-                                is UpdateState.Error -> "Check failed"
-                                UpdateState.Idle -> "Up to date"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Button(onClick = onCheckForUpdates, enabled = updateState !is UpdateState.Checking) { Text("Check") }
+                    StillWordmark(markSize = 22.dp)
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "v${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
-
-        SectionTitle("Privacy")
-        TonalPanel(Modifier.fillMaxWidth()) {
-            Text(
-                "Still reads Android’s local usage statistics to calculate your screen-time history. This information is processed on your device and is not uploaded anywhere.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        SectionTitle("About")
-        TonalPanel(Modifier.fillMaxWidth()) {
-            Column {
-                StillWordmark(markSize = 24.dp)
-                Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        Spacer(Modifier.height(StillSpacing.large))
+        Spacer(Modifier.height(StillSpacing.xLarge))
     }
 
     if (themeDialog) {
         ChoiceDialog(
             title = "Theme",
-            options = ThemePreference.entries.map { it.name to { onThemeChange(it) } },
-            selected = settings.theme.name,
+            options = ThemePreference.entries.map { it.displayName to { onThemeChange(it) } },
+            selected = settings.theme.displayName,
             onDismiss = { themeDialog = false },
         )
     }
@@ -222,7 +219,12 @@ fun WidgetSettingsScreen(
     var colorDialog by remember { mutableStateOf(false) }
     var labelDialog by remember { mutableStateOf(false) }
 
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium)) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = StillSpacing.large),
+    ) {
         SectionTitle("Preview")
         WidgetPreview(settings, widgetPreviewDuration)
 
@@ -294,6 +296,13 @@ private val WidgetAppearance.displayName: String
         WidgetAppearance.System -> "Follow system"
         WidgetAppearance.Light -> "Light"
         WidgetAppearance.Dark -> "Dark"
+    }
+
+private val ThemePreference.displayName: String
+    get() = when (this) {
+        ThemePreference.System -> "Follow system"
+        ThemePreference.Light -> "Light"
+        ThemePreference.Dark -> "Dark"
     }
 
 private val WidgetLabel.displayName: String
@@ -595,7 +604,10 @@ private fun Int.toHexColor(): String = "#" + (this and 0xFFFFFF).toString(16).pa
 @Composable
 private fun WidgetColorSettingRow(color: String?, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(14.dp),
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -647,14 +659,25 @@ private fun ChoiceDialog(title: String, options: List<Pair<String, () -> Unit>>,
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = StillSpacing.large, bottom = StillSpacing.small))
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(top = StillSpacing.large, bottom = StillSpacing.small),
+    )
 }
 
 @Composable
 private fun SettingRow(title: String, supporting: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(title, style = MaterialTheme.typography.titleMedium)
             Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(painterResource(StillIcons.ChevronRight), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -663,19 +686,99 @@ private fun SettingRow(title: String, supporting: String, onClick: () -> Unit) {
 
 @Composable
 private fun SettingSwitch(title: String, supporting: String?, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             supporting?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
+    }
+}
+
+@Composable
+private fun SettingActionRow(
+    title: String,
+    supporting: String,
+    icon: Int,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                supporting,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun UpdateCheckRow(updateState: UpdateState, onCheckForUpdates: () -> Unit) {
+    val status = when (updateState) {
+        UpdateState.Checking -> "Checking…"
+        is UpdateState.UpdateAvailable -> "${updateState.version} is available"
+        is UpdateState.Downloading -> "Downloading… ${(updateState.progress * 100).toInt()}%"
+        is UpdateState.Completed -> "Ready to install"
+        is UpdateState.Error -> "Couldn’t check. Try again."
+        UpdateState.Idle -> "Check for the latest version"
+    }
+    val statusColor = when (updateState) {
+        is UpdateState.Error -> MaterialTheme.colorScheme.error
+        is UpdateState.UpdateAvailable, is UpdateState.Completed -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("App version", style = MaterialTheme.typography.titleMedium)
+            Text(status, style = MaterialTheme.typography.bodySmall, color = statusColor)
+        }
+        TextButton(
+            onClick = onCheckForUpdates,
+            enabled = updateState !is UpdateState.Checking,
+        ) {
+            Text("Check now")
+        }
     }
 }
 
 @Composable
 private fun Hairline() {
     androidx.compose.material3.HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 14.dp),
+        modifier = Modifier.padding(horizontal = 16.dp),
         color = MaterialTheme.colorScheme.outlineVariant,
     )
 }
