@@ -9,8 +9,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.view.View
 import android.widget.RemoteViews
-import androidx.annotation.ColorRes
-import androidx.annotation.DrawableRes
+import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import app.still.MainActivity
 import app.still.R
@@ -18,6 +17,8 @@ import app.still.StillApplication
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetLabel
+import app.still.data.settings.parseWidgetColor
+import app.still.data.settings.widgetContrastColors
 import app.still.ui.components.compactDuration
 import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
@@ -76,13 +77,13 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
         content: WidgetContent,
         settings: UserSettings,
     ) {
-        val palette = WidgetPalette.resolve(context, settings.widgetAppearance)
+        val palette = WidgetPalette.resolve(context, settings.widgetAppearance, settings.widgetColor)
         appWidgetIds.forEach { appWidgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_screen_time).apply {
-                setInt(R.id.widget_root, "setBackgroundResource", palette.background)
-                setTextColor(R.id.widget_label, ContextCompat.getColor(context, palette.secondary))
-                setTextColor(R.id.widget_value, ContextCompat.getColor(context, palette.primary))
-                setInt(R.id.widget_refresh, "setColorFilter", ContextCompat.getColor(context, palette.secondary))
+                setInt(R.id.widget_background, "setColorFilter", palette.background)
+                setTextColor(R.id.widget_label, palette.secondary)
+                setTextColor(R.id.widget_value, palette.primary)
+                setInt(R.id.widget_refresh, "setColorFilter", palette.secondary)
                 setTextViewText(R.id.widget_label, content.label(context, settings.widgetLabel))
                 setTextViewText(R.id.widget_value, content.value(context))
                 setViewVisibility(R.id.widget_label, if (content.showsLabel(settings.widgetLabel)) View.VISIBLE else View.GONE)
@@ -128,21 +129,33 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
 }
 
 private data class WidgetPalette(
-    @param:DrawableRes val background: Int,
-    @param:ColorRes val primary: Int,
-    @param:ColorRes val secondary: Int,
+    @param:ColorInt val background: Int,
+    @param:ColorInt val primary: Int,
+    @param:ColorInt val secondary: Int,
 ) {
     companion object {
-        fun resolve(context: Context, appearance: WidgetAppearance): WidgetPalette {
+        fun resolve(context: Context, appearance: WidgetAppearance, customColor: String?): WidgetPalette {
+            parseWidgetColor(customColor)?.let { background ->
+                val colors = widgetContrastColors(background)
+                return WidgetPalette(colors.background, colors.foreground, colors.foreground)
+            }
             val dark = when (appearance) {
                 WidgetAppearance.System -> context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
                 WidgetAppearance.Light -> false
                 WidgetAppearance.Dark -> true
             }
             return if (dark) {
-                WidgetPalette(R.drawable.widget_background_dark, R.color.widget_primary_dark, R.color.widget_secondary_dark)
+                WidgetPalette(
+                    ContextCompat.getColor(context, R.color.widget_background_dark),
+                    ContextCompat.getColor(context, R.color.widget_primary_dark),
+                    ContextCompat.getColor(context, R.color.widget_secondary_dark),
+                )
             } else {
-                WidgetPalette(R.drawable.widget_background_light, R.color.widget_primary_light, R.color.widget_secondary_light)
+                WidgetPalette(
+                    ContextCompat.getColor(context, R.color.widget_background_light),
+                    ContextCompat.getColor(context, R.color.widget_primary_light),
+                    ContextCompat.getColor(context, R.color.widget_secondary_light),
+                )
             }
         }
     }

@@ -25,6 +25,7 @@ data class UserSettings(
     val versionCheckEnabled: Boolean? = null,
     val updateChannel: String = "release",
     val widgetAppearance: WidgetAppearance = WidgetAppearance.System,
+    val widgetColor: String? = null,
     val widgetLabel: WidgetLabel = WidgetLabel.ScreenTime,
     val widgetShowRefresh: Boolean = true,
 )
@@ -38,6 +39,7 @@ class SettingsRepository(private val context: Context) {
         val versionCheckEnabled = booleanPreferencesKey("version_check_enabled")
         val updateChannel = stringPreferencesKey("version_check_channel")
         val widgetAppearance = stringPreferencesKey("widget_appearance")
+        val widgetColor = stringPreferencesKey("widget_color")
         val widgetLabel = stringPreferencesKey("widget_label")
         val widgetShowRefresh = booleanPreferencesKey("widget_show_refresh")
     }
@@ -54,6 +56,7 @@ class SettingsRepository(private val context: Context) {
             widgetAppearance = preferences[Keys.widgetAppearance]
                 ?.let { runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
                 ?: WidgetAppearance.System,
+            widgetColor = normalizeWidgetColor(preferences[Keys.widgetColor]),
             widgetLabel = preferences[Keys.widgetLabel]
                 ?.let { runCatching { WidgetLabel.valueOf(it) }.getOrNull() }
                 ?: WidgetLabel.ScreenTime,
@@ -78,6 +81,9 @@ class SettingsRepository(private val context: Context) {
     }
     suspend fun setWidgetAppearance(value: WidgetAppearance) = context.settingsDataStore.edit {
         it[Keys.widgetAppearance] = value.name
+    }
+    suspend fun setWidgetColor(value: String?) = context.settingsDataStore.edit {
+        normalizeWidgetColor(value)?.let { color -> it[Keys.widgetColor] = color } ?: it.remove(Keys.widgetColor)
     }
     suspend fun setWidgetLabel(value: WidgetLabel) = context.settingsDataStore.edit {
         it[Keys.widgetLabel] = value.name

@@ -95,6 +95,10 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         container.settingsRepository.setWidgetAppearance(value)
         ScreenTimeWidgetProvider.updateAll(container.applicationContext)
     }
+    fun setWidgetColor(value: String?) = viewModelScope.launch {
+        container.settingsRepository.setWidgetColor(value)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
     fun setWidgetLabel(value: WidgetLabel) = viewModelScope.launch {
         container.settingsRepository.setWidgetLabel(value)
         ScreenTimeWidgetProvider.updateAll(container.applicationContext)

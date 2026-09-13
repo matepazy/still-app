@@ -250,6 +250,7 @@ private fun MainNavigation(
                     settings = settings,
                     widgetPreviewDuration = dashboard.today.total,
                     onWidgetAppearanceChange = viewModel::setWidgetAppearance,
+                    onWidgetColorChange = viewModel::setWidgetColor,
                     onWidgetLabelChange = viewModel::setWidgetLabel,
                     onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
                 )
