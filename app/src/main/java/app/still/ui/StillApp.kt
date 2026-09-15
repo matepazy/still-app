@@ -60,6 +60,7 @@ import app.still.ui.components.StillIcons
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
+import app.still.ui.settings.StoredDataScreen
 import app.still.ui.settings.WidgetSettingsScreen
 import app.still.ui.theme.StillSpacing
 import app.still.ui.theme.StillTheme
@@ -133,9 +134,9 @@ fun StillApp(
                 UpdateDetailsSheet(
                     update = update,
                     viewModel = viewModel,
-                    onDismiss = {
+                    onUpdateLater = {
                         activeUpdate = null
-                        viewModel.resetUpdateState()
+                        viewModel.remindAboutUpdateLater(update)
                     },
                 )
             }
@@ -275,6 +276,8 @@ private fun MainNavigation(
                     onDynamicChange = viewModel::setDynamicColors,
                     onRefresh = viewModel::refresh,
                     onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
+                    onStoredDataClick = { navController.navigate(StoredDataRoute) },
+                    onSaveUsageHistoryChange = viewModel::setSaveUsageHistory,
                     updateState = updateState,
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
@@ -283,12 +286,30 @@ private fun MainNavigation(
                 )
             }
         }
+        composable(StoredDataRoute) {
+            DestinationScaffold(
+                topBar = {
+                    SettingsTopBar(
+                        title = "Data stored on this device",
+                        onBack = {
+                            if (!navController.popBackStack()) navController.navigate(SettingsRoute)
+                        },
+                    )
+                },
+            ) { padding ->
+                StoredDataScreen(modifier = Modifier.padding(padding))
+            }
+        }
         composable(WidgetSettingsRoute) {
             DestinationScaffold(
                 topBar = {
-                    SettingsTopBar(title = "Widget") {
-                        if (!navController.popBackStack()) navController.navigate(SettingsRoute)
-                    }
+                    SettingsTopBar(
+                        title = "Widget",
+                        onBack = {
+                            if (!navController.popBackStack()) navController.navigate(SettingsRoute)
+                        },
+                        onReset = viewModel::resetWidgetSettings,
+                    )
                 },
             ) { padding ->
                 WidgetSettingsScreen(
@@ -300,6 +321,8 @@ private fun MainNavigation(
                     onWidgetFontSizeChange = viewModel::setWidgetFontSize,
                     onWidgetFontStyleChange = viewModel::setWidgetFontStyle,
                     onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
+                    onWidgetCornerRadiusChange = viewModel::setWidgetCornerRadius,
+                    onWidgetBackgroundOpacityChange = viewModel::setWidgetBackgroundOpacity,
                     modifier = Modifier.padding(padding),
                 )
             }

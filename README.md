@@ -31,6 +31,7 @@ Captured from the connected Android emulator running Still 0.9.0 with Usage Acce
 - **Apps** — selectable daily usage, opens, share of screen time, and per-app detail with usage history.
 - **Appearance** — system, light, and dark themes, with optional Android 12+ wallpaper colors.
 - **Local usage archive** — imports the oldest daily usage Android still retains, preserves detailed recent events in compressed form, and keeps the database on-device for long-term statistics.
+- **Private history control** — explains what is stored and lets the user stop archival and delete Still's saved usage history at any time.
 
 ## Architecture
 
@@ -44,7 +45,11 @@ Android exposes usage statistics through `UsageStatsManager`. Still declares `an
 
 ## Privacy model
 
-Still reads Android's local usage history and processes and archives it only on the device. The usage database is excluded from Android cloud backup and device transfer. Still contains no telemetry, advertisements, account system, or remote analytics SDK; its Internet permission is used only by the optional, consent-gated release updater. Appearance and reference-target preferences are stored locally with DataStore.
+Still reads Android's local usage history and processes and archives it only on the device. The usage database is excluded from Android cloud backup and device transfer. Users can turn off **Save usage history** in Settings; confirming this deletes the archive and stops future archival while leaving current screen-time reads available.
+
+The local usage archive contains app package names and labels; foreground/background, screen and keyguard event timestamps; daily per-app durations and open counts; daily screen time, unlocks, wakeups and longest break; and derived session counts, quick checks, longest sessions, first/last use, hourly activity, and frequent app-switch pairs. Event streams use a package dictionary, timestamp deltas, and gzip compression.
+
+DataStore keeps app preferences: onboarding completion, appearance, the last destination, widget configuration, update-check consent and channel, and postponed update reminders. A downloaded updater APK can temporarily exist in the app cache. Still contains no telemetry, advertisements, account system, or remote analytics SDK; its Internet permission is used only by the optional, consent-gated release updater.
 
 ## Build
 

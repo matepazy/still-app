@@ -47,11 +47,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun Intent.widgetNavigationRequest(): NavigationRequest? {
-        if (!getBooleanExtra(EXTRA_OPEN_TODAY, false)) return null
-        return NavigationRequest(LastDestination.Today, ++navigationRequestId)
+        val destination = when {
+            getBooleanExtra(EXTRA_OPEN_WIDGET_SETTINGS, false) -> LastDestination.WidgetSettings
+            getBooleanExtra(EXTRA_OPEN_TODAY, false) -> LastDestination.Today
+            else -> return null
+        }
+        return NavigationRequest(destination, ++navigationRequestId)
     }
 
     companion object {
         const val EXTRA_OPEN_TODAY = "app.still.extra.OPEN_TODAY"
+        const val EXTRA_OPEN_WIDGET_SETTINGS = "app.still.extra.OPEN_WIDGET_SETTINGS"
     }
 }

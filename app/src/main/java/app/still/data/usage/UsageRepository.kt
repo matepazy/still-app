@@ -49,12 +49,22 @@ class UsageRepository(
         }
     }
 
-    suspend fun dashboard(): Result<UsageDashboard> = withContext(Dispatchers.IO) {
+    suspend fun dashboard(saveHistory: Boolean = true): Result<UsageDashboard> = withContext(Dispatchers.IO) {
         runCatching {
             val zone = ZoneId.systemDefault()
             val now = clock.instant()
             val today = LocalDate.now(clock)
             val localTime = now.atZone(zone).toLocalTime()
+            if (!saveHistory) {
+                val start = today.atStartOfDay(zone).toInstant()
+                val current = buildDay(today, now, zone, dataSource.events(start.minus(Duration.ofHours(24)), now))
+                return@runCatching UsageDashboard(
+                    today = current,
+                    comparison = null,
+                    mostChanged = null,
+                    history = emptyList(),
+                )
+            }
             syncMutex.withLock { synchronizeArchive(now, zone) }
             val current = loadDay(today, now, zone) ?: buildDay(today, now, zone, emptyList())
             val history = archive.dates()
@@ -78,10 +88,14 @@ class UsageRepository(
         }
     }
 
-    suspend fun syncHistory(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun syncHistory(saveHistory: Boolean = true): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            syncMutex.withLock { synchronizeArchive(clock.instant(), ZoneId.systemDefault()) }
+            if (saveHistory) syncMutex.withLock { synchronizeArchive(clock.instant(), ZoneId.systemDefault()) }
         }
+    }
+
+    suspend fun clearHistory(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching { syncMutex.withLock { archive.clearHistory() } }
     }
 
     suspend fun appDetail(packageName: String, dashboard: UsageDashboard): AppDetail? = withContext(Dispatchers.Default) {

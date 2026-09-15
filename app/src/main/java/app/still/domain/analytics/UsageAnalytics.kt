@@ -2,9 +2,11 @@ package app.still.domain.analytics
 
 import app.still.domain.model.AppInfo
 import app.still.domain.model.AppUsage
+import app.still.domain.model.AppSwitchPair
 import app.still.domain.model.ChangedApp
 import app.still.domain.model.DaylineKind
 import app.still.domain.model.DaylineSegment
+import app.still.domain.model.DailyUsage
 import app.still.domain.model.ForegroundInterval
 import app.still.domain.model.SessionAppUsage
 import app.still.domain.model.UsageComparison
@@ -13,6 +15,50 @@ import app.still.domain.model.UsageEventType
 import app.still.domain.model.UsageSession
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
+
+data class DailyPatternSummary(
+    val sessionCount: Int,
+    val quickCheckCount: Int,
+    val longestSessionMillis: Long?,
+    val firstUseMillis: Long?,
+    val lastUseMillis: Long?,
+    val switchCount: Int,
+    val hourlyUsageMillis: List<Long>,
+)
+
+object UsagePatternSummarizer {
+    fun summarize(usage: DailyUsage, zone: ZoneId): DailyPatternSummary {
+        val millisecondsByHour = LongArray(24)
+        usage.dayline.asSequence()
+            .filter { it.kind == DaylineKind.Active }
+            .forEach { segment ->
+                var cursor = segment.start
+                while (cursor < segment.end) {
+                    val local = cursor.atZone(zone)
+                    val nextHour = local.toLocalDateTime()
+                        .withMinute(0)
+                        .withSecond(0)
+                        .withNano(0)
+                        .plusHours(1)
+                        .atZone(zone)
+                        .toInstant()
+                    val sliceEnd = minOf(segment.end, nextHour)
+                    millisecondsByHour[local.hour] += Duration.between(cursor, sliceEnd).toMillis()
+                    cursor = sliceEnd
+                }
+            }
+        return DailyPatternSummary(
+            sessionCount = usage.sessions.size,
+            quickCheckCount = usage.sessions.count { it.isQuickCheck },
+            longestSessionMillis = usage.sessions.maxOfOrNull { it.duration.toMillis() },
+            firstUseMillis = usage.sessions.minOfOrNull { it.start.toEpochMilli() },
+            lastUseMillis = usage.sessions.maxOfOrNull { it.end.toEpochMilli() },
+            switchCount = usage.sessions.sumOf { (it.sequence.size - 1).coerceAtLeast(0) },
+            hourlyUsageMillis = millisecondsByHour.toList(),
+        )
+    }
+}
 
 object ForegroundIntervalReconstructor {
     fun reconstruct(
@@ -64,12 +110,14 @@ object ForegroundIntervalReconstructor {
 
 object SessionAnalyzer {
     private val defaultSessionGap = Duration.ofSeconds(90)
+    private val defaultLockTolerance = Duration.ofMinutes(10)
 
     fun groupSessions(
         intervals: List<ForegroundInterval>,
         events: List<UsageEventRecord>,
         appInfo: (String) -> AppInfo,
         meaningfulGap: Duration = defaultSessionGap,
+        lockTolerance: Duration = defaultLockTolerance,
     ): List<UsageSession> {
         if (intervals.isEmpty()) return emptyList()
         val ordered = intervals.sortedBy { it.start }
@@ -78,12 +126,15 @@ object SessionAnalyzer {
         ordered.forEach { interval ->
             val current = groups.lastOrNull()
             val previous = current?.lastOrNull()
-            val boundary = previous != null && events.any {
+            val containsLock = previous != null && events.any {
                 !it.timestamp.isBefore(previous.end) && it.timestamp <= interval.start &&
-                    (it.type == UsageEventType.ScreenNonInteractive || it.type == UsageEventType.KeyguardHidden)
+                    (it.type == UsageEventType.ScreenNonInteractive ||
+                        it.type == UsageEventType.KeyguardShown ||
+                        it.type == UsageEventType.KeyguardHidden)
             }
             val gap = previous?.let { Duration.between(it.end, interval.start) }
-            if (current == null || previous == null || boundary || (gap != null && gap > meaningfulGap)) {
+            val gapLimit = if (containsLock) lockTolerance else meaningfulGap
+            if (current == null || previous == null || (gap != null && gap > gapLimit)) {
                 groups += mutableListOf(interval)
             } else {
                 current += interval
@@ -101,6 +152,26 @@ object SessionAnalyzer {
                 }
             UsageSession(group.first().start, group.maxOf { it.end }, byApp, sequence)
         }
+    }
+
+    fun frequentSwitches(sessions: List<UsageSession>, minimumSwitches: Int = 2): List<AppSwitchPair> {
+        val counts = mutableMapOf<Pair<String, String>, Int>()
+        sessions.forEach { session ->
+            session.sequence.zipWithNext().forEach { (from, to) ->
+                if (from.packageName == to.packageName) return@forEach
+                val pair = if (from.packageName < to.packageName) {
+                    from.packageName to to.packageName
+                } else {
+                    to.packageName to from.packageName
+                }
+                counts[pair] = counts.getOrDefault(pair, 0) + 1
+            }
+        }
+        return counts.mapNotNull { (pair, count) ->
+            count.takeIf { it >= minimumSwitches }?.let {
+                AppSwitchPair(pair.first, pair.second, it)
+            }
+        }.sortedByDescending { it.switchCount }
     }
 
     fun countUnlocks(events: List<UsageEventRecord>): Int = countDebounced(events, UsageEventType.KeyguardHidden)

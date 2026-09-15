@@ -11,17 +11,21 @@ import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetFontSize
 import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
+import app.still.data.settings.DeferredUpdate
 import app.still.domain.model.UsageDashboard
 import app.still.BuildConfig
 import app.still.update.ApkInstaller
 import app.still.update.UpdateState
 import app.still.update.VersionUpdater
+import app.still.update.SemanticVersion
 import app.still.widget.ScreenTimeWidgetProvider
+import app.still.data.usage.UsageHistoryScheduler
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -54,7 +58,20 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             container.settingsRepository.settings.collect { settings ->
                 if (!startupCheckHandled && settings.onboardingComplete) {
                     startupCheckHandled = true
-                    if (settings.versionCheckEnabled == true) checkForUpdates(settings.updateChannel)
+                    val deferred = settings.deferredUpdate?.takeIf {
+                        SemanticVersion.isNewer(it.version, BuildConfig.VERSION_NAME)
+                    }
+                    when {
+                        deferred != null && deferred.remindAfterMillis <= System.currentTimeMillis() -> {
+                            _updateState.value = deferred.toUpdateState()
+                        }
+                        deferred != null -> Unit
+                        settings.deferredUpdate != null -> {
+                            container.settingsRepository.clearRememberedUpdate()
+                            if (settings.versionCheckEnabled == true) checkForUpdates(settings.updateChannel)
+                        }
+                        settings.versionCheckEnabled == true -> checkForUpdates(settings.updateChannel)
+                    }
                 }
             }
         }
@@ -81,7 +98,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         }
         viewModelScope.launch {
             usageState.value = UsageUiState.Loading
-            usageState.value = container.usageRepository.dashboard().fold(
+            val saveHistory = container.settingsRepository.settings.first().saveUsageHistory
+            usageState.value = container.usageRepository.dashboard(saveHistory).fold(
                 onSuccess = UsageUiState::Ready,
                 onFailure = { UsageUiState.Error(it.message ?: "Usage information is unavailable right now.") },
             )
@@ -93,6 +111,17 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
     fun setTheme(value: ThemePreference) = viewModelScope.launch { container.settingsRepository.setTheme(value) }
     fun setDynamicColors(value: Boolean) = viewModelScope.launch { container.settingsRepository.setDynamicColors(value) }
+    fun setSaveUsageHistory(value: Boolean) = viewModelScope.launch {
+        container.settingsRepository.setSaveUsageHistory(value)
+        if (value) {
+            UsageHistoryScheduler.schedule(container.applicationContext)
+        } else {
+            UsageHistoryScheduler.cancel(container.applicationContext)
+            container.usageRepository.clearHistory()
+        }
+        refresh()
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
     fun setDailyTargetMinutes(value: Long?) = viewModelScope.launch { container.settingsRepository.setDailyTargetMinutes(value) }
     fun setLastDestination(value: LastDestination) = viewModelScope.launch {
         container.settingsRepository.setLastDestination(value)
@@ -125,6 +154,18 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         container.settingsRepository.setWidgetShowRefresh(value)
         ScreenTimeWidgetProvider.updateAll(container.applicationContext)
     }
+    fun setWidgetCornerRadius(valueDp: Int) = viewModelScope.launch {
+        container.settingsRepository.setWidgetCornerRadius(valueDp)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setWidgetBackgroundOpacity(valuePercent: Int) = viewModelScope.launch {
+        container.settingsRepository.setWidgetBackgroundOpacity(valuePercent)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun resetWidgetSettings() = viewModelScope.launch {
+        container.settingsRepository.resetWidgetSettings()
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
     fun setVersionCheckEnabled(value: Boolean) = viewModelScope.launch {
         container.settingsRepository.setVersionCheckEnabled(value)
         if (value) {
@@ -147,8 +188,32 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         VersionUpdater.checkForUpdates(
             currentVersion = BuildConfig.VERSION_NAME,
             includePrereleases = channel == "pre-release",
-            onResult = { _updateState.value = it },
+            onResult = { result ->
+                viewModelScope.launch {
+                    if (result is UpdateState.UpdateAvailable) {
+                        container.settingsRepository.rememberUpdate(result.toDeferredUpdate(remindAfterMillis = 0L))
+                    } else if (result is UpdateState.Idle) {
+                        container.settingsRepository.clearRememberedUpdate()
+                    }
+                    _updateState.value = result
+                }
+            },
         )
+    }
+
+    fun remindAboutUpdateLater(update: UpdateState.UpdateAvailable) = viewModelScope.launch {
+        container.settingsRepository.rememberUpdate(
+            update.toDeferredUpdate(System.currentTimeMillis() + UPDATE_REMINDER_DELAY_MS),
+        )
+        _updateState.value = UpdateState.Idle
+        delay(UPDATE_REMINDER_DELAY_MS)
+        val remembered = container.settingsRepository.settings.first().deferredUpdate
+        if (remembered?.version == update.version &&
+            remembered.remindAfterMillis <= System.currentTimeMillis() &&
+            SemanticVersion.isNewer(remembered.version, BuildConfig.VERSION_NAME)
+        ) {
+            _updateState.value = remembered.toUpdateState()
+        }
     }
 
     fun startApkDownload(downloadUrl: String) {
@@ -173,5 +238,18 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     class Factory(private val container: AppContainer) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(container) as T
+    }
+
+    private fun DeferredUpdate.toUpdateState() = UpdateState.UpdateAvailable(version, notes, downloadUrl)
+
+    private fun UpdateState.UpdateAvailable.toDeferredUpdate(remindAfterMillis: Long) = DeferredUpdate(
+        version = version,
+        notes = notes,
+        downloadUrl = downloadUrl,
+        remindAfterMillis = remindAfterMillis,
+    )
+
+    private companion object {
+        const val UPDATE_REMINDER_DELAY_MS = 24L * 60L * 60L * 1_000L
     }
 }

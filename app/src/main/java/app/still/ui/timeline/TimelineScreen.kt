@@ -1,6 +1,5 @@
 package app.still.ui.timeline
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -130,12 +129,6 @@ private fun SessionRow(session: UsageSession, isLast: Boolean) {
                         AppIcon(usage.app.packageName, usage.app.label, size = 26.dp)
                         Text(usage.app.label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                         Text(usage.duration.compactDuration(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                AnimatedVisibility(expanded && session.sequence.size > 1) {
-                    Column(Modifier.padding(top = StillSpacing.small)) {
-                        Text("App sequence", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(session.sequence.joinToString("  →  ") { it.label }, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

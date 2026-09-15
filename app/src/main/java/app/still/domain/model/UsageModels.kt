@@ -54,6 +54,12 @@ data class UsageSession(
     val isQuickCheck: Boolean get() = duration <= Duration.ofSeconds(60)
 }
 
+data class AppSwitchPair(
+    val firstPackage: String,
+    val secondPackage: String,
+    val switchCount: Int,
+)
+
 enum class DaylineKind { Active, Inactive }
 
 data class DaylineSegment(

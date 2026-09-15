@@ -36,12 +36,15 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -68,8 +72,10 @@ import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetFontSize
 import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
+import app.still.data.settings.WIDGET_PILL_RADIUS
 import app.still.data.settings.parseWidgetColor
 import app.still.data.settings.widgetContrastColors
+import app.still.data.settings.systemWidgetColors
 import app.still.ui.components.compactDuration
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.StillWordmark
@@ -80,10 +86,19 @@ import java.time.Duration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsTopBar(title: String = "Settings", onBack: () -> Unit) {
+fun SettingsTopBar(
+    title: String = "Settings",
+    onReset: (() -> Unit)? = null,
+    onBack: () -> Unit,
+) {
     TopAppBar(
         title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = { IconButton(onClick = onBack) { Icon(painterResource(StillIcons.Back), contentDescription = "Back") } },
+        actions = {
+            onReset?.let { reset ->
+                TextButton(onClick = reset) { Text("Reset") }
+            }
+        },
     )
 }
 
@@ -94,6 +109,8 @@ fun SettingsScreen(
     onDynamicChange: (Boolean) -> Unit,
     onRefresh: () -> Unit,
     onWidgetClick: () -> Unit,
+    onStoredDataClick: () -> Unit,
+    onSaveUsageHistoryChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     updateState: UpdateState = UpdateState.Idle,
     onVersionCheckChange: (Boolean) -> Unit = {},
@@ -102,6 +119,7 @@ fun SettingsScreen(
 ) {
     var themeDialog by remember { mutableStateOf(false) }
     var updateChannelDialog by remember { mutableStateOf(false) }
+    var stopSavingDialog by remember { mutableStateOf(false) }
     Column(
         modifier
             .fillMaxSize()
@@ -133,6 +151,31 @@ fun SettingsScreen(
                     title = "Home screen widget",
                     supporting = "Color, appearance, title and refresh",
                     onClick = onWidgetClick,
+                )
+            }
+        }
+
+        SectionTitle("Privacy & data")
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            Column {
+                SettingSwitch(
+                    title = "Save usage history",
+                    supporting = if (settings.saveUsageHistory) {
+                        "On-device history for long-term patterns"
+                    } else {
+                        "Off — Still only reads current Android data"
+                    },
+                    checked = settings.saveUsageHistory,
+                    enabled = true,
+                    onCheckedChange = { enabled ->
+                        if (enabled) onSaveUsageHistoryChange(true) else stopSavingDialog = true
+                    },
+                )
+                Hairline()
+                SettingRow(
+                    title = "Data stored on this device",
+                    supporting = "See exactly what Still keeps locally",
+                    onClick = onStoredDataClick,
                 )
             }
         }
@@ -210,6 +253,91 @@ fun SettingsScreen(
             onDismiss = { updateChannelDialog = false },
         )
     }
+    if (stopSavingDialog) {
+        AlertDialog(
+            onDismissRequest = { stopSavingDialog = false },
+            title = { Text("Keep usage history on?") },
+            text = {
+                Text(
+                    "Saved history lets Still find long-term patterns, because Android may remove older details. " +
+                        "It stays on this device and is never uploaded. Turning this off deletes Still’s saved usage history.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        stopSavingDialog = false
+                        onSaveUsageHistoryChange(false)
+                    },
+                ) { Text("Turn off & delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { stopSavingDialog = false }) { Text("Keep on") }
+            },
+        )
+    }
+}
+
+@Composable
+fun StoredDataScreen(modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = StillSpacing.large),
+    ) {
+        Text(
+            "Still keeps a private, on-device history so it can show patterns over days, weeks and months. " +
+                "This page describes the kinds of data stored — it never displays your raw records.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = StillSpacing.large),
+        )
+
+        StoredDataSection(
+            title = "Phone and app activity",
+            body = "Which apps were used, their app names and identifiers, roughly when they were in the foreground, " +
+                "how long they were used and how often they were opened. Still also keeps screen-on, screen-off and lock-state events.",
+        )
+        StoredDataSection(
+            title = "Daily patterns",
+            body = "Daily screen time, unlocks, wakeups and longest breaks; phone-use sessions and quick checks; " +
+                "first and last use, activity by hour, and apps that are frequently switched between.",
+        )
+        StoredDataSection(
+            title = "Your preferences",
+            body = "Onboarding completion, theme and wallpaper-color choices, the last screen you visited, " +
+                "widget appearance, and update-check preferences or reminders.",
+        )
+        StoredDataSection(
+            title = "Temporary update file",
+            body = "If you download an app update, its APK may stay in Still’s cache until Android clears it or a newer download replaces it.",
+        )
+
+        TonalPanel(Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                Text("Kept private", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Usage history is excluded from Android backup and device transfer. Still has no account and does not upload analytics or usage history.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Spacer(Modifier.height(StillSpacing.xLarge))
+    }
+}
+
+@Composable
+private fun StoredDataSection(title: String, body: String) {
+    SectionTitle(title)
+    TonalPanel(Modifier.fillMaxWidth()) {
+        Text(
+            body,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable
@@ -222,9 +350,24 @@ fun WidgetSettingsScreen(
     onWidgetFontSizeChange: (WidgetFontSize) -> Unit,
     onWidgetFontStyleChange: (WidgetFontStyle) -> Unit,
     onWidgetShowRefreshChange: (Boolean) -> Unit,
+    onWidgetCornerRadiusChange: (Int) -> Unit,
+    onWidgetBackgroundOpacityChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var colorDialog by remember { mutableStateOf(false) }
+    val savedCornerRadius = if (settings.widgetCornerRadiusDp == WIDGET_PILL_RADIUS) {
+        36f
+    } else {
+        settings.widgetCornerRadiusDp.toFloat()
+    }
+    var previewCornerRadius by remember(savedCornerRadius) { mutableFloatStateOf(savedCornerRadius) }
+    var previewBackgroundOpacity by remember(settings.widgetBackgroundOpacityPercent) {
+        mutableFloatStateOf(settings.widgetBackgroundOpacityPercent.toFloat())
+    }
+    val previewSettings = settings.copy(
+        widgetCornerRadiusDp = previewCornerRadius.toWidgetCornerRadius(),
+        widgetBackgroundOpacityPercent = previewBackgroundOpacity.toInt(),
+    )
 
     Column(
         modifier
@@ -233,14 +376,7 @@ fun WidgetSettingsScreen(
             .padding(horizontal = StillSpacing.large),
     ) {
         SectionTitle("Preview")
-        WidgetPreview(settings, widgetPreviewDuration)
-        Text(
-            "Changes are saved automatically and appear on your home screen.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = StillSpacing.small),
-        )
-
+        WidgetPreview(previewSettings, widgetPreviewDuration)
         SectionTitle("Background")
         TonalPanel(Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
@@ -272,6 +408,30 @@ fun WidgetSettingsScreen(
                         onClick = { colorDialog = true },
                     )
                 }
+                Hairline()
+                WidgetValueSlider(
+                    title = "Corner radius",
+                    value = previewCornerRadius,
+                    range = 0f..36f,
+                    steps = 8,
+                    valueLabel = { if (it >= 36f) "Pill" else "${it.toInt()} dp" },
+                    onValueChange = { previewCornerRadius = it },
+                    onValueChangeFinished = {
+                        onWidgetCornerRadiusChange(previewCornerRadius.toWidgetCornerRadius())
+                    },
+                )
+                Hairline()
+                WidgetValueSlider(
+                    title = "Background opacity",
+                    value = previewBackgroundOpacity,
+                    range = 20f..100f,
+                    steps = 7,
+                    valueLabel = { "${it.toInt()}%" },
+                    onValueChange = { previewBackgroundOpacity = it },
+                    onValueChangeFinished = {
+                        onWidgetBackgroundOpacityChange(previewBackgroundOpacity.toInt())
+                    },
+                )
             }
         }
 
@@ -313,7 +473,7 @@ fun WidgetSettingsScreen(
                 Hairline()
                 SettingSwitch(
                     title = "Show refresh button",
-                    supporting = "Refresh from your home screen",
+                    supporting = null,
                     checked = settings.widgetShowRefresh,
                     enabled = true,
                     onCheckedChange = onWidgetShowRefreshChange,
@@ -332,6 +492,41 @@ fun WidgetSettingsScreen(
     }
 }
 
+@Composable
+private fun WidgetValueSlider(
+    title: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    valueLabel: (Float) -> String,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+) {
+    Column {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(valueLabel(value), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            valueRange = range,
+            steps = steps,
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                activeTickColor = MaterialTheme.colorScheme.onPrimary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                inactiveTickColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        )
+    }
+}
+
+private fun Float.toWidgetCornerRadius(): Int =
+    if (this >= 36f) WIDGET_PILL_RADIUS else toInt()
+
 private data class DirectChoiceOption(
     val label: String,
     val selected: Boolean,
@@ -349,6 +544,14 @@ private fun DirectChoice(title: String, options: List<DirectChoiceOption>) {
                     selected = option.selected,
                     onClick = option.onClick,
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        activeBorderColor = MaterialTheme.colorScheme.outline,
+                        inactiveContainerColor = Color.Transparent,
+                        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                        inactiveBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
                     label = { Text(option.label, maxLines = 1) },
                 )
             }
@@ -421,15 +624,23 @@ private fun displayWidgetColor(color: String?): String = when (color) {
 
 @Composable
 private fun WidgetPreview(settings: UserSettings, duration: Duration) {
+    val context = LocalContext.current
     val dark = when (settings.widgetAppearance) {
         WidgetAppearance.System -> isSystemInDarkTheme()
         WidgetAppearance.Light -> false
         WidgetAppearance.Dark -> true
     }
     val customColors = parseWidgetColor(settings.widgetColor)?.let(::widgetContrastColors)
-    val background = customColors?.let { Color(it.background) } ?: if (dark) Color(0xFF18201B) else Color(0xFFF1F5F1)
-    val primary = customColors?.let { Color(it.foreground) } ?: if (dark) Color(0xFFE9F5EC) else Color(0xFF172019)
-    val secondary = customColors?.let { Color(it.foreground) } ?: if (dark) Color(0xFFAAB7AD) else Color(0xFF526057)
+    val systemColors = if (settings.widgetAppearance == WidgetAppearance.System) systemWidgetColors(context, dark) else null
+    val background = customColors?.let { Color(it.background) }
+        ?: systemColors?.let { Color(it.background) }
+        ?: if (dark) Color(0xFF18201B) else Color(0xFFF1F5F1)
+    val primary = customColors?.let { Color(it.foreground) }
+        ?: systemColors?.let { Color(it.primary) }
+        ?: if (dark) Color(0xFFE9F5EC) else Color(0xFF172019)
+    val secondary = customColors?.let { Color(it.foreground) }
+        ?: systemColors?.let { Color(it.secondary) }
+        ?: if (dark) Color(0xFFAAB7AD) else Color(0xFF526057)
     val label = when (settings.widgetLabel) {
         WidgetLabel.ScreenTime -> "Screen time"
         WidgetLabel.Today -> "Today"
@@ -440,6 +651,9 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
         label?.let { append("$it, ") }
         append(duration.compactDuration())
         settings.widgetColor?.let { append(", color $it") }
+        append(", ${settings.widgetBackgroundOpacityPercent}% opacity")
+        if (settings.widgetCornerRadiusDp == WIDGET_PILL_RADIUS) append(", pill corners")
+        else append(", ${settings.widgetCornerRadiusDp} dp corners")
         if (settings.widgetShowRefresh) append(", refresh button shown")
     }
 
@@ -447,8 +661,11 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
         modifier = Modifier
             .fillMaxWidth()
             .height(104.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(background)
+            .clip(
+                if (settings.widgetCornerRadiusDp == WIDGET_PILL_RADIUS) RoundedCornerShape(percent = 50)
+                else RoundedCornerShape(settings.widgetCornerRadiusDp.dp),
+            )
+            .background(background.copy(alpha = settings.widgetBackgroundOpacityPercent / 100f))
             .padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp)
             .semantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,

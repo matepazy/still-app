@@ -19,8 +19,10 @@ import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
+import app.still.data.settings.WIDGET_PILL_RADIUS
 import app.still.data.settings.parseWidgetColor
 import app.still.data.settings.widgetContrastColors
+import app.still.data.settings.systemWidgetColors
 import app.still.ui.components.compactDuration
 import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +32,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ScreenTimeWidgetProvider : AppWidgetProvider() {
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        WidgetUpdateScheduler.schedule(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        WidgetUpdateScheduler.cancel(context)
+        super.onDisabled(context)
+    }
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -40,7 +52,10 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        if (intent.action == ACTION_REFRESH) {
+        if (intent.action == ACTION_REFRESH ||
+            intent.action == Intent.ACTION_CONFIGURATION_CHANGED ||
+            intent.action == WALLPAPER_CHANGED_ACTION
+        ) {
             updateAll(context)
         }
     }
@@ -60,7 +75,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
                 val content = if (!container.permissionManager.hasUsageAccess()) {
                     WidgetContent.PermissionRequired
                 } else {
-                    container.usageRepository.dashboard().fold(
+                    container.usageRepository.dashboard(settings.saveUsageHistory).fold(
                         onSuccess = { WidgetContent.Ready(it.today.total) },
                         onFailure = { WidgetContent.Unavailable },
                     )
@@ -82,7 +97,13 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
         val palette = WidgetPalette.resolve(context, settings.widgetAppearance, settings.widgetColor)
         appWidgetIds.forEach { appWidgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_screen_time).apply {
+                setImageViewResource(R.id.widget_background, settings.widgetCornerRadiusDp.backgroundDrawable)
                 setInt(R.id.widget_background, "setColorFilter", palette.background)
+                setInt(
+                    R.id.widget_background,
+                    "setImageAlpha",
+                    settings.widgetBackgroundOpacityPercent.coerceIn(20, 100) * 255 / 100,
+                )
                 setTextColor(R.id.widget_label, palette.secondary)
                 setInt(R.id.widget_refresh, "setColorFilter", palette.secondary)
                 setTextViewText(R.id.widget_label, content.label(context, settings.widgetLabel))
@@ -103,6 +124,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val ACTION_REFRESH = "app.still.widget.action.REFRESH"
+        private const val WALLPAPER_CHANGED_ACTION = "android.intent.action.WALLPAPER_CHANGED"
         private val VALUE_VIEW_IDS = intArrayOf(
             R.id.widget_value_regular,
             R.id.widget_value_medium,
@@ -147,6 +169,21 @@ private val WidgetFontStyle.valueViewId: Int
         WidgetFontStyle.Bold -> R.id.widget_value_bold
     }
 
+private val Int.backgroundDrawable: Int
+    get() = if (this == WIDGET_PILL_RADIUS) {
+        R.drawable.widget_background_radius_pill
+    } else when (((coerceIn(0, 32) + 2) / 4) * 4) {
+        0 -> R.drawable.widget_background_radius_0
+        4 -> R.drawable.widget_background_radius_4
+        8 -> R.drawable.widget_background_radius_8
+        12 -> R.drawable.widget_background_radius_12
+        16 -> R.drawable.widget_background_radius_16
+        20 -> R.drawable.widget_background_radius_20
+        24 -> R.drawable.widget_background_radius_24
+        28 -> R.drawable.widget_background_radius_28
+        else -> R.drawable.widget_background_radius_32
+    }
+
 private data class WidgetPalette(
     @param:ColorInt val background: Int,
     @param:ColorInt val primary: Int,
@@ -162,6 +199,11 @@ private data class WidgetPalette(
                 WidgetAppearance.System -> context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
                 WidgetAppearance.Light -> false
                 WidgetAppearance.Dark -> true
+            }
+            if (appearance == WidgetAppearance.System) {
+                systemWidgetColors(context, dark)?.let { colors ->
+                    return WidgetPalette(colors.background, colors.primary, colors.secondary)
+                }
             }
             return if (dark) {
                 WidgetPalette(

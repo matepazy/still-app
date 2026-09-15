@@ -7,6 +7,7 @@ internal const val TimelineRoute = "timeline"
 internal const val AppsRoute = "apps"
 internal const val SettingsRoute = "settings"
 internal const val WidgetSettingsRoute = "settings/widget"
+internal const val StoredDataRoute = "settings/data"
 
 data class NavigationRequest(
     val destination: LastDestination,

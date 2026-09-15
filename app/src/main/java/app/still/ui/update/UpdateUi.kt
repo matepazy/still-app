@@ -71,7 +71,7 @@ fun VersionOptInDialog(onDecision: (Boolean) -> Unit) {
 fun UpdateDetailsSheet(
     update: UpdateState.UpdateAvailable,
     viewModel: MainViewModel,
-    onDismiss: () -> Unit,
+    onUpdateLater: () -> Unit,
 ) {
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     var showPermissionExplanation by remember { mutableStateOf(false) }
@@ -85,7 +85,7 @@ fun UpdateDetailsSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = { if (updateState !is UpdateState.Downloading) onDismiss() },
+        onDismissRequest = { if (updateState !is UpdateState.Downloading) onUpdateLater() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
@@ -136,7 +136,7 @@ fun UpdateDetailsSheet(
             Spacer(Modifier.height(StillSpacing.large))
             if (updateState !is UpdateState.Downloading) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("Close") }
+                    OutlinedButton(onClick = onUpdateLater, modifier = Modifier.weight(1f)) { Text("Update later") }
                     when (val current = updateState) {
                         is UpdateState.Completed -> Button(
                             onClick = {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 class UsageHistoryJobService : JobService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -25,7 +26,8 @@ class UsageHistoryJobService : JobService() {
         runningJob?.cancel()
         runningJob = scope.launch {
             try {
-                application.container.usageRepository.syncHistory()
+                val saveHistory = application.container.settingsRepository.settings.first().saveUsageHistory
+                application.container.usageRepository.syncHistory(saveHistory)
             } finally {
                 if (isActive) jobFinished(params, false)
             }
@@ -57,5 +59,9 @@ object UsageHistoryScheduler {
             .setPeriodic(TWELVE_HOURS_MS)
             .build()
         scheduler.schedule(job)
+    }
+
+    fun cancel(context: Context) {
+        context.getSystemService(JobScheduler::class.java).cancel(JOB_ID)
     }
 }

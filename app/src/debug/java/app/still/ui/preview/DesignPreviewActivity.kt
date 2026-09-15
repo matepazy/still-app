@@ -67,6 +67,7 @@ private fun DesignScreen(screen: String) {
                 onDynamicChange = {},
                 onRefresh = {},
                 onWidgetClick = {},
+                onStoredDataClick = {},
                 modifier = Modifier.padding(padding),
             )
         }

@@ -1,5 +1,8 @@
 package app.still.data.settings
 
+import android.content.Context
+import android.os.Build
+
 private val sixDigitHex = Regex("^[0-9A-Fa-f]{6}$")
 
 fun normalizeWidgetColor(value: String?): String? {
@@ -16,6 +19,29 @@ data class WidgetContrastColors(
     val background: Int,
     val foreground: Int,
 )
+
+data class WidgetThemeColors(
+    val background: Int,
+    val primary: Int,
+    val secondary: Int,
+)
+
+fun systemWidgetColors(context: Context, dark: Boolean): WidgetThemeColors? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
+    return if (dark) {
+        WidgetThemeColors(
+            background = context.getColor(android.R.color.system_accent1_800),
+            primary = context.getColor(android.R.color.system_accent1_50),
+            secondary = context.getColor(android.R.color.system_accent1_200),
+        )
+    } else {
+        WidgetThemeColors(
+            background = context.getColor(android.R.color.system_accent1_100),
+            primary = context.getColor(android.R.color.system_accent1_900),
+            secondary = context.getColor(android.R.color.system_accent1_700),
+        )
+    }
+}
 
 fun widgetContrastColors(background: Int): WidgetContrastColors {
     val opaqueBackground = background or 0xFF000000.toInt()

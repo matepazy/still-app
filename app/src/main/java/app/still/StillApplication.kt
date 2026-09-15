@@ -6,6 +6,7 @@ import app.still.data.usage.UsagePermissionManager
 import app.still.data.usage.UsageRepository
 import app.still.data.usage.UsageStatsDataSource
 import app.still.data.usage.UsageHistoryScheduler
+import app.still.widget.WidgetUpdateScheduler
 
 class StillApplication : Application() {
     lateinit var container: AppContainer
@@ -15,6 +16,7 @@ class StillApplication : Application() {
         super.onCreate()
         container = AppContainer(this)
         UsageHistoryScheduler.schedule(this)
+        WidgetUpdateScheduler.schedule(this)
     }
 }
 

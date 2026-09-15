@@ -8,6 +8,8 @@ import app.still.domain.model.AppInfo
 import app.still.domain.model.AppUsage
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.UsageEventRecord
+import app.still.domain.analytics.SessionAnalyzer
+import app.still.domain.analytics.UsagePatternSummarizer
 import java.time.Duration
 import java.time.LocalDate
 
@@ -19,7 +21,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
     context,
     "usage_history.db",
     null,
-    1,
+    3,
 ) {
     override fun onConfigure(db: SQLiteDatabase) {
         db.setForeignKeyConstraintsEnabled(true)
@@ -34,6 +36,12 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
                 unlocks INTEGER,
                 wakeups INTEGER,
                 longest_break_ms INTEGER,
+                session_count INTEGER,
+                quick_check_count INTEGER,
+                longest_session_ms INTEGER,
+                first_use_ms INTEGER,
+                last_use_ms INTEGER,
+                switch_count INTEGER,
                 detailed INTEGER NOT NULL DEFAULT 0,
                 events BLOB
             )""",
@@ -51,9 +59,22 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         )
         db.execSQL("CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL) WITHOUT ROWID")
         db.execSQL("CREATE INDEX app_days_package ON app_days(package_name, day)")
+        createAppSwitchesTable(db)
+        createHourlyUsageTable(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) createAppSwitchesTable(db)
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE days ADD COLUMN session_count INTEGER")
+            db.execSQL("ALTER TABLE days ADD COLUMN quick_check_count INTEGER")
+            db.execSQL("ALTER TABLE days ADD COLUMN longest_session_ms INTEGER")
+            db.execSQL("ALTER TABLE days ADD COLUMN first_use_ms INTEGER")
+            db.execSQL("ALTER TABLE days ADD COLUMN last_use_ms INTEGER")
+            db.execSQL("ALTER TABLE days ADD COLUMN switch_count INTEGER")
+            createHourlyUsageTable(db)
+        }
+    }
 
     fun metadata(key: String): String? = readableDatabase.query(
         "metadata", arrayOf("value"), "key = ?", arrayOf(key), null, null, null,
@@ -66,6 +87,18 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
             ContentValues().apply { put("key", key); put("value", value) },
             SQLiteDatabase.CONFLICT_REPLACE,
         )
+    }
+
+    fun clearHistory() {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.delete("days", null, null)
+            db.delete("metadata", null, null)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
     }
 
     fun dates(): List<LocalDate> = readableDatabase.query(
@@ -157,6 +190,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         db.beginTransaction()
         try {
             val epochDay = day.date.toEpochDay()
+            val patterns = UsagePatternSummarizer.summarize(day, java.time.ZoneId.systemDefault())
             db.insertWithOnConflict(
                 "days", null,
                 ContentValues().apply {
@@ -166,16 +200,87 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
                     put("unlocks", day.unlocks)
                     put("wakeups", day.wakeups)
                     day.longestBreak?.let { put("longest_break_ms", it.toMillis()) } ?: putNull("longest_break_ms")
+                    put("session_count", patterns.sessionCount)
+                    put("quick_check_count", patterns.quickCheckCount)
+                    patterns.longestSessionMillis
+                        ?.let { put("longest_session_ms", it) }
+                        ?: putNull("longest_session_ms")
+                    patterns.firstUseMillis
+                        ?.let { put("first_use_ms", it) }
+                        ?: putNull("first_use_ms")
+                    patterns.lastUseMillis
+                        ?.let { put("last_use_ms", it) }
+                        ?: putNull("last_use_ms")
+                    put("switch_count", patterns.switchCount)
                     put("detailed", 1)
                     put("events", UsageEventCodec.encode(events))
                 },
                 SQLiteDatabase.CONFLICT_REPLACE,
             )
             replaceApps(db, epochDay, day.apps, includeOpens = true)
+            replaceFrequentSwitches(db, epochDay, day)
+            replaceHourlyUsage(db, epochDay, patterns.hourlyUsageMillis)
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
         }
+    }
+
+    private fun replaceFrequentSwitches(db: SQLiteDatabase, day: Long, usage: DailyUsage) {
+        db.delete("app_switches", "day = ?", arrayOf(day.toString()))
+        SessionAnalyzer.frequentSwitches(usage.sessions).forEach { pair ->
+            db.insertOrThrow(
+                "app_switches", null,
+                ContentValues().apply {
+                    put("day", day)
+                    put("first_package", pair.firstPackage)
+                    put("second_package", pair.secondPackage)
+                    put("switch_count", pair.switchCount)
+                },
+            )
+        }
+    }
+
+    private fun createAppSwitchesTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS app_switches (
+                day INTEGER NOT NULL,
+                first_package TEXT NOT NULL,
+                second_package TEXT NOT NULL,
+                switch_count INTEGER NOT NULL,
+                PRIMARY KEY(day, first_package, second_package),
+                FOREIGN KEY(day) REFERENCES days(day) ON DELETE CASCADE
+            ) WITHOUT ROWID""",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS app_switches_frequency ON app_switches(switch_count DESC, day DESC)")
+    }
+
+    private fun replaceHourlyUsage(db: SQLiteDatabase, day: Long, millisecondsByHour: List<Long>) {
+        db.delete("hourly_usage", "day = ?", arrayOf(day.toString()))
+        millisecondsByHour.forEachIndexed { hour, durationMillis ->
+            if (durationMillis <= 0L) return@forEachIndexed
+            db.insertOrThrow(
+                "hourly_usage", null,
+                ContentValues().apply {
+                    put("day", day)
+                    put("local_hour", hour)
+                    put("duration_ms", durationMillis)
+                },
+            )
+        }
+    }
+
+    private fun createHourlyUsageTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS hourly_usage (
+                day INTEGER NOT NULL,
+                local_hour INTEGER NOT NULL CHECK(local_hour BETWEEN 0 AND 23),
+                duration_ms INTEGER NOT NULL,
+                PRIMARY KEY(day, local_hour),
+                FOREIGN KEY(day) REFERENCES days(day) ON DELETE CASCADE
+            ) WITHOUT ROWID""",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS hourly_usage_hour ON hourly_usage(local_hour, day)")
     }
 
     private fun replaceApps(db: SQLiteDatabase, day: Long, apps: List<AppUsage>, includeOpens: Boolean) {
