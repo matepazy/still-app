@@ -132,6 +132,12 @@ class UsageRepository(
         }
         val info: (String) -> AppInfo = ::resolveApp
         val sessions = SessionAnalyzer.groupSessions(intervals, events, info)
+        val checkInCount = SessionAnalyzer.groupSessions(
+            intervals,
+            events,
+            info,
+            lockTolerance = Duration.ZERO,
+        ).size
         val apps = AppUsageAggregator.aggregate(intervals, info)
         return DailyUsage(
             date = date,
@@ -140,6 +146,7 @@ class UsageRepository(
             total = intervals.fold(Duration.ZERO) { total, interval -> total.plus(interval.duration) },
             apps = apps,
             sessions = sessions,
+            checkInCount = checkInCount,
             unlocks = SessionAnalyzer.countUnlocks(events),
             wakeups = SessionAnalyzer.countWakeups(events),
             longestBreak = SessionAnalyzer.longestBreak(intervals, end),

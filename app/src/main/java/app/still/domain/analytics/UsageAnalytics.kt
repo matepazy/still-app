@@ -110,7 +110,7 @@ object ForegroundIntervalReconstructor {
 
 object SessionAnalyzer {
     private val defaultSessionGap = Duration.ofSeconds(90)
-    private val defaultLockTolerance = Duration.ofMinutes(10)
+    private val defaultLockTolerance = Duration.ofMinutes(5)
 
     fun groupSessions(
         intervals: List<ForegroundInterval>,

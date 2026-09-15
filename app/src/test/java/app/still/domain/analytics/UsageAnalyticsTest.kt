@@ -64,9 +64,10 @@ class UsageAnalyticsTest {
         )
         val intervals = ForegroundIntervalReconstructor.reconstruct(events, start, end)
         assertEquals(1, SessionAnalyzer.groupSessions(intervals, events, info).size)
+        assertEquals(2, SessionAnalyzer.groupSessions(intervals, events, info, lockTolerance = Duration.ZERO).size)
     }
 
-    @Test fun screenLockLongerThanTenMinutesStartsNewCheckIn() {
+    @Test fun screenLockLongerThanFiveMinutesStartsNewCheckIn() {
         val events = listOf(
             event(10, UsageEventType.ActivityResumed, "app.one"),
             event(12, UsageEventType.ScreenNonInteractive),
@@ -78,12 +79,12 @@ class UsageAnalyticsTest {
         assertEquals(2, SessionAnalyzer.groupSessions(intervals, events, info).size)
     }
 
-    @Test fun exactlyTenMinuteScreenLockStaysInSameCheckIn() {
+    @Test fun exactlyFiveMinuteScreenLockStaysInSameCheckIn() {
         val events = listOf(
             event(10, UsageEventType.ActivityResumed, "app.one"),
             event(12, UsageEventType.ScreenNonInteractive),
-            event(22, UsageEventType.KeyguardHidden),
-            event(22, UsageEventType.ActivityResumed, "app.one"),
+            event(17, UsageEventType.KeyguardHidden),
+            event(17, UsageEventType.ActivityResumed, "app.one"),
             event(25, UsageEventType.ActivityPaused, "app.one"),
         )
         val intervals = ForegroundIntervalReconstructor.reconstruct(events, start, end)

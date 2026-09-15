@@ -114,7 +114,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
     fun day(date: LocalDate): DailyUsage? {
         val values = readableDatabase.query(
             "days",
-            arrayOf("range_end_ms", "total_ms", "unlocks", "wakeups", "longest_break_ms", "detailed"),
+            arrayOf("range_end_ms", "total_ms", "unlocks", "wakeups", "longest_break_ms", "session_count", "detailed"),
             "day = ?", arrayOf(date.toEpochDay().toString()), null, null, null,
         ).use { cursor ->
             if (!cursor.moveToFirst()) return null
@@ -124,7 +124,8 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
                 unlocks = if (cursor.isNull(2)) 0 else cursor.getInt(2),
                 wakeups = if (cursor.isNull(3)) 0 else cursor.getInt(3),
                 longestBreakMillis = if (cursor.isNull(4)) null else cursor.getLong(4),
-                detailed = cursor.getInt(5) == 1,
+                checkInCount = if (cursor.isNull(5)) 0 else cursor.getInt(5),
+                detailed = cursor.getInt(6) == 1,
             )
         }
         val apps = readableDatabase.query(
@@ -151,6 +152,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
             total = Duration.ofMillis(values.totalMillis),
             apps = apps,
             sessions = emptyList(),
+            checkInCount = values.checkInCount,
             unlocks = values.unlocks,
             wakeups = values.wakeups,
             longestBreak = values.longestBreakMillis?.let(Duration::ofMillis),
@@ -200,7 +202,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
                     put("unlocks", day.unlocks)
                     put("wakeups", day.wakeups)
                     day.longestBreak?.let { put("longest_break_ms", it.toMillis()) } ?: putNull("longest_break_ms")
-                    put("session_count", patterns.sessionCount)
+                    put("session_count", day.checkInCount)
                     put("quick_check_count", patterns.quickCheckCount)
                     patterns.longestSessionMillis
                         ?.let { put("longest_session_ms", it) }
@@ -305,6 +307,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         val unlocks: Int,
         val wakeups: Int,
         val longestBreakMillis: Long?,
+        val checkInCount: Int,
         val detailed: Boolean,
     )
 }

@@ -85,6 +85,7 @@ data class DailyUsage(
     val total: Duration,
     val apps: List<AppUsage>,
     val sessions: List<UsageSession>,
+    val checkInCount: Int = sessions.size,
     val unlocks: Int,
     val wakeups: Int,
     val longestBreak: Duration?,

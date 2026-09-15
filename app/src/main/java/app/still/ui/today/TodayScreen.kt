@@ -92,7 +92,7 @@ fun TodayScreen(
         Spacer(Modifier.height(40.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
             MetricPanel(
-                value = "${today.sessions.size}",
+                value = "${today.checkInCount}",
                 label = "check-ins",
                 detail = quickCheckText(today),
                 icon = { Icon(painterResource(StillIcons.History), contentDescription = null) },
