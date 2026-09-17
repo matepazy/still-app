@@ -6,23 +6,15 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.view.View
 import android.widget.RemoteViews
-import androidx.annotation.ColorInt
-import androidx.core.content.ContextCompat
 import app.still.MainActivity
 import app.still.MainActivity.Companion.EXTRA_OPEN_TODAY
 import app.still.R
 import app.still.StillApplication
 import app.still.data.settings.UserSettings
-import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
-import app.still.data.settings.WIDGET_PILL_RADIUS
-import app.still.data.settings.parseWidgetColor
-import app.still.data.settings.widgetContrastColors
-import app.still.data.settings.systemWidgetColors
 import app.still.ui.components.compactDuration
 import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +30,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDisabled(context: Context) {
-        WidgetUpdateScheduler.cancel(context)
+        WidgetUpdateScheduler.schedule(context)
         super.onDisabled(context)
     }
 
@@ -94,10 +86,10 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
         content: WidgetContent,
         settings: UserSettings,
     ) {
-        val palette = WidgetPalette.resolve(context, settings.widgetAppearance, settings.widgetColor)
+        val palette = WidgetPalette.resolve(context, settings)
         appWidgetIds.forEach { appWidgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_screen_time).apply {
-                setImageViewResource(R.id.widget_background, settings.widgetCornerRadiusDp.backgroundDrawable)
+                setImageViewResource(R.id.widget_background, settings.widgetCornerRadiusDp.widgetBackgroundDrawable)
                 setInt(R.id.widget_background, "setColorFilter", palette.background)
                 setInt(
                     R.id.widget_background,
@@ -168,59 +160,6 @@ private val WidgetFontStyle.valueViewId: Int
         WidgetFontStyle.Medium -> R.id.widget_value_medium
         WidgetFontStyle.Bold -> R.id.widget_value_bold
     }
-
-private val Int.backgroundDrawable: Int
-    get() = if (this == WIDGET_PILL_RADIUS) {
-        R.drawable.widget_background_radius_pill
-    } else when (((coerceIn(0, 32) + 2) / 4) * 4) {
-        0 -> R.drawable.widget_background_radius_0
-        4 -> R.drawable.widget_background_radius_4
-        8 -> R.drawable.widget_background_radius_8
-        12 -> R.drawable.widget_background_radius_12
-        16 -> R.drawable.widget_background_radius_16
-        20 -> R.drawable.widget_background_radius_20
-        24 -> R.drawable.widget_background_radius_24
-        28 -> R.drawable.widget_background_radius_28
-        else -> R.drawable.widget_background_radius_32
-    }
-
-private data class WidgetPalette(
-    @param:ColorInt val background: Int,
-    @param:ColorInt val primary: Int,
-    @param:ColorInt val secondary: Int,
-) {
-    companion object {
-        fun resolve(context: Context, appearance: WidgetAppearance, customColor: String?): WidgetPalette {
-            parseWidgetColor(customColor)?.let { background ->
-                val colors = widgetContrastColors(background)
-                return WidgetPalette(colors.background, colors.foreground, colors.foreground)
-            }
-            val dark = when (appearance) {
-                WidgetAppearance.System -> context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-                WidgetAppearance.Light -> false
-                WidgetAppearance.Dark -> true
-            }
-            if (appearance == WidgetAppearance.System) {
-                systemWidgetColors(context, dark)?.let { colors ->
-                    return WidgetPalette(colors.background, colors.primary, colors.secondary)
-                }
-            }
-            return if (dark) {
-                WidgetPalette(
-                    ContextCompat.getColor(context, R.color.widget_background_dark),
-                    ContextCompat.getColor(context, R.color.widget_primary_dark),
-                    ContextCompat.getColor(context, R.color.widget_secondary_dark),
-                )
-            } else {
-                WidgetPalette(
-                    ContextCompat.getColor(context, R.color.widget_background_light),
-                    ContextCompat.getColor(context, R.color.widget_primary_light),
-                    ContextCompat.getColor(context, R.color.widget_secondary_light),
-                )
-            }
-        }
-    }
-}
 
 private sealed interface WidgetContent {
     data object Loading : WidgetContent

@@ -18,13 +18,23 @@ enum class WidgetAppearance { System, Light, Dark }
 
 enum class WidgetLabel { ScreenTime, Today, Hidden }
 
+enum class DaylineWidgetLabel { Dayline, Today, Hidden }
+
 enum class WidgetFontSize(val valueSp: Float) { Small(20f), Medium(24f), Large(28f) }
 
 enum class WidgetFontStyle { Regular, Medium, Bold }
 
 const val WIDGET_PILL_RADIUS = 1_000
 
-enum class LastDestination { Today, Timeline, Apps, Settings, WidgetSettings }
+enum class LastDestination {
+    Today,
+    Timeline,
+    Apps,
+    Settings,
+    WidgetSettings,
+    ScreenTimeWidgetSettings,
+    DaylineWidgetSettings,
+}
 
 data class UserSettings(
     val onboardingComplete: Boolean = false,
@@ -43,6 +53,12 @@ data class UserSettings(
     val widgetShowRefresh: Boolean = true,
     val widgetCornerRadiusDp: Int = 24,
     val widgetBackgroundOpacityPercent: Int = 100,
+    val daylineWidgetAppearance: WidgetAppearance = WidgetAppearance.System,
+    val daylineWidgetColor: String? = null,
+    val daylineWidgetLabel: DaylineWidgetLabel = DaylineWidgetLabel.Dayline,
+    val daylineWidgetShowRefresh: Boolean = true,
+    val daylineWidgetCornerRadiusDp: Int = 24,
+    val daylineWidgetBackgroundOpacityPercent: Int = 100,
     val lastDestination: LastDestination = LastDestination.Today,
 )
 
@@ -74,6 +90,12 @@ class SettingsRepository(private val context: Context) {
         val widgetShowRefresh = booleanPreferencesKey("widget_show_refresh")
         val widgetCornerRadius = intPreferencesKey("widget_corner_radius_dp")
         val widgetBackgroundOpacity = intPreferencesKey("widget_background_opacity_percent")
+        val daylineWidgetAppearance = stringPreferencesKey("dayline_widget_appearance")
+        val daylineWidgetColor = stringPreferencesKey("dayline_widget_color")
+        val daylineWidgetLabel = stringPreferencesKey("dayline_widget_label")
+        val daylineWidgetShowRefresh = booleanPreferencesKey("dayline_widget_show_refresh")
+        val daylineWidgetCornerRadius = intPreferencesKey("dayline_widget_corner_radius_dp")
+        val daylineWidgetBackgroundOpacity = intPreferencesKey("dayline_widget_background_opacity_percent")
         val lastDestination = stringPreferencesKey("last_destination")
     }
 
@@ -113,6 +135,16 @@ class SettingsRepository(private val context: Context) {
             widgetShowRefresh = preferences[Keys.widgetShowRefresh] ?: true,
             widgetCornerRadiusDp = normalizeWidgetRadius(preferences[Keys.widgetCornerRadius] ?: 24),
             widgetBackgroundOpacityPercent = (preferences[Keys.widgetBackgroundOpacity] ?: 100).coerceIn(20, 100),
+            daylineWidgetAppearance = preferences[Keys.daylineWidgetAppearance]
+                ?.let { runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
+                ?: WidgetAppearance.System,
+            daylineWidgetColor = normalizeWidgetColor(preferences[Keys.daylineWidgetColor]),
+            daylineWidgetLabel = preferences[Keys.daylineWidgetLabel]
+                ?.let { runCatching { DaylineWidgetLabel.valueOf(it) }.getOrNull() }
+                ?: DaylineWidgetLabel.Dayline,
+            daylineWidgetShowRefresh = preferences[Keys.daylineWidgetShowRefresh] ?: true,
+            daylineWidgetCornerRadiusDp = normalizeWidgetRadius(preferences[Keys.daylineWidgetCornerRadius] ?: 24),
+            daylineWidgetBackgroundOpacityPercent = (preferences[Keys.daylineWidgetBackgroundOpacity] ?: 100).coerceIn(20, 100),
             lastDestination = preferences[Keys.lastDestination]
                 ?.let { runCatching { LastDestination.valueOf(it) }.getOrNull() }
                 ?: LastDestination.Today,
@@ -177,6 +209,25 @@ class SettingsRepository(private val context: Context) {
     suspend fun setWidgetBackgroundOpacity(valuePercent: Int) = context.settingsDataStore.edit {
         it[Keys.widgetBackgroundOpacity] = valuePercent.coerceIn(20, 100)
     }
+    suspend fun setDaylineWidgetColor(value: String?) = context.settingsDataStore.edit {
+        normalizeWidgetColor(value)?.let { color -> it[Keys.daylineWidgetColor] = color } ?: it.remove(Keys.daylineWidgetColor)
+    }
+    suspend fun setDaylineWidgetTheme(value: WidgetAppearance) = context.settingsDataStore.edit {
+        it[Keys.daylineWidgetAppearance] = value.name
+        it.remove(Keys.daylineWidgetColor)
+    }
+    suspend fun setDaylineWidgetLabel(value: DaylineWidgetLabel) = context.settingsDataStore.edit {
+        it[Keys.daylineWidgetLabel] = value.name
+    }
+    suspend fun setDaylineWidgetShowRefresh(value: Boolean) = context.settingsDataStore.edit {
+        it[Keys.daylineWidgetShowRefresh] = value
+    }
+    suspend fun setDaylineWidgetCornerRadius(valueDp: Int) = context.settingsDataStore.edit {
+        it[Keys.daylineWidgetCornerRadius] = normalizeWidgetRadius(valueDp)
+    }
+    suspend fun setDaylineWidgetBackgroundOpacity(valuePercent: Int) = context.settingsDataStore.edit {
+        it[Keys.daylineWidgetBackgroundOpacity] = valuePercent.coerceIn(20, 100)
+    }
     suspend fun setLastDestination(value: LastDestination) = context.settingsDataStore.edit {
         it[Keys.lastDestination] = value.name
     }
@@ -190,6 +241,15 @@ class SettingsRepository(private val context: Context) {
         it.remove(Keys.widgetShowRefresh)
         it.remove(Keys.widgetCornerRadius)
         it.remove(Keys.widgetBackgroundOpacity)
+    }
+
+    suspend fun resetDaylineWidgetSettings() = context.settingsDataStore.edit {
+        it.remove(Keys.daylineWidgetAppearance)
+        it.remove(Keys.daylineWidgetColor)
+        it.remove(Keys.daylineWidgetLabel)
+        it.remove(Keys.daylineWidgetShowRefresh)
+        it.remove(Keys.daylineWidgetCornerRadius)
+        it.remove(Keys.daylineWidgetBackgroundOpacity)
     }
 }
 

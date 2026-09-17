@@ -12,14 +12,18 @@ import app.still.data.settings.WidgetFontSize
 import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
 import app.still.data.settings.DeferredUpdate
+import app.still.data.settings.DaylineWidgetLabel
 import app.still.domain.model.UsageDashboard
 import app.still.BuildConfig
 import app.still.update.ApkInstaller
 import app.still.update.UpdateState
 import app.still.update.VersionUpdater
 import app.still.update.SemanticVersion
+import app.still.widget.WidgetUpdateDispatcher
 import app.still.widget.ScreenTimeWidgetProvider
+import app.still.widget.DaylineWidgetProvider
 import app.still.data.usage.UsageHistoryScheduler
+import app.still.data.usage.StoredDataSummary
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,6 +52,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     private val usageState = MutableStateFlow<UsageUiState>(UsageUiState.Loading)
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState
+    private val _storedDataSummary = MutableStateFlow<StoredDataSummary?>(null)
+    val storedDataSummary: StateFlow<StoredDataSummary?> = _storedDataSummary
     val state: StateFlow<MainUiState> = combine(container.settingsRepository.settings, usageState) { settings, usage ->
         MainUiState(settings, usage)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MainUiState())
@@ -106,6 +112,10 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    fun refreshStoredDataSummary() = viewModelScope.launch {
+        _storedDataSummary.value = container.usageRepository.storedDataSummary()
+    }
+
     fun completeOnboarding(versionCheckEnabled: Boolean) = viewModelScope.launch {
         container.settingsRepository.completeOnboarding(versionCheckEnabled)
     }
@@ -119,8 +129,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             UsageHistoryScheduler.cancel(container.applicationContext)
             container.usageRepository.clearHistory()
         }
+        refreshStoredDataSummary()
         refresh()
-        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+        WidgetUpdateDispatcher.updateAll(container.applicationContext)
     }
     fun setDailyTargetMinutes(value: Long?) = viewModelScope.launch { container.settingsRepository.setDailyTargetMinutes(value) }
     fun setLastDestination(value: LastDestination) = viewModelScope.launch {
@@ -165,6 +176,34 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun resetWidgetSettings() = viewModelScope.launch {
         container.settingsRepository.resetWidgetSettings()
         ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setDaylineWidgetColor(value: String?) = viewModelScope.launch {
+        container.settingsRepository.setDaylineWidgetColor(value)
+        DaylineWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setDaylineWidgetTheme(value: WidgetAppearance) = viewModelScope.launch {
+        container.settingsRepository.setDaylineWidgetTheme(value)
+        DaylineWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setDaylineWidgetLabel(value: DaylineWidgetLabel) = viewModelScope.launch {
+        container.settingsRepository.setDaylineWidgetLabel(value)
+        DaylineWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setDaylineWidgetShowRefresh(value: Boolean) = viewModelScope.launch {
+        container.settingsRepository.setDaylineWidgetShowRefresh(value)
+        DaylineWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setDaylineWidgetCornerRadius(valueDp: Int) = viewModelScope.launch {
+        container.settingsRepository.setDaylineWidgetCornerRadius(valueDp)
+        DaylineWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setDaylineWidgetBackgroundOpacity(valuePercent: Int) = viewModelScope.launch {
+        container.settingsRepository.setDaylineWidgetBackgroundOpacity(valuePercent)
+        DaylineWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun resetDaylineWidgetSettings() = viewModelScope.launch {
+        container.settingsRepository.resetDaylineWidgetSettings()
+        DaylineWidgetProvider.updateAll(container.applicationContext)
     }
     fun setVersionCheckEnabled(value: Boolean) = viewModelScope.launch {
         container.settingsRepository.setVersionCheckEnabled(value)

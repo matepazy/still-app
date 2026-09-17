@@ -17,12 +17,23 @@ import java.time.LocalDate
  * Private app-database archive. Daily aggregates are normalized for cheap stats
  * queries; event streams are stored as gzip blobs only while detailed events exist.
  */
+data class StoredDataSummary(
+    val entryCount: Long,
+    val sizeBytes: Long,
+)
+
 class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
-    context,
+    context.applicationContext,
     "usage_history.db",
     null,
     3,
 ) {
+    private val databaseFiles = listOf(
+        context.applicationContext.getDatabasePath("usage_history.db"),
+        context.applicationContext.getDatabasePath("usage_history.db-wal"),
+        context.applicationContext.getDatabasePath("usage_history.db-shm"),
+    )
+
     override fun onConfigure(db: SQLiteDatabase) {
         db.setForeignKeyConstraintsEnabled(true)
     }
@@ -99,6 +110,20 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         } finally {
             db.endTransaction()
         }
+    }
+
+    fun storedDataSummary(): StoredDataSummary {
+        val db = readableDatabase
+        val entryCount = listOf("days", "app_days", "app_switches", "hourly_usage", "metadata")
+            .sumOf { table ->
+                db.rawQuery("SELECT COUNT(*) FROM $table", null).use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getLong(0) else 0L
+                }
+            }
+        return StoredDataSummary(
+            entryCount = entryCount,
+            sizeBytes = databaseFiles.filter { it.isFile }.sumOf { it.length() },
+        )
     }
 
     fun dates(): List<LocalDate> = readableDatabase.query(

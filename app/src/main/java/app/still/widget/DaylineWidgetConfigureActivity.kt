@@ -6,7 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import app.still.MainActivity
 
-class ScreenTimeWidgetConfigureActivity : Activity() {
+class DaylineWidgetConfigureActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val appWidgetId = intent.getIntExtra(
@@ -19,7 +19,7 @@ class ScreenTimeWidgetConfigureActivity : Activity() {
             return
         }
 
-        ScreenTimeWidgetProvider.updateAll(applicationContext)
+        DaylineWidgetProvider.updateAll(applicationContext)
         setResult(
             RESULT_OK,
             Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId),
@@ -27,7 +27,7 @@ class ScreenTimeWidgetConfigureActivity : Activity() {
         startActivity(
             Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                putExtra(MainActivity.EXTRA_OPEN_SCREEN_TIME_WIDGET_SETTINGS, true)
+                putExtra(MainActivity.EXTRA_OPEN_DAYLINE_WIDGET_SETTINGS, true)
             },
         )
         finish()

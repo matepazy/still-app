@@ -10,4 +10,14 @@
     <string name="widget_unavailable">Unavailable</string>
     <string name="widget_refresh">Refresh screen time</string>
     <string name="widget_open_app">Open Still</string>
+    <string name="widget_preview_duration">2h 14m</string>
+    <string name="widget_dayline_name">Dayline</string>
+    <string name="widget_dayline">Dayline</string>
+    <string name="widget_dayline_description">Today’s screen use across the day</string>
+    <string name="widget_dayline_refresh">Refresh Dayline</string>
+    <string name="widget_dayline_open_app">Open Dayline in Still</string>
+    <string name="widget_dayline_loading_description">Dayline is updating</string>
+    <string name="widget_dayline_description_ready">Dayline, %1$s screen use today</string>
+    <string name="widget_dayline_permission_description">Dayline needs usage access. Open Still.</string>
+    <string name="widget_dayline_unavailable_description">Dayline is unavailable. Open Still.</string>
 </resources>

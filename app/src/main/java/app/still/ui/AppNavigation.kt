@@ -7,6 +7,8 @@ internal const val TimelineRoute = "timeline"
 internal const val AppsRoute = "apps"
 internal const val SettingsRoute = "settings"
 internal const val WidgetSettingsRoute = "settings/widget"
+internal const val ScreenTimeWidgetSettingsRoute = "settings/widget/screen-time"
+internal const val DaylineWidgetSettingsRoute = "settings/widget/dayline"
 internal const val StoredDataRoute = "settings/data"
 
 data class NavigationRequest(
@@ -21,6 +23,8 @@ internal val LastDestination.route: String
         LastDestination.Apps -> AppsRoute
         LastDestination.Settings -> SettingsRoute
         LastDestination.WidgetSettings -> WidgetSettingsRoute
+        LastDestination.ScreenTimeWidgetSettings -> ScreenTimeWidgetSettingsRoute
+        LastDestination.DaylineWidgetSettings -> DaylineWidgetSettingsRoute
     }
 
 internal fun lastDestinationForRoute(route: String?): LastDestination? = when (route) {
@@ -29,5 +33,7 @@ internal fun lastDestinationForRoute(route: String?): LastDestination? = when (r
     AppsRoute -> LastDestination.Apps
     SettingsRoute -> LastDestination.Settings
     WidgetSettingsRoute -> LastDestination.WidgetSettings
+    ScreenTimeWidgetSettingsRoute -> LastDestination.ScreenTimeWidgetSettings
+    DaylineWidgetSettingsRoute -> LastDestination.DaylineWidgetSettings
     else -> null
 }

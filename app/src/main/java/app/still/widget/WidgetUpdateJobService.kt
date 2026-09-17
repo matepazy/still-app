@@ -10,7 +10,7 @@ import android.content.Context
 
 class WidgetUpdateJobService : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
-        ScreenTimeWidgetProvider.updateAll(applicationContext)
+        WidgetUpdateDispatcher.updateAll(applicationContext)
         return false
     }
 
@@ -23,8 +23,14 @@ object WidgetUpdateScheduler {
 
     fun schedule(context: Context) {
         val manager = AppWidgetManager.getInstance(context)
-        val provider = ComponentName(context, ScreenTimeWidgetProvider::class.java)
-        if (manager.getAppWidgetIds(provider).isEmpty()) return
+        val screenTimeProvider = ComponentName(context, ScreenTimeWidgetProvider::class.java)
+        val daylineProvider = ComponentName(context, DaylineWidgetProvider::class.java)
+        if (manager.getAppWidgetIds(screenTimeProvider).isEmpty() &&
+            manager.getAppWidgetIds(daylineProvider).isEmpty()
+        ) {
+            cancel(context)
+            return
+        }
         val scheduler = context.getSystemService(JobScheduler::class.java)
         val existing = scheduler.getPendingJob(JOB_ID)
         if (existing?.intervalMillis == THIRTY_MINUTES_MS) return

@@ -13,7 +13,7 @@ import app.still.data.settings.LastDestination
 import app.still.ui.MainViewModel
 import app.still.ui.NavigationRequest
 import app.still.ui.StillApp
-import app.still.widget.ScreenTimeWidgetProvider
+import app.still.widget.WidgetUpdateDispatcher
 
 class MainActivity : ComponentActivity() {
     private var navigationRequest by mutableStateOf<NavigationRequest?>(null)
@@ -43,11 +43,13 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.onResume()
-        ScreenTimeWidgetProvider.updateAll(applicationContext)
+        WidgetUpdateDispatcher.updateAll(applicationContext)
     }
 
     private fun Intent.widgetNavigationRequest(): NavigationRequest? {
         val destination = when {
+            getBooleanExtra(EXTRA_OPEN_SCREEN_TIME_WIDGET_SETTINGS, false) -> LastDestination.ScreenTimeWidgetSettings
+            getBooleanExtra(EXTRA_OPEN_DAYLINE_WIDGET_SETTINGS, false) -> LastDestination.DaylineWidgetSettings
             getBooleanExtra(EXTRA_OPEN_WIDGET_SETTINGS, false) -> LastDestination.WidgetSettings
             getBooleanExtra(EXTRA_OPEN_TODAY, false) -> LastDestination.Today
             else -> return null
@@ -58,5 +60,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_OPEN_TODAY = "app.still.extra.OPEN_TODAY"
         const val EXTRA_OPEN_WIDGET_SETTINGS = "app.still.extra.OPEN_WIDGET_SETTINGS"
+        const val EXTRA_OPEN_SCREEN_TIME_WIDGET_SETTINGS = "app.still.extra.OPEN_SCREEN_TIME_WIDGET_SETTINGS"
+        const val EXTRA_OPEN_DAYLINE_WIDGET_SETTINGS = "app.still.extra.OPEN_DAYLINE_WIDGET_SETTINGS"
     }
 }

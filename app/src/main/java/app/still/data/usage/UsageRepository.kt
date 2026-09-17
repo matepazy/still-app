@@ -98,6 +98,10 @@ class UsageRepository(
         runCatching { syncMutex.withLock { archive.clearHistory() } }
     }
 
+    suspend fun storedDataSummary(): StoredDataSummary = withContext(Dispatchers.IO) {
+        syncMutex.withLock { archive.storedDataSummary() }
+    }
+
     suspend fun appDetail(packageName: String, dashboard: UsageDashboard): AppDetail? = withContext(Dispatchers.Default) {
         val usage = dashboard.today.apps.firstOrNull { it.app.packageName == packageName } ?: return@withContext null
         val daily = dashboard.history.sortedBy { it.date }.map { day ->

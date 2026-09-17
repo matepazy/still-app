@@ -2,6 +2,8 @@ package app.still.ui.settings
 
 import android.graphics.Color as AndroidColor
 import android.os.Build
+import android.text.format.Formatter
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,9 +53,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -67,6 +73,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import app.still.BuildConfig
 import app.still.data.settings.ThemePreference
+import app.still.data.settings.DaylineWidgetLabel
+import app.still.data.usage.StoredDataSummary
+import app.still.domain.model.DailyUsage
+import app.still.domain.model.DaylineKind
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetFontSize
@@ -83,6 +93,7 @@ import app.still.ui.theme.StillSpacing
 import app.still.ui.components.StillIcons
 import app.still.update.UpdateState
 import java.time.Duration
+import java.text.NumberFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -279,7 +290,11 @@ fun SettingsScreen(
 }
 
 @Composable
-fun StoredDataScreen(modifier: Modifier = Modifier) {
+fun StoredDataScreen(
+    summary: StoredDataSummary?,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
     Column(
         modifier
             .fillMaxSize()
@@ -294,34 +309,68 @@ fun StoredDataScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(top = StillSpacing.large),
         )
 
+        SectionTitle("At a glance")
+        TonalPanel(Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+            ) {
+                StoredDataIcon(StillIcons.Storage)
+                Column {
+                    Text(
+                        summary?.let {
+                            "${NumberFormat.getIntegerInstance().format(it.entryCount)} usage ${if (it.entryCount == 1L) "entry" else "entries"}"
+                        } ?: "Counting entries…",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        summary?.let { "${Formatter.formatShortFileSize(context, it.sizeBytes)} on this device" }
+                            ?: "Calculating size…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         StoredDataSection(
             title = "Phone and app activity",
+            icon = StillIcons.Apps,
             body = "Which apps were used, their app names and identifiers, roughly when they were in the foreground, " +
                 "how long they were used and how often they were opened. Still also keeps screen-on, screen-off and lock-state events.",
         )
         StoredDataSection(
             title = "Daily patterns",
+            icon = StillIcons.Timeline,
             body = "Daily screen time, unlocks, wakeups and longest breaks; phone-use sessions and quick checks; " +
                 "first and last use, activity by hour, and apps that are frequently switched between.",
         )
         StoredDataSection(
             title = "Your preferences",
+            icon = StillIcons.Settings,
             body = "Onboarding completion, theme and wallpaper-color choices, the last screen you visited, " +
                 "widget appearance, and update-check preferences or reminders.",
         )
         StoredDataSection(
             title = "Temporary update file",
+            icon = StillIcons.Download,
             body = "If you download an app update, its APK may stay in Still’s cache until Android clears it or a newer download replaces it.",
         )
 
         TonalPanel(Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                Text("Kept private", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Usage history is excluded from Android backup and device transfer. Still has no account and does not upload analytics or usage history.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+            ) {
+                StoredDataIcon(StillIcons.Privacy)
+                Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                    Text("Kept private", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Usage history is excluded from Android backup and device transfer. Still has no account and does not upload analytics or usage history.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         Spacer(Modifier.height(StillSpacing.xLarge))
@@ -329,13 +378,38 @@ fun StoredDataScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun StoredDataSection(title: String, body: String) {
+private fun StoredDataSection(title: String, @DrawableRes icon: Int, body: String) {
     SectionTitle(title)
     TonalPanel(Modifier.fillMaxWidth()) {
-        Text(
-            body,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+        ) {
+            StoredDataIcon(icon)
+            Text(
+                body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun StoredDataIcon(@DrawableRes icon: Int) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -343,7 +417,7 @@ private fun StoredDataSection(title: String, body: String) {
 @Composable
 fun WidgetSettingsScreen(
     settings: UserSettings,
-    widgetPreviewDuration: Duration,
+    widgetPreviewDay: DailyUsage,
     onWidgetColorChange: (String?) -> Unit,
     onWidgetThemeChange: (WidgetAppearance) -> Unit,
     onWidgetLabelChange: (WidgetLabel) -> Unit,
@@ -376,7 +450,7 @@ fun WidgetSettingsScreen(
             .padding(horizontal = StillSpacing.large),
     ) {
         SectionTitle("Preview")
-        WidgetPreview(previewSettings, widgetPreviewDuration)
+        WidgetPreview(previewSettings, widgetPreviewDay.total)
         SectionTitle("Background")
         TonalPanel(Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
@@ -493,6 +567,205 @@ fun WidgetSettingsScreen(
 }
 
 @Composable
+fun WidgetSelectorScreen(
+    settings: UserSettings,
+    previewDay: DailyUsage,
+    onScreenTimeClick: () -> Unit,
+    onDaylineClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = StillSpacing.large),
+    ) {
+        Text(
+            text = "Choose a widget to customize.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = StillSpacing.large, bottom = StillSpacing.small),
+        )
+        WidgetSelectorItem(title = "Screen time", onClick = onScreenTimeClick) {
+            WidgetPreview(settings, previewDay.total)
+        }
+        Spacer(Modifier.height(StillSpacing.medium))
+        WidgetSelectorItem(title = "Dayline", onClick = onDaylineClick) {
+            DaylineWidgetPreview(settings, previewDay)
+        }
+        Spacer(Modifier.height(StillSpacing.xLarge))
+    }
+}
+
+@Composable
+private fun WidgetSelectorItem(
+    title: String,
+    onClick: () -> Unit,
+    preview: @Composable () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) { role = Role.Button },
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = StillSpacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "Customize",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Icon(
+                painter = painterResource(StillIcons.ChevronRight),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
+        preview()
+    }
+}
+
+@Composable
+fun DaylineWidgetSettingsScreen(
+    settings: UserSettings,
+    widgetPreviewDay: DailyUsage,
+    onWidgetColorChange: (String?) -> Unit,
+    onWidgetThemeChange: (WidgetAppearance) -> Unit,
+    onWidgetLabelChange: (DaylineWidgetLabel) -> Unit,
+    onWidgetShowRefreshChange: (Boolean) -> Unit,
+    onWidgetCornerRadiusChange: (Int) -> Unit,
+    onWidgetBackgroundOpacityChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var colorDialog by remember { mutableStateOf(false) }
+    val savedCornerRadius = if (settings.daylineWidgetCornerRadiusDp == WIDGET_PILL_RADIUS) {
+        36f
+    } else {
+        settings.daylineWidgetCornerRadiusDp.toFloat()
+    }
+    var previewCornerRadius by remember(savedCornerRadius) { mutableFloatStateOf(savedCornerRadius) }
+    var previewBackgroundOpacity by remember(settings.daylineWidgetBackgroundOpacityPercent) {
+        mutableFloatStateOf(settings.daylineWidgetBackgroundOpacityPercent.toFloat())
+    }
+    val previewSettings = settings.copy(
+        daylineWidgetCornerRadiusDp = previewCornerRadius.toWidgetCornerRadius(),
+        daylineWidgetBackgroundOpacityPercent = previewBackgroundOpacity.toInt(),
+    )
+
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = StillSpacing.large),
+    ) {
+        SectionTitle("Preview")
+        DaylineWidgetPreview(previewSettings, widgetPreviewDay)
+        SectionTitle("Background")
+        TonalPanel(Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                DirectChoice(
+                    title = "Color",
+                    options = listOf(
+                        DirectChoiceOption("Theme", settings.daylineWidgetColor == null) {
+                            onWidgetColorChange(null)
+                        },
+                        DirectChoiceOption("Custom", settings.daylineWidgetColor != null) {
+                            colorDialog = true
+                        },
+                    ),
+                )
+                if (settings.daylineWidgetColor == null) {
+                    DirectChoice(
+                        title = "Theme",
+                        options = WidgetAppearance.entries.map { appearance ->
+                            DirectChoiceOption(
+                                label = appearance.shortDisplayName,
+                                selected = settings.daylineWidgetAppearance == appearance,
+                                onClick = { onWidgetThemeChange(appearance) },
+                            )
+                        },
+                    )
+                } else {
+                    WidgetCustomColorRow(
+                        color = settings.daylineWidgetColor,
+                        onClick = { colorDialog = true },
+                    )
+                }
+                Hairline()
+                WidgetValueSlider(
+                    title = "Corner radius",
+                    value = previewCornerRadius,
+                    range = 0f..36f,
+                    steps = 8,
+                    valueLabel = { if (it >= 36f) "Pill" else "${it.toInt()} dp" },
+                    onValueChange = { previewCornerRadius = it },
+                    onValueChangeFinished = {
+                        onWidgetCornerRadiusChange(previewCornerRadius.toWidgetCornerRadius())
+                    },
+                )
+                Hairline()
+                WidgetValueSlider(
+                    title = "Background opacity",
+                    value = previewBackgroundOpacity,
+                    range = 20f..100f,
+                    steps = 7,
+                    valueLabel = { "${it.toInt()}%" },
+                    onValueChange = { previewBackgroundOpacity = it },
+                    onValueChangeFinished = {
+                        onWidgetBackgroundOpacityChange(previewBackgroundOpacity.toInt())
+                    },
+                )
+            }
+        }
+
+        SectionTitle("Content")
+        TonalPanel(Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                DirectChoice(
+                    title = "Title",
+                    options = DaylineWidgetLabel.entries.map { label ->
+                        DirectChoiceOption(
+                            label = label.directDisplayName,
+                            selected = settings.daylineWidgetLabel == label,
+                            onClick = { onWidgetLabelChange(label) },
+                        )
+                    },
+                )
+                Hairline()
+                SettingSwitch(
+                    title = "Show refresh button",
+                    supporting = null,
+                    checked = settings.daylineWidgetShowRefresh,
+                    enabled = true,
+                    onCheckedChange = onWidgetShowRefreshChange,
+                )
+            }
+        }
+        Spacer(Modifier.height(StillSpacing.large))
+    }
+
+    if (colorDialog) {
+        WidgetColorDialog(
+            current = settings.daylineWidgetColor,
+            onApply = onWidgetColorChange,
+            onDismiss = { colorDialog = false },
+        )
+    }
+}
+
+
+@Composable
 private fun WidgetValueSlider(
     title: String,
     value: Float,
@@ -594,6 +867,13 @@ private val WidgetLabel.directDisplayName: String
         WidgetLabel.Hidden -> "None"
     }
 
+private val DaylineWidgetLabel.directDisplayName: String
+    get() = when (this) {
+        DaylineWidgetLabel.Dayline -> "Dayline"
+        DaylineWidgetLabel.Today -> "Today"
+        DaylineWidgetLabel.Hidden -> "None"
+    }
+
 private val WidgetFontSize.displayName: String
     get() = when (this) {
         WidgetFontSize.Small -> "Small"
@@ -657,15 +937,113 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
         if (settings.widgetShowRefresh) append(", refresh button shown")
     }
 
+    WidgetPreviewLayout(
+        background = background,
+        backgroundOpacityPercent = settings.widgetBackgroundOpacityPercent,
+        cornerRadiusDp = settings.widgetCornerRadiusDp,
+        label = label,
+        secondary = secondary,
+        showRefresh = settings.widgetShowRefresh,
+        description = description,
+    ) {
+        Box(Modifier.fillMaxWidth().height(36.dp), contentAlignment = Alignment.CenterStart) {
+            Text(
+                text = duration.compactDuration(),
+                color = primary,
+                fontSize = settings.widgetFontSize.valueSp.sp,
+                fontWeight = settings.widgetFontStyle.fontWeight,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
+    val context = LocalContext.current
+    val dark = when (settings.daylineWidgetAppearance) {
+        WidgetAppearance.System -> isSystemInDarkTheme()
+        WidgetAppearance.Light -> false
+        WidgetAppearance.Dark -> true
+    }
+    val customColors = parseWidgetColor(settings.daylineWidgetColor)?.let(::widgetContrastColors)
+    val systemColors = if (settings.daylineWidgetAppearance == WidgetAppearance.System) systemWidgetColors(context, dark) else null
+    val background = customColors?.let { Color(it.background) }
+        ?: systemColors?.let { Color(it.background) }
+        ?: if (dark) Color(0xFF18201B) else Color(0xFFF1F5F1)
+    val primary = customColors?.let { Color(it.foreground) }
+        ?: systemColors?.let { Color(it.primary) }
+        ?: if (dark) Color(0xFFE9F5EC) else Color(0xFF172019)
+    val secondary = customColors?.let { Color(it.foreground) }
+        ?: systemColors?.let { Color(it.secondary) }
+        ?: if (dark) Color(0xFFAAB7AD) else Color(0xFF526057)
+    val label = when (settings.daylineWidgetLabel) {
+        DaylineWidgetLabel.Dayline -> "Dayline"
+        DaylineWidgetLabel.Today -> "Today"
+        DaylineWidgetLabel.Hidden -> null
+    }
+    val fullDayMillis = Duration.ofHours(24).toMillis().toFloat()
+    val nowProgress = (Duration.between(day.rangeStart, day.rangeEnd).toMillis() / fullDayMillis).coerceIn(0f, 1f)
+
+    WidgetPreviewLayout(
+        background = background,
+        backgroundOpacityPercent = settings.daylineWidgetBackgroundOpacityPercent,
+        cornerRadiusDp = settings.daylineWidgetCornerRadiusDp,
+        label = label,
+        secondary = secondary,
+        showRefresh = settings.daylineWidgetShowRefresh,
+        description = "Dayline widget preview, ${day.total.compactDuration()} screen use today",
+    ) {
+        Box(Modifier.fillMaxWidth().height(36.dp), contentAlignment = Alignment.CenterStart) {
+            Canvas(Modifier.fillMaxWidth().height(18.dp)) {
+                val radius = 5.dp.toPx()
+                val outline = Path().apply {
+                    addRoundRect(androidx.compose.ui.geometry.RoundRect(0f, 0f, size.width, size.height, CornerRadius(radius)))
+                }
+                clipPath(outline) {
+                    drawRoundRect(secondary.copy(alpha = .14f), cornerRadius = CornerRadius(radius))
+                    day.dayline.forEach { segment ->
+                        val left = (Duration.between(day.rangeStart, segment.start).toMillis() / fullDayMillis)
+                            .coerceIn(0f, 1f) * size.width
+                        val right = (Duration.between(day.rangeStart, segment.end).toMillis() / fullDayMillis)
+                            .coerceIn(0f, 1f) * size.width
+                        if (right > left) {
+                            drawRect(
+                                color = if (segment.kind == DaylineKind.Active) primary else secondary.copy(alpha = .47f),
+                                topLeft = Offset(left, 0f),
+                                size = Size(right - left, size.height),
+                            )
+                        }
+                    }
+                    listOf(.25f, .5f, .75f).forEach { progress ->
+                        drawLine(background.copy(alpha = .3f), Offset(size.width * progress, 0f), Offset(size.width * progress, size.height))
+                    }
+                    drawLine(primary, Offset(size.width * nowProgress, 0f), Offset(size.width * nowProgress, size.height), 2.dp.toPx())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WidgetPreviewLayout(
+    background: Color,
+    backgroundOpacityPercent: Int,
+    cornerRadiusDp: Int,
+    label: String?,
+    secondary: Color,
+    showRefresh: Boolean,
+    description: String,
+    content: @Composable () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(104.dp)
             .clip(
-                if (settings.widgetCornerRadiusDp == WIDGET_PILL_RADIUS) RoundedCornerShape(percent = 50)
-                else RoundedCornerShape(settings.widgetCornerRadiusDp.dp),
+                if (cornerRadiusDp == WIDGET_PILL_RADIUS) RoundedCornerShape(percent = 50)
+                else RoundedCornerShape(cornerRadiusDp.dp),
             )
-            .background(background.copy(alpha = settings.widgetBackgroundOpacityPercent / 100f))
+            .background(background.copy(alpha = backgroundOpacityPercent / 100f))
             .padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp)
             .semantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
@@ -674,14 +1052,9 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
             label?.let {
                 Text(it, style = MaterialTheme.typography.labelMedium, color = secondary)
             }
-            Text(
-                text = duration.compactDuration(),
-                color = primary,
-                fontSize = settings.widgetFontSize.valueSp.sp,
-                fontWeight = settings.widgetFontStyle.fontWeight,
-            )
+            content()
         }
-        if (settings.widgetShowRefresh) {
+        if (showRefresh) {
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 Icon(
                     painter = painterResource(StillIcons.Refresh),
@@ -980,7 +1353,11 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
-private fun SettingRow(title: String, supporting: String, onClick: () -> Unit) {
+private fun SettingRow(
+    title: String,
+    supporting: String,
+    onClick: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -997,7 +1374,13 @@ private fun SettingRow(title: String, supporting: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SettingSwitch(title: String, supporting: String?, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun SettingSwitch(
+    title: String,
+    supporting: String?,
+    checked: Boolean,
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

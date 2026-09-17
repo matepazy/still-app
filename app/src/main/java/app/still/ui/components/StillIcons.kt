@@ -25,4 +25,6 @@ object StillIcons {
     @DrawableRes val Download = R.drawable.ic_ui_download
     @DrawableRes val Update = R.drawable.ic_ui_update
     @DrawableRes val Error = R.drawable.ic_ui_error
+    @DrawableRes val Storage = R.drawable.ic_ui_storage
+    @DrawableRes val Privacy = R.drawable.ic_ui_privacy
 }

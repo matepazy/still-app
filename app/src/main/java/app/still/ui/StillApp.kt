@@ -62,6 +62,8 @@ import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.settings.StoredDataScreen
 import app.still.ui.settings.WidgetSettingsScreen
+import app.still.ui.settings.WidgetSelectorScreen
+import app.still.ui.settings.DaylineWidgetSettingsScreen
 import app.still.ui.theme.StillSpacing
 import app.still.ui.theme.StillTheme
 import app.still.ui.update.UpdateDetailsSheet
@@ -86,6 +88,7 @@ fun StillApp(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+    val storedDataSummary by viewModel.storedDataSummary.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var activeUpdate by remember { mutableStateOf<UpdateState.UpdateAvailable?>(null) }
     LaunchedEffect(updateState) {
@@ -118,6 +121,7 @@ fun StillApp(
                         settings,
                         updateState,
                         viewModel,
+                        storedDataSummary,
                         navigationRequest,
                         onNavigationRequestHandled,
                     )
@@ -150,6 +154,7 @@ private fun MainNavigation(
     settings: app.still.data.settings.UserSettings,
     updateState: UpdateState,
     viewModel: MainViewModel,
+    storedDataSummary: app.still.data.usage.StoredDataSummary?,
     navigationRequest: NavigationRequest?,
     onNavigationRequestHandled: (Int) -> Unit,
 ) {
@@ -287,6 +292,7 @@ private fun MainNavigation(
             }
         }
         composable(StoredDataRoute) {
+            LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
             DestinationScaffold(
                 topBar = {
                     SettingsTopBar(
@@ -297,24 +303,45 @@ private fun MainNavigation(
                     )
                 },
             ) { padding ->
-                StoredDataScreen(modifier = Modifier.padding(padding))
+                StoredDataScreen(
+                    summary = storedDataSummary,
+                    modifier = Modifier.padding(padding),
+                )
             }
         }
         composable(WidgetSettingsRoute) {
             DestinationScaffold(
                 topBar = {
                     SettingsTopBar(
-                        title = "Widget",
+                        title = "Widgets",
                         onBack = {
                             if (!navController.popBackStack()) navController.navigate(SettingsRoute)
                         },
+                    )
+                },
+            ) { padding ->
+                WidgetSelectorScreen(
+                    settings = settings,
+                    previewDay = dashboard.today,
+                    onScreenTimeClick = { navController.navigate(ScreenTimeWidgetSettingsRoute) },
+                    onDaylineClick = { navController.navigate(DaylineWidgetSettingsRoute) },
+                    modifier = Modifier.padding(padding),
+                )
+            }
+        }
+        composable(ScreenTimeWidgetSettingsRoute) {
+            DestinationScaffold(
+                topBar = {
+                    SettingsTopBar(
+                        title = "Screen time",
+                        onBack = { navController.popBackStack() },
                         onReset = viewModel::resetWidgetSettings,
                     )
                 },
             ) { padding ->
                 WidgetSettingsScreen(
                     settings = settings,
-                    widgetPreviewDuration = dashboard.today.total,
+                    widgetPreviewDay = dashboard.today,
                     onWidgetColorChange = viewModel::setWidgetColor,
                     onWidgetThemeChange = viewModel::setWidgetTheme,
                     onWidgetLabelChange = viewModel::setWidgetLabel,
@@ -323,6 +350,29 @@ private fun MainNavigation(
                     onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
                     onWidgetCornerRadiusChange = viewModel::setWidgetCornerRadius,
                     onWidgetBackgroundOpacityChange = viewModel::setWidgetBackgroundOpacity,
+                    modifier = Modifier.padding(padding),
+                )
+            }
+        }
+        composable(DaylineWidgetSettingsRoute) {
+            DestinationScaffold(
+                topBar = {
+                    SettingsTopBar(
+                        title = "Dayline",
+                        onBack = { navController.popBackStack() },
+                        onReset = viewModel::resetDaylineWidgetSettings,
+                    )
+                },
+            ) { padding ->
+                DaylineWidgetSettingsScreen(
+                    settings = settings,
+                    widgetPreviewDay = dashboard.today,
+                    onWidgetColorChange = viewModel::setDaylineWidgetColor,
+                    onWidgetThemeChange = viewModel::setDaylineWidgetTheme,
+                    onWidgetLabelChange = viewModel::setDaylineWidgetLabel,
+                    onWidgetShowRefreshChange = viewModel::setDaylineWidgetShowRefresh,
+                    onWidgetCornerRadiusChange = viewModel::setDaylineWidgetCornerRadius,
+                    onWidgetBackgroundOpacityChange = viewModel::setDaylineWidgetBackgroundOpacity,
                     modifier = Modifier.padding(padding),
                 )
             }
@@ -350,6 +400,16 @@ private fun NavHostController.navigateTo(destination: LastDestination) {
         LastDestination.WidgetSettings -> {
             navigate(SettingsRoute) { launchSingleTop = true }
             navigate(WidgetSettingsRoute) { launchSingleTop = true }
+        }
+        LastDestination.ScreenTimeWidgetSettings -> {
+            navigate(SettingsRoute) { launchSingleTop = true }
+            navigate(WidgetSettingsRoute) { launchSingleTop = true }
+            navigate(ScreenTimeWidgetSettingsRoute) { launchSingleTop = true }
+        }
+        LastDestination.DaylineWidgetSettings -> {
+            navigate(SettingsRoute) { launchSingleTop = true }
+            navigate(WidgetSettingsRoute) { launchSingleTop = true }
+            navigate(DaylineWidgetSettingsRoute) { launchSingleTop = true }
         }
     }
 }
