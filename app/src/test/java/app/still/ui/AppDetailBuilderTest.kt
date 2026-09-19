@@ -33,6 +33,22 @@ class AppDetailBuilderTest {
         assertEquals(Duration.ofMinutes(2), secondSelection.usage.duration)
     }
 
+    @Test
+    fun averageUsesUpToFourteenDaysBeforeTheSelectedDate() {
+        val days = (0L..15L).map { offset -> day(windowStart.plusDays(offset), offset + 1) }
+        val dashboard = UsageDashboard(
+            today = days.last(),
+            comparison = null,
+            mostChanged = null,
+            history = days.dropLast(1),
+        )
+
+        val detail = requireNotNull(buildAppDetail(app.packageName, dashboard, days.last().date))
+
+        // The oldest of the 15 prior days is outside the baseline window.
+        assertEquals(Duration.ofMinutes(8).plusSeconds(30), detail.averageDaily)
+    }
+
     private fun day(date: LocalDate, minutes: Long): DailyUsage {
         val start = date.atStartOfDay().toInstant(ZoneOffset.UTC)
         return DailyUsage(

@@ -20,8 +20,8 @@ android {
         applicationId = "app.still"
         minSdk = 28
         targetSdk = 37
-        versionCode = 7
-        versionName = "1.3.0"
+        versionCode = 8
+        versionName = "1.3.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

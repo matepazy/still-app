@@ -139,7 +139,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
     fun day(date: LocalDate): DailyUsage? {
         val values = readableDatabase.query(
             "days",
-            arrayOf("range_end_ms", "total_ms", "unlocks", "wakeups", "longest_break_ms", "session_count", "detailed"),
+            arrayOf("range_end_ms", "total_ms", "unlocks", "wakeups", "longest_break_ms", "session_count", "quick_check_count", "detailed"),
             "day = ?", arrayOf(date.toEpochDay().toString()), null, null, null,
         ).use { cursor ->
             if (!cursor.moveToFirst()) return null
@@ -150,7 +150,8 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
                 wakeups = if (cursor.isNull(3)) 0 else cursor.getInt(3),
                 longestBreakMillis = if (cursor.isNull(4)) null else cursor.getLong(4),
                 checkInCount = if (cursor.isNull(5)) 0 else cursor.getInt(5),
-                detailed = cursor.getInt(6) == 1,
+                quickCheckCount = if (cursor.isNull(6)) 0 else cursor.getInt(6),
+                detailed = cursor.getInt(7) == 1,
             )
         }
         val apps = readableDatabase.query(
@@ -178,6 +179,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
             apps = apps,
             sessions = emptyList(),
             checkInCount = values.checkInCount,
+            quickCheckCount = values.quickCheckCount,
             unlocks = values.unlocks,
             wakeups = values.wakeups,
             longestBreak = values.longestBreakMillis?.let(Duration::ofMillis),
@@ -333,6 +335,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         val wakeups: Int,
         val longestBreakMillis: Long?,
         val checkInCount: Int,
+        val quickCheckCount: Int,
         val detailed: Boolean,
     )
 }

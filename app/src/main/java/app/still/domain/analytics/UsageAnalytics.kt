@@ -50,7 +50,7 @@ object UsagePatternSummarizer {
             }
         return DailyPatternSummary(
             sessionCount = usage.sessions.size,
-            quickCheckCount = usage.sessions.count { it.isQuickCheck },
+            quickCheckCount = usage.quickCheckCount,
             longestSessionMillis = usage.sessions.maxOfOrNull { it.duration.toMillis() },
             firstUseMillis = usage.sessions.minOfOrNull { it.start.toEpochMilli() },
             lastUseMillis = usage.sessions.maxOfOrNull { it.end.toEpochMilli() },

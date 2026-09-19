@@ -489,7 +489,13 @@ internal fun buildAppDetail(packageName: String, dashboard: UsageDashboard, sele
             if (available) day.apps.firstOrNull { it.app.packageName == packageName }?.duration ?: Duration.ZERO else null,
         )
     }
-    val valid = daily.filter { it.date.isBefore(selectedDate) }.mapNotNull { it.duration }
+    val valid = allDays.asReversed()
+        .asSequence()
+        .filter { it.date.isBefore(selectedDate) }
+        .filter { it.total > Duration.ZERO || it.unlocks > 0 || it.wakeups > 0 }
+        .map { day -> day.apps.firstOrNull { it.app.packageName == packageName }?.duration ?: Duration.ZERO }
+        .take(APP_BASELINE_DAYS)
+        .toList()
     val average = valid.takeIf { it.isNotEmpty() }?.map { it.toMillis() }?.average()?.toLong()?.let(Duration::ofMillis)
     return AppDetail(
         date = selectedDate,
@@ -501,6 +507,8 @@ internal fun buildAppDetail(packageName: String, dashboard: UsageDashboard, sele
             .sortedByDescending { it.start },
     )
 }
+
+private const val APP_BASELINE_DAYS = 14
 
 @Composable
 private fun LoadingScreen() {

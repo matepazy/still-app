@@ -1,6 +1,7 @@
 package app.still.domain.analytics
 
 import app.still.domain.model.AppInfo
+import app.still.domain.model.AppUsage
 import app.still.domain.model.DaylineKind
 import app.still.domain.model.DaylineSegment
 import app.still.domain.model.DailyUsage
@@ -54,7 +55,7 @@ class UsageAnalyticsTest {
         assertEquals(at(18), intervals.single().end)
     }
 
-    @Test fun shortScreenLockStaysInSameCheckIn() {
+    @Test fun shortScreenLockStaysInSameTimelineSessionButStartsANewCheckIn() {
         val events = listOf(
             event(10, UsageEventType.ActivityResumed, "app.one"),
             event(12, UsageEventType.ScreenNonInteractive),
@@ -67,7 +68,24 @@ class UsageAnalyticsTest {
         assertEquals(2, SessionAnalyzer.groupSessions(intervals, events, info, lockTolerance = Duration.ZERO).size)
     }
 
-    @Test fun screenLockLongerThanFiveMinutesStartsNewCheckIn() {
+    @Test fun quickCheckCountDoesNotUseTimelineLockGracePeriod() {
+        val events = listOf(
+            UsageEventRecord(start.plusSeconds(10), UsageEventType.ActivityResumed, "app.one"),
+            UsageEventRecord(start.plusSeconds(30), UsageEventType.ScreenNonInteractive),
+            UsageEventRecord(start.plusSeconds(60), UsageEventType.KeyguardHidden),
+            UsageEventRecord(start.plusSeconds(60), UsageEventType.ActivityResumed, "app.one"),
+            UsageEventRecord(start.plusSeconds(80), UsageEventType.ActivityPaused, "app.one"),
+        )
+        val intervals = ForegroundIntervalReconstructor.reconstruct(events, start, end)
+        val timelineSessions = SessionAnalyzer.groupSessions(intervals, events, info)
+        val checkIns = SessionAnalyzer.groupSessions(intervals, events, info, lockTolerance = Duration.ZERO)
+
+        assertEquals(1, timelineSessions.size)
+        assertFalse(timelineSessions.single().isQuickCheck)
+        assertEquals(2, checkIns.count { it.isQuickCheck })
+    }
+
+    @Test fun screenLockLongerThanFiveMinutesStartsNewTimelineSession() {
         val events = listOf(
             event(10, UsageEventType.ActivityResumed, "app.one"),
             event(12, UsageEventType.ScreenNonInteractive),
@@ -79,7 +97,7 @@ class UsageAnalyticsTest {
         assertEquals(2, SessionAnalyzer.groupSessions(intervals, events, info).size)
     }
 
-    @Test fun exactlyFiveMinuteScreenLockStaysInSameCheckIn() {
+    @Test fun exactlyFiveMinuteScreenLockStaysInSameTimelineSession() {
         val events = listOf(
             event(10, UsageEventType.ActivityResumed, "app.one"),
             event(12, UsageEventType.ScreenNonInteractive),
@@ -145,8 +163,14 @@ class UsageAnalyticsTest {
         assertEquals(Duration.ofMinutes(20).toMillis(), summary.hourlyUsageMillis[1])
     }
 
-    @Test fun quickCheckAtSixtySecondsIsQuick() {
+    @Test fun checkInAtSixtySecondsIsNotLessThanAMinute() {
         val events = listOf(UsageEventRecord(at(10), UsageEventType.ActivityResumed, "app.one"), UsageEventRecord(at(10).plusSeconds(60), UsageEventType.ActivityPaused, "app.one"))
+        val sessions = SessionAnalyzer.groupSessions(ForegroundIntervalReconstructor.reconstruct(events, start, end), events, info)
+        assertFalse(sessions.single().isQuickCheck)
+    }
+
+    @Test fun checkInBelowSixtySecondsIsQuick() {
+        val events = listOf(UsageEventRecord(at(10), UsageEventType.ActivityResumed, "app.one"), UsageEventRecord(at(10).plusSeconds(59), UsageEventType.ActivityPaused, "app.one"))
         val sessions = SessionAnalyzer.groupSessions(ForegroundIntervalReconstructor.reconstruct(events, start, end), events, info)
         assertTrue(sessions.single().isQuickCheck)
     }
@@ -198,6 +222,18 @@ class UsageAnalyticsTest {
 
     @Test fun insufficientBaselineDoesNotManufactureComparison() {
         assertEquals(null, BaselineCalculator.compare(Duration.ofMinutes(10), listOf(Duration.ofMinutes(20), Duration.ofMinutes(30))))
+    }
+
+    @Test fun mostChangedUsesTheAverageOfHistoricalDays() {
+        val app = AppInfo("app.one", "one")
+        val result = BaselineCalculator.mostChanged(
+            today = listOf(AppUsage(app, Duration.ofMinutes(30), 1)),
+            previousDays = listOf(10L, 20L, 30L).map { minutes ->
+                listOf(AppUsage(app, Duration.ofMinutes(minutes), 1))
+            },
+        )
+
+        assertEquals(Duration.ofMinutes(10), result?.difference)
     }
 
     @Test fun systemLaunchersAreRecognizedWithoutFilteringOrdinaryApps() {

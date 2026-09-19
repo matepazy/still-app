@@ -51,7 +51,7 @@ data class UsageSession(
     val sequence: List<AppInfo>,
 ) {
     val duration: Duration get() = Duration.between(start, end).coerceAtLeast(Duration.ZERO)
-    val isQuickCheck: Boolean get() = duration <= Duration.ofSeconds(60)
+    val isQuickCheck: Boolean get() = duration < Duration.ofMinutes(1)
 }
 
 data class AppSwitchPair(
@@ -86,6 +86,7 @@ data class DailyUsage(
     val apps: List<AppUsage>,
     val sessions: List<UsageSession>,
     val checkInCount: Int = sessions.size,
+    val quickCheckCount: Int = sessions.count { it.isQuickCheck },
     val unlocks: Int,
     val wakeups: Int,
     val longestBreak: Duration?,

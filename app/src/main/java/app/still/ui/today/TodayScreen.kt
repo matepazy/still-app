@@ -189,10 +189,10 @@ private fun MetricPanel(
 }
 
 private fun quickCheckText(today: DailyUsage): String {
-    val quick = today.sessions.count { it.isQuickCheck }
+    val quick = today.quickCheckCount
     return when (quick) {
-        0 -> "None under a minute"
-        1 -> "1 under a minute"
-        else -> "$quick under a minute"
+        0 -> "None less than a minute"
+        1 -> "1 less than a minute"
+        else -> "$quick less than a minute"
     }
 }

@@ -72,13 +72,13 @@ class UsageRepository(
                 .filter { it != today }
                 .mapNotNull { date -> loadDay(date, date.plusDays(1).atStartOfDay(zone).toInstant(), zone) }
                 .toList()
-            val sameTimeHistory = (1L..7L).map { offset ->
+            val sameTimeHistory = (1L..BASELINE_DAYS.toLong()).map { offset ->
                 val date = today.minusDays(offset)
                 val cutoff = date.atTime(localTime).atZone(zone).toInstant()
                 loadDetailedDay(date, cutoff, zone)
             }
+            // A detailed archived day is valid even when usage was still zero at this time.
             val valid = sameTimeHistory.filterNotNull()
-                .filter { it.total > Duration.ZERO || it.unlocks > 0 || it.wakeups > 0 }
             UsageDashboard(
                 today = current,
                 comparison = BaselineCalculator.compare(current.total, valid.map { it.total }),
@@ -108,7 +108,7 @@ class UsageRepository(
             val available = day.total > Duration.ZERO || day.unlocks > 0 || day.wakeups > 0
             DailyAppUsage(day.date, if (available) day.apps.firstOrNull { it.app.packageName == packageName }?.duration ?: Duration.ZERO else null)
         }
-        val validPast = daily.mapNotNull { it.duration }
+        val validPast = daily.asReversed().mapNotNull { it.duration }.take(BASELINE_DAYS)
         val average = validPast.takeIf { it.isNotEmpty() }?.map { it.toMillis() }?.average()?.toLong()?.let(Duration::ofMillis)
         AppDetail(
             date = dashboard.today.date,
@@ -136,12 +136,12 @@ class UsageRepository(
         }
         val info: (String) -> AppInfo = ::resolveApp
         val sessions = SessionAnalyzer.groupSessions(intervals, events, info)
-        val checkInCount = SessionAnalyzer.groupSessions(
+        val checkIns = SessionAnalyzer.groupSessions(
             intervals,
             events,
             info,
             lockTolerance = Duration.ZERO,
-        ).size
+        )
         val apps = AppUsageAggregator.aggregate(intervals, info)
         return DailyUsage(
             date = date,
@@ -150,7 +150,8 @@ class UsageRepository(
             total = intervals.fold(Duration.ZERO) { total, interval -> total.plus(interval.duration) },
             apps = apps,
             sessions = sessions,
-            checkInCount = checkInCount,
+            checkInCount = checkIns.size,
+            quickCheckCount = checkIns.count { it.isQuickCheck },
             unlocks = SessionAnalyzer.countUnlocks(events),
             wakeups = SessionAnalyzer.countWakeups(events),
             longestBreak = SessionAnalyzer.longestBreak(intervals, end),
@@ -237,6 +238,7 @@ class UsageRepository(
     }
 
     private companion object {
+        const val BASELINE_DAYS = 14
         const val INITIAL_IMPORT_KEY = "initial_import_complete"
         const val LAST_SYNC_KEY = "last_event_sync_ms"
     }
