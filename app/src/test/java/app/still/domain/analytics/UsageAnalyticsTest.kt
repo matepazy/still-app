@@ -6,6 +6,7 @@ import app.still.domain.model.DaylineKind
 import app.still.domain.model.DaylineSegment
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.ForegroundInterval
+import app.still.domain.model.SessionAppUsage
 import app.still.domain.model.UsageEventRecord
 import app.still.domain.model.UsageEventType
 import app.still.domain.model.UsageSession
@@ -36,6 +37,23 @@ class UsageAnalyticsTest {
         val intervals = ForegroundIntervalReconstructor.reconstruct(events, start, end)
         assertEquals(listOf("app.one", "app.two"), intervals.map { it.packageName })
         assertEquals(1, SessionAnalyzer.groupSessions(intervals, events, info).size)
+    }
+
+    @Test fun sessionActiveDurationExcludesGapsInsideTheSessionWindow() {
+        val app = AppInfo("app.one", "one")
+        val session = UsageSession(
+            start = at(10),
+            end = at(34),
+            apps = listOf(
+                SessionAppUsage(app, Duration.ofMinutes(21)),
+                SessionAppUsage(AppInfo("app.two", "two"), Duration.ofSeconds(40)),
+                SessionAppUsage(AppInfo("app.three", "three"), Duration.ofSeconds(20)),
+            ),
+            sequence = listOf(app),
+        )
+
+        assertEquals(Duration.ofMinutes(24), session.duration)
+        assertEquals(Duration.ofMinutes(22), session.activeDuration)
     }
 
     @Test fun duplicateResumeIsIgnored() {

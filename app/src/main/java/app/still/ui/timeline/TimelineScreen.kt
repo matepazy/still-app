@@ -115,7 +115,7 @@ private fun SessionRow(session: UsageSession, isLast: Boolean) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                     Text("${session.start.clockTime()} – ${session.end.clockTime()}", style = MaterialTheme.typography.titleSmall)
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(session.duration.compactDuration(), style = MaterialTheme.typography.titleSmall)
+                        Text(session.activeDuration.compactDuration(), style = MaterialTheme.typography.titleSmall)
                         Text(if (expanded) "less" else "details", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

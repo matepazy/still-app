@@ -50,6 +50,8 @@ data class UsageSession(
     val apps: List<SessionAppUsage>,
     val sequence: List<AppInfo>,
 ) {
+    /** Foreground app time, excluding idle gaps retained within the session window. */
+    val activeDuration: Duration get() = apps.fold(Duration.ZERO) { total, usage -> total.plus(usage.duration) }
     val duration: Duration get() = Duration.between(start, end).coerceAtLeast(Duration.ZERO)
     val isQuickCheck: Boolean get() = duration < Duration.ofMinutes(1)
 }
