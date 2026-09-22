@@ -27,4 +27,14 @@ object StillIcons {
     @DrawableRes val Error = R.drawable.ic_ui_error
     @DrawableRes val Storage = R.drawable.ic_ui_storage
     @DrawableRes val Privacy = R.drawable.ic_ui_privacy
+    @DrawableRes val CategorySocial = R.drawable.ic_category_social
+    @DrawableRes val CategoryGames = R.drawable.ic_category_games
+    @DrawableRes val CategoryVideo = R.drawable.ic_category_video
+    @DrawableRes val CategoryMusic = R.drawable.ic_category_music
+    @DrawableRes val CategoryPhotography = R.drawable.ic_category_photography
+    @DrawableRes val CategoryNews = R.drawable.ic_category_news
+    @DrawableRes val CategoryMaps = R.drawable.ic_category_maps
+    @DrawableRes val CategoryProductivity = R.drawable.ic_category_productivity
+    @DrawableRes val CategoryAccessibility = R.drawable.ic_category_accessibility
+    @DrawableRes val CategoryOther = R.drawable.ic_category_other
 }

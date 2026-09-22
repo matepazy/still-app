@@ -1,5 +1,6 @@
 package app.still.ui.appdetail
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,9 +21,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -36,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.AppDetail
+import app.still.data.settings.AppCategory
 import app.still.ui.components.AppIcon
 import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
@@ -63,7 +73,10 @@ fun AppDetailScreen(
     detail: AppDetail,
     modifier: Modifier = Modifier,
     onDateSelected: (LocalDate) -> Unit = {},
+    category: AppCategory = AppCategory.Other,
+    onCategorySelected: (AppCategory) -> Unit = {},
 ) {
+    var showCategoryPicker by remember { mutableStateOf(false) }
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -71,6 +84,20 @@ fun AppDetailScreen(
         AppIcon(detail.usage.app.packageName, detail.usage.app.label, size = 70.dp)
         Spacer(Modifier.height(StillSpacing.small))
         Text(detail.usage.app.label, style = MaterialTheme.typography.titleLarge)
+        TextButton(onClick = { showCategoryPicker = true }) {
+            Icon(
+                painterResource(category.iconResource()),
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(category.displayName)
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                painterResource(StillIcons.ChevronDown),
+                contentDescription = "Change app category",
+            )
+        }
         Spacer(Modifier.height(StillSpacing.large))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             HeroStat(
@@ -102,6 +129,70 @@ fun AppDetailScreen(
         }
         Spacer(Modifier.height(StillSpacing.large))
     }
+
+    if (showCategoryPicker) {
+        AppCategoryPicker(
+            selectedCategory = category,
+            onDismiss = { showCategoryPicker = false },
+            onSelect = {
+                onCategorySelected(it)
+                showCategoryPicker = false
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppCategoryPicker(
+    selectedCategory: AppCategory,
+    onDismiss: () -> Unit,
+    onSelect: (AppCategory) -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Text(
+            "App category",
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.titleLarge,
+        )
+        AppCategory.entries.forEach { category ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.RadioButton) { onSelect(category) }
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = category == selectedCategory,
+                    onClick = { onSelect(category) },
+                )
+                Icon(
+                    painterResource(category.iconResource()),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(category.displayName, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+        Spacer(Modifier.height(StillSpacing.large))
+    }
+}
+
+@DrawableRes
+private fun AppCategory.iconResource(): Int = when (this) {
+    AppCategory.Social -> StillIcons.CategorySocial
+    AppCategory.Games -> StillIcons.CategoryGames
+    AppCategory.Video -> StillIcons.CategoryVideo
+    AppCategory.MusicAndAudio -> StillIcons.CategoryMusic
+    AppCategory.Photography -> StillIcons.CategoryPhotography
+    AppCategory.News -> StillIcons.CategoryNews
+    AppCategory.MapsAndNavigation -> StillIcons.CategoryMaps
+    AppCategory.Productivity -> StillIcons.CategoryProductivity
+    AppCategory.Accessibility -> StillIcons.CategoryAccessibility
+    AppCategory.Other -> StillIcons.CategoryOther
 }
 
 @Composable

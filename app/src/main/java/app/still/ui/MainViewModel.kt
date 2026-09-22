@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.still.AppContainer
 import app.still.data.settings.ThemePreference
+import app.still.data.settings.AppCategory
 import app.still.data.settings.LastDestination
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
@@ -136,6 +137,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun setDailyTargetMinutes(value: Long?) = viewModelScope.launch { container.settingsRepository.setDailyTargetMinutes(value) }
     fun setLastDestination(value: LastDestination) = viewModelScope.launch {
         container.settingsRepository.setLastDestination(value)
+    }
+    fun setAppCategory(packageName: String, category: AppCategory) = viewModelScope.launch {
+        container.settingsRepository.setAppCategory(packageName, category)
     }
     fun setWidgetAppearance(value: WidgetAppearance) = viewModelScope.launch {
         container.settingsRepository.setWidgetAppearance(value)

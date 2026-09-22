@@ -47,6 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.still.data.settings.ThemePreference
+import app.still.data.settings.AppCategory
 import app.still.data.settings.LastDestination
 import app.still.domain.model.AppDetail
 import app.still.domain.model.DailyAppUsage
@@ -158,6 +159,7 @@ private fun MainNavigation(
     navigationRequest: NavigationRequest?,
     onNavigationRequestHandled: (Int) -> Unit,
 ) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val initialDestination = remember { navigationRequest?.destination ?: settings.lastDestination }
     val initialRequestId = remember { navigationRequest?.id }
@@ -251,6 +253,10 @@ private fun MainNavigation(
         composable(AppDetailRoute) { entry ->
             val packageName = entry.arguments?.getString("packageName").orEmpty()
             val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
+            val suggestedCategory = remember(packageName) {
+                AppCategory.forPackage(context.packageManager, packageName)
+            }
+            val appCategory = settings.appCategoryOverrides[packageName] ?: suggestedCategory
             DestinationScaffold(
                 topBar = { AppDetailTopBar(title) { navController.popBackStack() } },
             ) { padding ->
@@ -259,6 +265,8 @@ private fun MainNavigation(
                         it,
                         modifier = Modifier.padding(padding),
                         onDateSelected = selectDate,
+                        category = appCategory,
+                        onCategorySelected = { category -> viewModel.setAppCategory(packageName, category) },
                     )
                 }
                     ?: ErrorScreen(

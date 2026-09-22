@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -60,6 +61,7 @@ data class UserSettings(
     val daylineWidgetCornerRadiusDp: Int = 24,
     val daylineWidgetBackgroundOpacityPercent: Int = 100,
     val lastDestination: LastDestination = LastDestination.Today,
+    val appCategoryOverrides: Map<String, AppCategory> = emptyMap(),
 )
 
 data class DeferredUpdate(
@@ -97,6 +99,7 @@ class SettingsRepository(private val context: Context) {
         val daylineWidgetCornerRadius = intPreferencesKey("dayline_widget_corner_radius_dp")
         val daylineWidgetBackgroundOpacity = intPreferencesKey("dayline_widget_background_opacity_percent")
         val lastDestination = stringPreferencesKey("last_destination")
+        val appCategoryOverrides = stringSetPreferencesKey("app_category_overrides")
     }
 
     val settings: Flow<UserSettings> = context.settingsDataStore.data.map { preferences ->
@@ -148,6 +151,7 @@ class SettingsRepository(private val context: Context) {
             lastDestination = preferences[Keys.lastDestination]
                 ?.let { runCatching { LastDestination.valueOf(it) }.getOrNull() }
                 ?: LastDestination.Today,
+            appCategoryOverrides = decodeAppCategoryOverrides(preferences[Keys.appCategoryOverrides].orEmpty()),
         )
     }
 
@@ -232,6 +236,12 @@ class SettingsRepository(private val context: Context) {
         it[Keys.lastDestination] = value.name
     }
 
+    suspend fun setAppCategory(packageName: String, category: AppCategory) = context.settingsDataStore.edit { preferences ->
+        val overrides = decodeAppCategoryOverrides(preferences[Keys.appCategoryOverrides].orEmpty()).toMutableMap()
+        overrides[packageName] = category
+        preferences[Keys.appCategoryOverrides] = encodeAppCategoryOverrides(overrides)
+    }
+
     suspend fun resetWidgetSettings() = context.settingsDataStore.edit {
         it.remove(Keys.widgetAppearance)
         it.remove(Keys.widgetColor)
@@ -255,3 +265,21 @@ class SettingsRepository(private val context: Context) {
 
 private fun normalizeWidgetRadius(value: Int): Int =
     if (value >= WIDGET_PILL_RADIUS) WIDGET_PILL_RADIUS else value.coerceIn(0, 32)
+
+private const val APP_CATEGORY_SEPARATOR = '\t'
+
+internal fun encodeAppCategoryOverrides(overrides: Map<String, AppCategory>): Set<String> =
+    overrides.mapTo(mutableSetOf()) { (packageName, category) ->
+        "$packageName$APP_CATEGORY_SEPARATOR${category.name}"
+    }
+
+internal fun decodeAppCategoryOverrides(values: Set<String>): Map<String, AppCategory> = buildMap {
+    values.forEach { value ->
+        val separatorIndex = value.indexOf(APP_CATEGORY_SEPARATOR)
+        if (separatorIndex <= 0 || separatorIndex == value.lastIndex) return@forEach
+        val packageName = value.substring(0, separatorIndex)
+        val categoryName = value.substring(separatorIndex + 1)
+        val category = runCatching { AppCategory.valueOf(categoryName) }.getOrNull() ?: return@forEach
+        put(packageName, category)
+    }
+}
