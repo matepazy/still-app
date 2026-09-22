@@ -27,6 +27,7 @@ object StillIcons {
     @DrawableRes val Error = R.drawable.ic_ui_error
     @DrawableRes val Storage = R.drawable.ic_ui_storage
     @DrawableRes val Privacy = R.drawable.ic_ui_privacy
+    @DrawableRes val Delete = R.drawable.ic_ui_delete
     @DrawableRes val CategorySocial = R.drawable.ic_category_social
     @DrawableRes val CategoryGames = R.drawable.ic_category_games
     @DrawableRes val CategoryVideo = R.drawable.ic_category_video

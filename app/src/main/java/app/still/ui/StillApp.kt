@@ -63,6 +63,7 @@ import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.settings.StoredDataScreen
+import app.still.ui.settings.ArchiveMigrationDialog
 import app.still.ui.settings.WidgetSettingsScreen
 import app.still.ui.settings.WidgetSelectorScreen
 import app.still.ui.settings.DaylineWidgetSettingsScreen
@@ -91,6 +92,9 @@ fun StillApp(
     val settings = state.settings
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val storedDataSummary by viewModel.storedDataSummary.collectAsStateWithLifecycle()
+    val archiveMigrationNotice by viewModel.archiveMigrationNotice.collectAsStateWithLifecycle()
+    val archiveRestoreState by viewModel.archiveRestoreState.collectAsStateWithLifecycle()
+    val archiveBackupDeleteState by viewModel.archiveBackupDeleteState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var activeUpdate by remember { mutableStateOf<UpdateState.UpdateAvailable?>(null) }
     LaunchedEffect(updateState) {
@@ -124,6 +128,8 @@ fun StillApp(
                         updateState,
                         viewModel,
                         storedDataSummary,
+                        archiveRestoreState,
+                        archiveBackupDeleteState,
                         navigationRequest,
                         onNavigationRequestHandled,
                     )
@@ -131,7 +137,13 @@ fun StillApp(
             }
         }
 
-        if (settings?.onboardingComplete == true && settings.versionCheckEnabled == null) {
+        archiveMigrationNotice?.let { notice ->
+            if (settings?.onboardingComplete == true) {
+                ArchiveMigrationDialog(notice, viewModel::acknowledgeArchiveMigration)
+            }
+        }
+
+        if (archiveMigrationNotice == null && settings?.onboardingComplete == true && settings.versionCheckEnabled == null) {
             VersionOptInDialog(onDecision = viewModel::setVersionCheckEnabled)
         }
 
@@ -157,6 +169,8 @@ private fun MainNavigation(
     updateState: UpdateState,
     viewModel: MainViewModel,
     storedDataSummary: app.still.data.usage.StoredDataSummary?,
+    archiveRestoreState: ArchiveRestoreState,
+    archiveBackupDeleteState: ArchiveBackupDeleteState,
     navigationRequest: NavigationRequest?,
     onNavigationRequestHandled: (Int) -> Unit,
 ) {
@@ -302,6 +316,7 @@ private fun MainNavigation(
             }
         }
         composable(SettingsRoute) {
+            LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
             DestinationScaffold(
                 topBar = {
                     SettingsTopBar {
@@ -317,6 +332,10 @@ private fun MainNavigation(
                     onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
                     onStoredDataClick = { navController.navigate(StoredDataRoute) },
                     onSaveUsageHistoryChange = viewModel::setSaveUsageHistory,
+                    storedDataSummary = storedDataSummary,
+                    archiveRestoreState = archiveRestoreState,
+                    onRestoreArchive = viewModel::restoreArchiveBackup,
+                    onDismissArchiveRestoreResult = viewModel::dismissArchiveRestoreResult,
                     updateState = updateState,
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
@@ -339,6 +358,9 @@ private fun MainNavigation(
             ) { padding ->
                 StoredDataScreen(
                     summary = storedDataSummary,
+                    archiveBackupDeleteState = archiveBackupDeleteState,
+                    onDeleteArchiveBackup = viewModel::deleteArchiveBackup,
+                    onDismissArchiveBackupDeleteResult = viewModel::dismissArchiveBackupDeleteResult,
                     modifier = Modifier.padding(padding),
                 )
             }

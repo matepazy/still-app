@@ -25,6 +25,7 @@ import app.still.widget.ScreenTimeWidgetProvider
 import app.still.widget.DaylineWidgetProvider
 import app.still.data.usage.UsageHistoryScheduler
 import app.still.data.usage.StoredDataSummary
+import app.still.data.usage.ArchiveMigrationNotice
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,6 +45,20 @@ sealed interface UsageUiState {
     data class Error(val message: String) : UsageUiState
 }
 
+sealed interface ArchiveRestoreState {
+    data object Idle : ArchiveRestoreState
+    data object Restoring : ArchiveRestoreState
+    data object Restored : ArchiveRestoreState
+    data class Error(val message: String) : ArchiveRestoreState
+}
+
+sealed interface ArchiveBackupDeleteState {
+    data object Idle : ArchiveBackupDeleteState
+    data object Deleting : ArchiveBackupDeleteState
+    data object Deleted : ArchiveBackupDeleteState
+    data class Error(val message: String) : ArchiveBackupDeleteState
+}
+
 data class MainUiState(
     val settings: UserSettings? = null,
     val usage: UsageUiState = UsageUiState.Loading,
@@ -55,6 +70,12 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     val updateState: StateFlow<UpdateState> = _updateState
     private val _storedDataSummary = MutableStateFlow<StoredDataSummary?>(null)
     val storedDataSummary: StateFlow<StoredDataSummary?> = _storedDataSummary
+    private val _archiveMigrationNotice = MutableStateFlow<ArchiveMigrationNotice?>(null)
+    val archiveMigrationNotice: StateFlow<ArchiveMigrationNotice?> = _archiveMigrationNotice
+    private val _archiveRestoreState = MutableStateFlow<ArchiveRestoreState>(ArchiveRestoreState.Idle)
+    val archiveRestoreState: StateFlow<ArchiveRestoreState> = _archiveRestoreState
+    private val _archiveBackupDeleteState = MutableStateFlow<ArchiveBackupDeleteState>(ArchiveBackupDeleteState.Idle)
+    val archiveBackupDeleteState: StateFlow<ArchiveBackupDeleteState> = _archiveBackupDeleteState
     val state: StateFlow<MainUiState> = combine(container.settingsRepository.settings, usageState) { settings, usage ->
         MainUiState(settings, usage)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MainUiState())
@@ -110,11 +131,59 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 onSuccess = UsageUiState::Ready,
                 onFailure = { UsageUiState.Error(it.message ?: "Usage information is unavailable right now.") },
             )
+            _archiveMigrationNotice.value = container.usageRepository.migrationNotice()
         }
     }
 
     fun refreshStoredDataSummary() = viewModelScope.launch {
         _storedDataSummary.value = container.usageRepository.storedDataSummary()
+    }
+
+    fun acknowledgeArchiveMigration() = viewModelScope.launch {
+        container.usageRepository.acknowledgeMigrationNotice()
+        _archiveMigrationNotice.value = null
+    }
+
+    fun restoreArchiveBackup() = viewModelScope.launch {
+        if (_archiveRestoreState.value == ArchiveRestoreState.Restoring) return@launch
+        _archiveRestoreState.value = ArchiveRestoreState.Restoring
+        container.usageRepository.restoreLegacyBackup().fold(
+            onSuccess = {
+                _archiveRestoreState.value = ArchiveRestoreState.Restored
+                refreshStoredDataSummary()
+                refresh()
+                WidgetUpdateDispatcher.updateAll(container.applicationContext)
+            },
+            onFailure = {
+                _archiveRestoreState.value = ArchiveRestoreState.Error(
+                    it.message ?: "The backup could not be restored. Your compact archive is unchanged.",
+                )
+            },
+        )
+    }
+
+    fun dismissArchiveRestoreResult() {
+        _archiveRestoreState.value = ArchiveRestoreState.Idle
+    }
+
+    fun deleteArchiveBackup() = viewModelScope.launch {
+        if (_archiveBackupDeleteState.value == ArchiveBackupDeleteState.Deleting) return@launch
+        _archiveBackupDeleteState.value = ArchiveBackupDeleteState.Deleting
+        container.usageRepository.deleteLegacyBackup().fold(
+            onSuccess = {
+                _archiveBackupDeleteState.value = ArchiveBackupDeleteState.Deleted
+                refreshStoredDataSummary()
+            },
+            onFailure = {
+                _archiveBackupDeleteState.value = ArchiveBackupDeleteState.Error(
+                    it.message ?: "The safety backup could not be deleted. Try again.",
+                )
+            },
+        )
+    }
+
+    fun dismissArchiveBackupDeleteResult() {
+        _archiveBackupDeleteState.value = ArchiveBackupDeleteState.Idle
     }
 
     fun completeOnboarding(versionCheckEnabled: Boolean) = viewModelScope.launch {

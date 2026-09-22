@@ -37,7 +37,7 @@ Captured from the connected Android emulator running Still 0.9.0 with Usage Acce
 
 Still uses Kotlin, Jetpack Compose, Material 3, Navigation Compose, Coroutines/Flow, and DataStore Preferences. Platform event collection lives in `data/usage`, pure calculation code in `domain/analytics`, immutable models in `domain/model`, and screen-focused composables under `ui`.
 
-`UsageStatsDataSource` converts Android `UsageEvents` into a small internal event model. `LocalUsageArchive` stores normalized daily/app totals in SQLite and gzip-compresses the event streams that Android still exposes. A native periodic job refreshes the archive twice daily. Pure Kotlin analyzers reconstruct foreground intervals, group real phone-use sessions, distinguish wakeups from unlocks, aggregate app use, build the Dayline, and calculate same-time baselines. ViewModels perform queries outside composition and expose stable UI state.
+`UsageStatsDataSource` converts Android `UsageEvents` into a small internal event model. `LocalUsageArchive` stores a shared app dictionary, compact daily app totals and a versioned, delta-encoded event stream that the app can rebuild into visible statistics. A native periodic job refreshes the archive twice daily. Pure Kotlin analyzers reconstruct foreground intervals, group real phone-use sessions, distinguish wakeups from unlocks, aggregate app use, build the Dayline, and calculate same-time baselines. ViewModels perform queries outside composition and expose stable UI state. The format and reconstruction path are documented in [`docs/DATA_ARCHIVE_FORMAT.md`](docs/DATA_ARCHIVE_FORMAT.md).
 
 ## Usage access
 
@@ -47,7 +47,7 @@ Android exposes usage statistics through `UsageStatsManager`. Still declares `an
 
 Still reads Android's local usage history and processes and archives it only on the device. The usage database is excluded from Android cloud backup and device transfer. Users can turn off **Save usage history** in Settings; confirming this deletes the archive and stops future archival while leaving current screen-time reads available.
 
-The local usage archive contains app package names and labels; foreground/background, screen and keyguard event timestamps; daily per-app durations and open counts; daily screen time, unlocks, wakeups and longest break; and derived session counts, quick checks, longest sessions, first/last use, hourly activity, and frequent app-switch pairs. Event streams use a package dictionary, timestamp deltas, and gzip compression.
+The local usage archive contains app package names and labels; compact foreground, screen and keyguard transitions; and daily per-app durations and open counts. Daily screen time, unlocks, wakeups, sessions, quick checks, breaks, first/last use, hourly activity, and frequent app switches are rebuilt when needed instead of stored redundantly. Event streams use one-second timestamp deltas, variable-length integers, a package dictionary, and gzip compression.
 
 DataStore keeps app preferences: onboarding completion, appearance, the last destination, widget configuration, update-check consent and channel, and postponed update reminders. A downloaded updater APK can temporarily exist in the app cache. Still contains no telemetry, advertisements, account system, or remote analytics SDK; its Internet permission is used only by the optional, consent-gated release updater.
 

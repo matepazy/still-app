@@ -102,6 +102,22 @@ class UsageRepository(
         syncMutex.withLock { archive.storedDataSummary() }
     }
 
+    suspend fun migrationNotice(): ArchiveMigrationNotice? = withContext(Dispatchers.IO) {
+        syncMutex.withLock { archive.migrationNotice() }
+    }
+
+    suspend fun acknowledgeMigrationNotice() = withContext(Dispatchers.IO) {
+        syncMutex.withLock { archive.acknowledgeMigrationNotice() }
+    }
+
+    suspend fun restoreLegacyBackup(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching { syncMutex.withLock { archive.restoreLegacyBackup() } }
+    }
+
+    suspend fun deleteLegacyBackup(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching { syncMutex.withLock { archive.deleteLegacyBackup() } }
+    }
+
     suspend fun appDetail(packageName: String, dashboard: UsageDashboard): AppDetail? = withContext(Dispatchers.Default) {
         val usage = dashboard.today.apps.firstOrNull { it.app.packageName == packageName } ?: return@withContext null
         val daily = dashboard.history.sortedBy { it.date }.map { day ->

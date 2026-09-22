@@ -75,6 +75,8 @@ import app.still.BuildConfig
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.DaylineWidgetLabel
 import app.still.data.usage.StoredDataSummary
+import app.still.data.usage.ArchiveMigrationNotice
+import app.still.data.usage.ArchiveStorageFormat
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.DaylineKind
 import app.still.data.settings.UserSettings
@@ -92,8 +94,15 @@ import app.still.ui.components.StillWordmark
 import app.still.ui.theme.StillSpacing
 import app.still.ui.components.StillIcons
 import app.still.update.UpdateState
+import app.still.ui.ArchiveRestoreState
+import app.still.ui.ArchiveBackupDeleteState
 import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.text.NumberFormat
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,6 +131,10 @@ fun SettingsScreen(
     onWidgetClick: () -> Unit,
     onStoredDataClick: () -> Unit,
     onSaveUsageHistoryChange: (Boolean) -> Unit = {},
+    storedDataSummary: StoredDataSummary? = null,
+    archiveRestoreState: ArchiveRestoreState = ArchiveRestoreState.Idle,
+    onRestoreArchive: () -> Unit = {},
+    onDismissArchiveRestoreResult: () -> Unit = {},
     modifier: Modifier = Modifier,
     updateState: UpdateState = UpdateState.Idle,
     onVersionCheckChange: (Boolean) -> Unit = {},
@@ -131,6 +144,7 @@ fun SettingsScreen(
     var themeDialog by remember { mutableStateOf(false) }
     var updateChannelDialog by remember { mutableStateOf(false) }
     var stopSavingDialog by remember { mutableStateOf(false) }
+    var restoreArchiveDialog by remember { mutableStateOf(false) }
     Column(
         modifier
             .fillMaxSize()
@@ -166,7 +180,7 @@ fun SettingsScreen(
             }
         }
 
-        SectionTitle("Privacy & data")
+        SectionTitle("Data")
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
             Column {
                 SettingSwitch(
@@ -187,6 +201,21 @@ fun SettingsScreen(
                     title = "Data stored on this device",
                     supporting = "See exactly what Still keeps locally",
                     onClick = onStoredDataClick,
+                )
+                Hairline()
+                SettingRow(
+                    title = "Restore backup",
+                    supporting = when {
+                        archiveRestoreState == ArchiveRestoreState.Restoring -> "Restoring previous archive…"
+                        storedDataSummary == null -> "Checking for a migration backup…"
+                        storedDataSummary.storageFormat == ArchiveStorageFormat.Legacy -> "Previous archive format is active"
+                        storedDataSummary.backupAvailable -> "Return to the archive saved before compression"
+                        else -> "No migration backup is available"
+                    },
+                    enabled = storedDataSummary?.let {
+                        it.backupAvailable && it.storageFormat == ArchiveStorageFormat.Compact
+                    } == true && archiveRestoreState != ArchiveRestoreState.Restoring,
+                    onClick = { restoreArchiveDialog = true },
                 )
             }
         }
@@ -287,14 +316,118 @@ fun SettingsScreen(
             },
         )
     }
+    if (restoreArchiveDialog) {
+        AlertDialog(
+            onDismissRequest = { restoreArchiveDialog = false },
+            title = { Text("Restore the previous archive?") },
+            text = {
+                Text(
+                    "Still will switch back to the archive format used before migration. History recorded since then will be kept, " +
+                        "and nothing changes unless the backup restores successfully.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        restoreArchiveDialog = false
+                        onRestoreArchive()
+                    },
+                ) { Text("Restore backup") }
+            },
+            dismissButton = {
+                TextButton(onClick = { restoreArchiveDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+    when (archiveRestoreState) {
+        ArchiveRestoreState.Restored -> AlertDialog(
+            onDismissRequest = onDismissArchiveRestoreResult,
+            title = { Text("Backup restored") },
+            text = { Text("Still is using the previous archive format again. Your saved history is intact.") },
+            confirmButton = { TextButton(onClick = onDismissArchiveRestoreResult) { Text("Done") } },
+        )
+        is ArchiveRestoreState.Error -> AlertDialog(
+            onDismissRequest = onDismissArchiveRestoreResult,
+            title = { Text("Backup wasn’t restored") },
+            text = { Text(archiveRestoreState.message) },
+            confirmButton = { TextButton(onClick = onDismissArchiveRestoreResult) { Text("Close") } },
+        )
+        ArchiveRestoreState.Idle, ArchiveRestoreState.Restoring -> Unit
+    }
+}
+
+@Composable
+fun ArchiveMigrationDialog(
+    notice: ArchiveMigrationNotice,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val activeSaved = Formatter.formatShortFileSize(context, notice.activeBytesSaved)
+    val backupSize = Formatter.formatShortFileSize(context, notice.backupSizeBytes)
+    val resultText = when {
+        notice.netBytesSaved > 0L ->
+            "That frees ${Formatter.formatShortFileSize(context, notice.netBytesSaved)} on this device, including the backup."
+        notice.activeBytesSaved > 0L ->
+            "The active archive is $activeSaved smaller. Keeping the $backupSize safety backup currently uses " +
+                "${Formatter.formatShortFileSize(context, -notice.netBytesSaved)} more in total."
+        else ->
+            "The compact archive and its $backupSize safety backup currently use " +
+                "${Formatter.formatShortFileSize(context, -notice.netBytesSaved)} more in total."
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { StoredDataIcon(StillIcons.Storage) },
+        title = { Text("Usage history upgraded") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                MigrationDialogRow(
+                    icon = StillIcons.Apps,
+                    title = "Compact history",
+                    body = "Still rebuilt your saved history so the app can recreate details when needed.",
+                )
+                MigrationDialogRow(
+                    icon = StillIcons.Storage,
+                    title = "Storage",
+                    body = resultText,
+                )
+                MigrationDialogRow(
+                    icon = StillIcons.History,
+                    title = "Safety backup",
+                    body = "Restore it from Settings › Data if anything looks wrong, or delete it later from Data stored on this device.",
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Got it") } },
+    )
+}
+
+@Composable
+private fun MigrationDialogRow(@DrawableRes icon: Int, title: String, body: String) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+    ) {
+        StoredDataIcon(icon)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(StillSpacing.small),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
 
 @Composable
 fun StoredDataScreen(
     summary: StoredDataSummary?,
+    archiveBackupDeleteState: ArchiveBackupDeleteState = ArchiveBackupDeleteState.Idle,
+    onDeleteArchiveBackup: () -> Unit = {},
+    onDismissArchiveBackupDeleteResult: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    var deleteBackupDialog by remember { mutableStateOf(false) }
     Column(
         modifier
             .fillMaxSize()
@@ -302,98 +435,224 @@ fun StoredDataScreen(
             .padding(horizontal = StillSpacing.large),
     ) {
         Text(
-            "Still keeps a private, on-device history so it can show patterns over days, weeks and months. " +
-                "This page describes the kinds of data stored — it never displays your raw records.",
+            "A private summary of what Still keeps locally. Raw usage records are never shown here.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = StillSpacing.large),
         )
 
-        SectionTitle("At a glance")
-        TonalPanel(Modifier.fillMaxWidth()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
-            ) {
-                StoredDataIcon(StillIcons.Storage)
-                Column {
-                    Text(
-                        summary?.let {
-                            "${NumberFormat.getIntegerInstance().format(it.entryCount)} usage ${if (it.entryCount == 1L) "entry" else "entries"}"
-                        } ?: "Counting entries…",
-                        style = MaterialTheme.typography.titleMedium,
+        SectionTitle("Overview")
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            Column {
+                StoredDataFact(
+                    label = "Saved history",
+                    value = summary?.let {
+                        val days = NumberFormat.getIntegerInstance().format(it.dayCount)
+                        val apps = NumberFormat.getIntegerInstance().format(it.appCount)
+                        "$days ${if (it.dayCount == 1L) "day" else "days"} · $apps ${if (it.appCount == 1L) "app" else "apps"}"
+                    } ?: "Counting…",
+                )
+                Hairline()
+                StoredDataFact(
+                    label = "Coverage",
+                    value = summary?.let(::formatCoverage) ?: "Checking…",
+                )
+                Hairline()
+                StoredDataFact(
+                    label = "Last updated",
+                    value = summary?.lastUpdatedMillis?.let(::formatLastUpdated) ?: if (summary == null) "Checking…" else "Not yet",
+                )
+                Hairline()
+                StoredDataFact(
+                    label = "Total storage",
+                    value = summary?.let { Formatter.formatShortFileSize(context, it.sizeBytes) } ?: "Calculating…",
+                )
+                if (summary != null) {
+                    Hairline()
+                    StoredDataFact(
+                        label = "Archive format",
+                        value = if (summary.storageFormat == ArchiveStorageFormat.Compact) "Compact" else "Previous",
                     )
-                    Text(
-                        summary?.let { "${Formatter.formatShortFileSize(context, it.sizeBytes)} on this device" }
-                            ?: "Calculating size…",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                }
+                if (summary?.backupAvailable == true) {
+                    Hairline()
+                    StoredDataFact(
+                        label = "Safety backup",
+                        value = Formatter.formatShortFileSize(context, summary.backupSizeBytes),
                     )
                 }
             }
         }
 
-        StoredDataSection(
-            title = "Phone and app activity",
-            icon = StillIcons.Apps,
-            body = "Which apps were used, their app names and identifiers, roughly when they were in the foreground, " +
-                "how long they were used and how often they were opened. Still also keeps screen-on, screen-off and lock-state events.",
-        )
-        StoredDataSection(
-            title = "Daily patterns",
-            icon = StillIcons.Timeline,
-            body = "Daily screen time, unlocks, wakeups and longest breaks; phone-use sessions and quick checks; " +
-                "first and last use, activity by hour, and apps that are frequently switched between.",
-        )
-        StoredDataSection(
-            title = "Your preferences",
-            icon = StillIcons.Settings,
-            body = "Onboarding completion, theme and wallpaper-color choices, the last screen you visited, " +
-                "widget appearance, and update-check preferences or reminders.",
-        )
-        StoredDataSection(
-            title = "Temporary update file",
-            icon = StillIcons.Download,
-            body = "If you download an app update, its APK may stay in Still’s cache until Android clears it or a newer download replaces it.",
-        )
+        if (summary?.backupAvailable == true && summary.storageFormat == ArchiveStorageFormat.Compact) {
+            SectionTitle("Safety backup")
+            TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+                SettingActionRow(
+                    title = "Delete backup",
+                    supporting = if (archiveBackupDeleteState == ArchiveBackupDeleteState.Deleting) {
+                        "Deleting the previous ${Formatter.formatShortFileSize(context, summary.backupSizeBytes)} archive…"
+                    } else {
+                        "Free ${Formatter.formatShortFileSize(context, summary.backupSizeBytes)} · This removes the restore option"
+                    },
+                    icon = StillIcons.Delete,
+                    enabled = archiveBackupDeleteState != ArchiveBackupDeleteState.Deleting,
+                    onClick = { deleteBackupDialog = true },
+                )
+            }
+        }
 
-        TonalPanel(Modifier.fillMaxWidth()) {
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
-            ) {
-                StoredDataIcon(StillIcons.Privacy)
-                Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                    Text("Kept private", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Usage history is excluded from Android backup and device transfer. Still has no account and does not upload analytics or usage history.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+        SectionTitle("What is kept")
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            Column {
+                StoredDataItem(
+                    title = "Usage history",
+                    icon = StillIcons.Apps,
+                    body = if (summary?.storageFormat == ArchiveStorageFormat.Legacy) {
+                        "App, screen and lock events with their original timestamps."
+                    } else {
+                        "Compact app, screen and lock transitions, rounded to the second."
+                    },
+                )
+                Hairline()
+                StoredDataItem(
+                    title = "Daily app totals",
+                    icon = StillIcons.Timeline,
+                    body = "App identity, time used and opens. Sessions, quick checks and patterns are rebuilt when needed.",
+                )
+                Hairline()
+                StoredDataItem(
+                    title = "App preferences",
+                    icon = StillIcons.Settings,
+                    body = "Theme, widgets, navigation and update settings. A downloaded update may remain temporarily in cache.",
+                )
+            }
+        }
+
+        Spacer(Modifier.height(StillSpacing.large))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = StillSpacing.small),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+        ) {
+            StoredDataIcon(StillIcons.Privacy)
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                Text("Stays on this device", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Usage history is excluded from Android backup and device transfer. Still has no account and does not upload analytics or usage history.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
+
+    if (deleteBackupDialog) {
+        AlertDialog(
+            onDismissRequest = { deleteBackupDialog = false },
+            icon = { StoredDataIcon(StillIcons.Delete) },
+            title = { Text("Delete the safety backup?") },
+            text = {
+                Text(
+                    "This permanently deletes the previous ${summary?.let { Formatter.formatShortFileSize(context, it.backupSizeBytes) } ?: ""} " +
+                        "archive. Your compact history stays intact, but Restore backup will no longer be available.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        deleteBackupDialog = false
+                        onDeleteArchiveBackup()
+                    },
+                ) {
+                    Text("Delete backup", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { deleteBackupDialog = false }) { Text("Cancel") } },
+        )
+    }
+    when (archiveBackupDeleteState) {
+        ArchiveBackupDeleteState.Deleted -> AlertDialog(
+            onDismissRequest = onDismissArchiveBackupDeleteResult,
+            icon = { StoredDataIcon(StillIcons.Storage) },
+            title = { Text("Backup deleted") },
+            text = { Text("The compact archive is unchanged. The previous-format backup and its restore option have been removed.") },
+            confirmButton = { TextButton(onClick = onDismissArchiveBackupDeleteResult) { Text("Done") } },
+        )
+        is ArchiveBackupDeleteState.Error -> AlertDialog(
+            onDismissRequest = onDismissArchiveBackupDeleteResult,
+            icon = { StoredDataIcon(StillIcons.Error) },
+            title = { Text("Backup wasn’t deleted") },
+            text = { Text(archiveBackupDeleteState.message) },
+            confirmButton = { TextButton(onClick = onDismissArchiveBackupDeleteResult) { Text("Close") } },
+        )
+        ArchiveBackupDeleteState.Idle, ArchiveBackupDeleteState.Deleting -> Unit
+    }
 }
 
 @Composable
-private fun StoredDataSection(title: String, @DrawableRes icon: Int, body: String) {
-    SectionTitle(title)
-    TonalPanel(Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+private fun StoredDataFact(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = StillSpacing.large, vertical = StillSpacing.medium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Text(value, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+private fun StoredDataItem(title: String, @DrawableRes icon: Int, body: String) {
+    Row(
+        modifier = Modifier.padding(StillSpacing.large),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+    ) {
+        StoredDataIcon(icon)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(StillSpacing.small),
         ) {
-            StoredDataIcon(icon)
+            Text(title, style = MaterialTheme.typography.titleMedium)
             Text(
                 body,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
             )
         }
     }
+}
+
+private fun formatCoverage(summary: StoredDataSummary): String {
+    val oldest = summary.oldestDate ?: return "No saved history"
+    val newest = summary.newestDate ?: return "No saved history"
+    if (oldest == newest) return oldest.format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault()))
+    val startPattern = if (oldest.year == newest.year) "MMM d" else "MMM d, yyyy"
+    val endPattern = "MMM d, yyyy"
+    return "${oldest.format(DateTimeFormatter.ofPattern(startPattern, Locale.getDefault()))} – " +
+        newest.format(DateTimeFormatter.ofPattern(endPattern, Locale.getDefault()))
+}
+
+private fun formatLastUpdated(timestampMillis: Long): String {
+    val zone = ZoneId.systemDefault()
+    val updated = Instant.ofEpochMilli(timestampMillis).atZone(zone)
+    val today = LocalDate.now(zone)
+    val day = when (updated.toLocalDate()) {
+        today -> "Today"
+        today.minusDays(1) -> "Yesterday"
+        else -> updated.format(DateTimeFormatter.ofPattern("MMM d", Locale.getDefault()))
+    }
+    return "$day, ${updated.format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()))}"
 }
 
 @Composable
@@ -1356,20 +1615,29 @@ private fun SectionTitle(text: String) {
 private fun SettingRow(
     title: String,
     supporting: String,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Icon(painterResource(StillIcons.ChevronRight), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(
+            painterResource(StillIcons.ChevronRight),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else .38f),
+        )
     }
 }
 
@@ -1410,17 +1678,22 @@ private fun SettingActionRow(
     title: String,
     supporting: String,
     icon: Int,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text(
                 supporting,
                 style = MaterialTheme.typography.bodySmall,
@@ -1430,7 +1703,7 @@ private fun SettingActionRow(
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else .38f),
         )
     }
 }
