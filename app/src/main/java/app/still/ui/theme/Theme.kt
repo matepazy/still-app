@@ -1,6 +1,7 @@
 package app.still.ui.theme
 
 import android.app.Activity
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,7 +10,9 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
@@ -103,8 +106,13 @@ fun StillTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         val window = (context as Activity).window
-        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !dark
-        WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !dark
+        SideEffect {
+            // Keep the activity surface behind Compose in sync with the selected app theme.
+            // Android exposes this surface while animating predictive back to the launcher/widget.
+            window.setBackgroundDrawable(ColorDrawable(colors.background.toArgb()))
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !dark
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !dark
+        }
     }
     MaterialTheme(colorScheme = colors, typography = StillTypography, content = content)
 }

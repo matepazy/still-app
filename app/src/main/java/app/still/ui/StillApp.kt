@@ -1,6 +1,7 @@
 package app.still.ui
 
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -206,8 +207,21 @@ private fun MainNavigation(
                 transformOrigin = TransformOrigin.Center,
             )
         },
+        predictivePopEnterTransition = { _ -> EnterTransition.None },
+        predictivePopExitTransition = { _ ->
+            scaleOut(
+                targetScale = 0.9f,
+                transformOrigin = TransformOrigin.Center,
+            )
+        },
     ) {
-        composable(TodayRoute) {
+        composable(
+            route = TodayRoute,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
+        ) {
             DestinationScaffold(
                 topBar = { TodayTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(TodayRoute, navController) },
@@ -223,7 +237,13 @@ private fun MainNavigation(
                 )
             }
         }
-        composable(TimelineRoute) {
+        composable(
+            route = TimelineRoute,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
+        ) {
             DestinationScaffold(
                 topBar = { TimelineTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(TimelineRoute, navController) },
@@ -236,7 +256,13 @@ private fun MainNavigation(
                 )
             }
         }
-        composable(AppsRoute) {
+        composable(
+            route = AppsRoute,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
+        ) {
             DestinationScaffold(
                 topBar = { AppsTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(AppsRoute, navController) },
