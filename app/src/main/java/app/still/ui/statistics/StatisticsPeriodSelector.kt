@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsRange
 import java.time.Instant

@@ -110,14 +110,16 @@ class UsageRepository(
                 else -> date.plusDays(1).atStartOfDay(zone).toInstant()
             }
             if (date == today && end.isBefore(date.atStartOfDay(zone).toInstant())) return@map StatisticsCalculator.emptyDay(date)
-            val day = if (cutoff != null && date == today) loadDetailedDay(date, end, zone)
-                else archive.day(date)?.let { stored ->
+            val day = if (date == today) {
+                val start = date.atStartOfDay(zone).toInstant()
+                buildDay(date, end, zone, dataSource.events(start.minus(Duration.ofHours(24)), end))
+            } else archive.day(date)?.let { stored ->
                     if (stored.detailsAvailable) loadDetailedDay(date, end, zone) ?: stored else stored
-                } ?: if (date == today) loadDay(date, end, zone) else null
+                }
             if (day == null) return@map StatisticsCalculator.emptyDay(date)
             val detailed = day.detailsAvailable
             val active = day.dayline.filter { it.kind == app.still.domain.model.DaylineKind.Active }
-            val hours = if (detailed && active.isNotEmpty()) (0..23).map { hour ->
+            val hours = if (detailed) (0..23).map { hour ->
                 val start = date.atTime(hour, 0).atZone(zone).toInstant()
                 val stop = date.atTime(hour, 0).plusHours(1).atZone(zone).toInstant()
                 active.sumOf { segment ->

@@ -82,6 +82,11 @@ import app.still.ui.statistics.StatisticsScreen
 import app.still.ui.statistics.StatisticsTopBar
 import app.still.ui.statistics.StatisticsViewModel
 import app.still.StillApplication
+import app.still.ui.compare.CompareScreen
+import app.still.ui.compare.CompareTopBar
+import app.still.ui.compare.CompareViewModel
+import app.still.domain.model.StatisticsPeriod
+import app.still.domain.model.StatisticsRange
 import java.time.Duration
 import java.time.LocalDate
 
@@ -220,6 +225,7 @@ private fun MainNavigation(
     val selectedDate = runCatching { LocalDate.parse(selectedDateValue) }.getOrDefault(dashboard.today.date)
     val selectedDay = availableDays.firstOrNull { it.date == selectedDate } ?: dashboard.today
     val selectDate: (LocalDate) -> Unit = { selectedDateValue = it.toString() }
+    var compareRange by remember { mutableStateOf(StatisticsPeriod.Week.range(LocalDate.now())) }
 
     NavHost(
         navController = navController,
@@ -312,8 +318,23 @@ private fun MainNavigation(
                 topBar = { StatisticsTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(StatisticsRoute, navController) },
             ) { padding ->
-                StatisticsScreen(statisticsViewModel, onCompare = { }, modifier = Modifier.padding(padding))
+                StatisticsScreen(statisticsViewModel, onCompare = { range ->
+                    compareRange = range
+                    navController.navigate(CompareRoute)
+                }, modifier = Modifier.padding(padding))
             }
+        }
+        composable(CompareRoute) {
+            val compareViewModel: CompareViewModel = viewModel(
+                factory = CompareViewModel.Factory(
+                    (context.applicationContext as StillApplication).container.usageRepository,
+                    settings.appCategoryOverrides,
+                    compareRange,
+                ),
+            )
+            DestinationScaffold(
+                topBar = { CompareTopBar { if (!navController.popBackStack()) navController.navigate(StatisticsRoute) } },
+            ) { padding -> CompareScreen(compareViewModel, Modifier.padding(padding)) }
         }
         composable(AppDetailRoute) { entry ->
             val packageName = entry.arguments?.getString("packageName").orEmpty()
