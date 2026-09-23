@@ -31,6 +31,7 @@ enum class LastDestination {
     Today,
     Timeline,
     Apps,
+    Statistics,
     Settings,
     WidgetSettings,
     ScreenTimeWidgetSettings,

@@ -11,6 +11,7 @@ object StillIcons {
     @DrawableRes val Today = R.drawable.ic_ui_today
     @DrawableRes val Timeline = R.drawable.ic_ui_timeline
     @DrawableRes val Apps = R.drawable.ic_ui_apps
+    @DrawableRes val Statistics = R.drawable.ic_ui_statistics
     @DrawableRes val Settings = R.drawable.ic_ui_settings
     @DrawableRes val Back = R.drawable.ic_ui_back
     @DrawableRes val More = R.drawable.ic_ui_more

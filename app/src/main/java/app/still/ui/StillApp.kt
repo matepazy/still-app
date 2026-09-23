@@ -77,6 +77,8 @@ import app.still.ui.timeline.TimelineScreen
 import app.still.ui.timeline.TimelineTopBar
 import app.still.ui.today.TodayScreen
 import app.still.ui.today.TodayTopBar
+import app.still.ui.statistics.StatisticsScreen
+import app.still.ui.statistics.StatisticsTopBar
 import java.time.Duration
 import java.time.LocalDate
 
@@ -296,6 +298,14 @@ private fun MainNavigation(
                 )
             }
         }
+        composable(StatisticsRoute) {
+            DestinationScaffold(
+                topBar = { StatisticsTopBar { navController.navigate(SettingsRoute) } },
+                bottomBar = { StillNavigationBar(StatisticsRoute, navController) },
+            ) { padding ->
+                StatisticsScreen(modifier = Modifier.padding(padding))
+            }
+        }
         composable(AppDetailRoute) { entry ->
             val packageName = entry.arguments?.getString("packageName").orEmpty()
             val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
@@ -453,7 +463,7 @@ private fun NavHostController.navigateTo(destination: LastDestination) {
                 }
             }
         }
-        LastDestination.Timeline, LastDestination.Apps -> navigate(destination.route) {
+        LastDestination.Timeline, LastDestination.Apps, LastDestination.Statistics -> navigate(destination.route) {
             popUpTo(graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
             restoreState = true
@@ -504,6 +514,7 @@ private fun StillNavigationBar(currentRoute: String, navController: NavHostContr
             Triple(TodayRoute, "Today", StillIcons.Today),
             Triple(TimelineRoute, "Timeline", StillIcons.Timeline),
             Triple(AppsRoute, "Apps", StillIcons.Apps),
+            Triple(StatisticsRoute, "Statistics", StillIcons.Statistics),
         ).forEach { (route, label, icon) ->
             NavigationBarItem(
                 selected = currentRoute == route,

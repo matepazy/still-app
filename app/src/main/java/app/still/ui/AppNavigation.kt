@@ -5,6 +5,8 @@ import app.still.data.settings.LastDestination
 internal const val TodayRoute = "today"
 internal const val TimelineRoute = "timeline"
 internal const val AppsRoute = "apps"
+internal const val StatisticsRoute = "statistics"
+internal const val CompareRoute = "compare"
 internal const val SettingsRoute = "settings"
 internal const val WidgetSettingsRoute = "settings/widget"
 internal const val ScreenTimeWidgetSettingsRoute = "settings/widget/screen-time"
@@ -21,6 +23,7 @@ internal val LastDestination.route: String
         LastDestination.Today -> TodayRoute
         LastDestination.Timeline -> TimelineRoute
         LastDestination.Apps -> AppsRoute
+        LastDestination.Statistics -> StatisticsRoute
         LastDestination.Settings -> SettingsRoute
         LastDestination.WidgetSettings -> WidgetSettingsRoute
         LastDestination.ScreenTimeWidgetSettings -> ScreenTimeWidgetSettingsRoute
@@ -31,6 +34,7 @@ internal fun lastDestinationForRoute(route: String?): LastDestination? = when (r
     TodayRoute -> LastDestination.Today
     TimelineRoute -> LastDestination.Timeline
     AppsRoute -> LastDestination.Apps
+    StatisticsRoute -> LastDestination.Statistics
     SettingsRoute -> LastDestination.Settings
     WidgetSettingsRoute -> LastDestination.WidgetSettings
     ScreenTimeWidgetSettingsRoute -> LastDestination.ScreenTimeWidgetSettings
