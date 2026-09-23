@@ -57,7 +57,7 @@ fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
             Text("Scan a code", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(StillSpacing.large))
             Text("Point your camera at your friend's Still QR code.", modifier = Modifier.padding(horizontal = StillSpacing.large))
             Spacer(Modifier.height(StillSpacing.medium))
-            CompareScanner(viewModel::onScanned)
+            CompareScanner(viewModel::onScanned, Modifier.weight(1f))
         }
         return
     }

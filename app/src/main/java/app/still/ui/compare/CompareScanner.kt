@@ -44,14 +44,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
-fun CompareScanner(onCode: (String) -> Unit) {
+fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
     LaunchedEffect(Unit) { if (!granted) launcher.launch(Manifest.permission.CAMERA) }
     if (!granted) {
-        Column(Modifier.padding(24.dp)) {
+        Column(modifier.padding(24.dp)) {
             Text("Camera access lets Still scan your friend's QR code. The image stays on this phone.")
             Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) { Text("Allow camera") }
         }
@@ -93,7 +93,7 @@ fun CompareScanner(onCode: (String) -> Unit) {
             executor.shutdown()
         }
     }
-    Box(Modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize()) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
         cameraError?.let { Text(it, modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error) }
         val color = MaterialTheme.colorScheme.primary
