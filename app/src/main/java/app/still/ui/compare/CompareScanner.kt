@@ -60,6 +60,7 @@ fun CompareScanner(onCode: (String) -> Unit) {
     val previewView = remember { PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER } }
     val executor = remember { Executors.newSingleThreadExecutor() }
     val delivered = remember { AtomicBoolean(false) }
+    var cameraError by remember { mutableStateOf<String?>(null) }
     DisposableEffect(owner) {
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -85,7 +86,7 @@ fun CompareScanner(onCode: (String) -> Unit) {
                 }
                 provider.unbindAll()
                 provider.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
-            }
+            }.onFailure { cameraError = "Camera preview is unavailable on this device." }
         }, ContextCompat.getMainExecutor(context))
         onDispose {
             if (future.isDone) runCatching { future.get().unbindAll() }
@@ -94,6 +95,7 @@ fun CompareScanner(onCode: (String) -> Unit) {
     }
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+        cameraError?.let { Text(it, modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error) }
         val color = MaterialTheme.colorScheme.primary
         Canvas(Modifier.fillMaxSize()) {
             val side = size.width * 0.72f

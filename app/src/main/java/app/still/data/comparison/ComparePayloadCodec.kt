@@ -1,6 +1,7 @@
 package app.still.data.comparison
 
 import app.still.domain.model.CompareSnapshot
+import app.still.data.settings.AppCategory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.io.ByteArrayInputStream
@@ -13,7 +14,7 @@ import java.util.zip.GZIPOutputStream
 
 object ComparePayloadCodec {
     private const val PREFIX = "STILL-CMP:1:"
-    private const val MAX_COMPRESSED = 2300
+    private const val MAX_COMPRESSED = 1400
     private const val MAX_JSON = 12000
     private val adapter = Moshi.Builder().add(KotlinJsonAdapterFactory()).build().adapter(CompareSnapshot::class.java)
 
@@ -27,7 +28,7 @@ object ComparePayloadCodec {
     }
 
     fun decode(code: String): Result<CompareSnapshot> = runCatching {
-        require(code.startsWith(PREFIX) && code.length <= 3200) { "This is not a supported Still comparison code." }
+        require(code.startsWith(PREFIX) && code.length <= 2000) { "This is not a supported Still comparison code." }
         val compressed = Base64.getUrlDecoder().decode(code.removePrefix(PREFIX))
         require(compressed.size <= MAX_COMPRESSED) { "Comparison code is too large." }
         val output = ByteArrayOutputStream()
@@ -53,7 +54,7 @@ object ComparePayloadCodec {
         require(snapshot.sessionId.matches(Regex("[0-9a-f]{32}"))) { "Invalid comparison session." }
         require(snapshot.replyTo == null || snapshot.replyTo.matches(Regex("[0-9a-f]{24}")))
         val range = snapshot.range
-        require(range.days in 1..3660 && !range.endInclusive.isAfter(LocalDate.now().plusDays(1)))
+        require(range.days in 1..3660 && !range.endInclusive.isAfter(LocalDate.now()))
         val sharing = snapshot.sharing
         require(snapshot.totalScreenTimeMillis == null || snapshot.totalScreenTimeMillis in 0..(3660L * 24 * 60 * 60 * 1000))
         require(snapshot.averageDailyScreenTimeMillis == null || snapshot.averageDailyScreenTimeMillis in 0..86_400_000L)
@@ -65,8 +66,11 @@ object ComparePayloadCodec {
         require(sharing.categories || snapshot.categories == null)
         require(sharing.apps || snapshot.apps == null)
         require(snapshot.categories.orEmpty().size <= 10 && snapshot.apps.orEmpty().size <= 8)
-        require(snapshot.categories.orEmpty().all { it.name.length <= 40 && it.millis >= 0 })
+        require(snapshot.categories.orEmpty().all { item -> AppCategory.entries.any { it.displayName == item.name } && item.millis >= 0 })
         require(snapshot.apps.orEmpty().all { it.label.length <= 50 && it.millis >= 0 })
-        snapshot.cutoffEpochMillis?.let { require(it in 0..(System.currentTimeMillis() + 300_000)) }
+        snapshot.cutoffEpochMillis?.let {
+            require(range.endInclusive == LocalDate.now())
+            require(it in 0..(System.currentTimeMillis() + 300_000))
+        }
     }
 }

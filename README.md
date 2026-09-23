@@ -29,6 +29,8 @@ Captured from the connected Android emulator running Still 0.9.0 with Usage Acce
 - **Dayline** — a compact timeline that makes fragmented use and longer sessions visually distinct.
 - **Timeline** — reverse-chronological phone sessions with app duration, switch sequence, and day selection.
 - **Apps** — selectable daily usage, opens, share of screen time, and per-app detail with usage history.
+- **Statistics** — local trends across day, week, month, year, or a custom range, with neutral comparisons to the preceding period. Detailed rhythm metrics appear only for days with event history.
+- **Compare with a friend** — exchange two QR codes in person to see a calm, side-by-side comparison without an account, server, or internet connection.
 - **Appearance** — system, light, and dark themes, with optional Android 12+ wallpaper colors.
 - **Local usage archive** — imports the oldest daily usage Android still retains, preserves detailed recent events in compressed form, and keeps the database on-device for long-term statistics.
 - **Private history control** — explains what is stored and lets the user stop archival and delete Still's saved usage history at any time.
@@ -36,6 +38,8 @@ Captured from the connected Android emulator running Still 0.9.0 with Usage Acce
 ## Architecture
 
 Still uses Kotlin, Jetpack Compose, Material 3, Navigation Compose, Coroutines/Flow, and DataStore Preferences. Platform event collection lives in `data/usage`, pure calculation code in `domain/analytics`, immutable models in `domain/model`, and screen-focused composables under `ui`.
+
+Range calculations live in `domain/statistics` and read the existing local archive through `UsageRepository`. Detailed sessions and hourly patterns depend on the event data Android originally provided; aggregate-only days still contribute screen time, apps, and categories. Comparison snapshots are derived in `domain/compare`, encoded locally, and exchanged through QR codes using CameraX and ZXing.
 
 `UsageStatsDataSource` converts Android `UsageEvents` into a small internal event model. `LocalUsageArchive` stores a shared app dictionary, compact daily app totals and a versioned, delta-encoded event stream that the app can rebuild into visible statistics. A native periodic job refreshes the archive twice daily. Pure Kotlin analyzers reconstruct foreground intervals, group real phone-use sessions, distinguish wakeups from unlocks, aggregate app use, build the Dayline, and calculate same-time baselines. ViewModels perform queries outside composition and expose stable UI state. The format and reconstruction path are documented in [`docs/DATA_ARCHIVE_FORMAT.md`](docs/DATA_ARCHIVE_FORMAT.md).
 
@@ -50,6 +54,8 @@ Still reads Android's local usage history and processes and archives it only on 
 The local usage archive contains app package names and labels; compact foreground, screen and keyguard transitions; and daily per-app durations and open counts. Daily screen time, unlocks, wakeups, sessions, quick checks, breaks, first/last use, hourly activity, and frequent app switches are rebuilt when needed instead of stored redundantly. Event streams use one-second timestamp deltas, variable-length integers, a package dictionary, and gzip compression.
 
 DataStore keeps app preferences: onboarding completion, appearance, the last destination, widget configuration, update-check consent and channel, and postponed update reminders. A downloaded updater APK can temporarily exist in the app cache. Still contains no telemetry, advertisements, account system, or remote analytics SDK; its Internet permission is used only by the optional, consent-gated release updater.
+
+Friend comparison uses only the camera permission. The first QR establishes a time cutoff when the selected range includes today, and the reply carries the same cutoff and session ID. QR codes contain only selected summary values, never raw events or the archive. Individual app labels are opt-in; package names are omitted. Received snapshots stay in the Compare ViewModel and disappear when that flow ends. Still does not verify that another person's values are tamper-proof.
 
 ## Build
 

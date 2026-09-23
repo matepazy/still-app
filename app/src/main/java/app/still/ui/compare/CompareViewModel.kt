@@ -15,7 +15,9 @@ import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsRange
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
 
@@ -47,7 +49,11 @@ class CompareViewModel(
     fun selectPeriod(period: StatisticsPeriod) {
         if (period != StatisticsPeriod.Custom) _state.value = _state.value.copy(period = period, range = period.range(LocalDate.now()), error = null)
     }
-    fun selectCustom(range: StatisticsRange) { _state.value = _state.value.copy(period = StatisticsPeriod.Custom, range = range, error = null) }
+    fun selectCustom(range: StatisticsRange) {
+        if (range.days > 3660 || range.endInclusive.isAfter(LocalDate.now())) {
+            _state.value = _state.value.copy(error = "Choose a range ending today or earlier, up to ten years long.")
+        } else _state.value = _state.value.copy(period = StatisticsPeriod.Custom, range = range, error = null)
+    }
     fun scanFriend() {
         if (_state.value.sharing.flags() == 0) {
             _state.value = _state.value.copy(error = "Choose at least one thing to share.")
@@ -120,9 +126,11 @@ class CompareViewModel(
 
     private suspend fun build(range: StatisticsRange, sharing: CompareSharing, cutoff: Instant?, sessionId: String? = null, replyTo: String? = null): CompareSnapshot {
         val days = repository.statisticsDays(range, cutoff)
-        return CompareSnapshotBuilder.build(range, days, sharing,
-            { packageName -> overrides[packageName] ?: repository.categoryFor(packageName) },
-            sessionId ?: java.util.UUID.randomUUID().toString().replace("-", ""), cutoff, replyTo)
+        return withContext(Dispatchers.Default) {
+            CompareSnapshotBuilder.build(range, days, sharing,
+                { packageName -> overrides[packageName] ?: repository.categoryFor(packageName) },
+                sessionId ?: java.util.UUID.randomUUID().toString().replace("-", ""), cutoff, replyTo)
+        }
     }
 
     class Factory(private val repository: UsageRepository, private val overrides: Map<String, AppCategory>, private val range: StatisticsRange) : ViewModelProvider.Factory {

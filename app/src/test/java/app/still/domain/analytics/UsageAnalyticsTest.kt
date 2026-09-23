@@ -150,7 +150,7 @@ class UsageAnalyticsTest {
         val one = AppInfo("app.one", "one")
         val two = AppInfo("app.two", "two")
         val sessions = listOf(
-            UsageSession(at(30), at(31), emptyList(), listOf(one)),
+            UsageSession(at(30), at(30).plusSeconds(59), emptyList(), listOf(one)),
             UsageSession(at(90), at(100), emptyList(), listOf(one, two, one)),
         )
         val usage = DailyUsage(

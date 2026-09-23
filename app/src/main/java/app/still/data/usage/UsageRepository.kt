@@ -40,6 +40,7 @@ class UsageRepository(
     private val packageManager = context.packageManager
     private val launcherApps = context.getSystemService(LauncherApps::class.java)
     private val metadata = mutableMapOf<String, AppInfo>()
+    private val categoryCache = mutableMapOf<String, AppCategory>()
     private val homePackage: String? by lazy {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
@@ -140,11 +141,15 @@ class UsageRepository(
                 hours,
                 if (detailed) day.sessions.sumOf { (it.sequence.size - 1).coerceAtLeast(0) } else null,
                 day.apps,
+                if (detailed) day.sessions.size else null,
+                if (detailed) day.sessions.sumOf { it.duration.toMillis() } else null,
             )
         }
     }
 
-    fun categoryFor(packageName: String): AppCategory = AppCategory.forPackage(packageManager, packageName)
+    fun categoryFor(packageName: String): AppCategory = synchronized(categoryCache) {
+        categoryCache.getOrPut(packageName) { AppCategory.forPackage(packageManager, packageName) }
+    }
 
     suspend fun clearHistory(): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching { syncMutex.withLock { archive.clearHistory() } }

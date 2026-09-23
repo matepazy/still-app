@@ -30,7 +30,10 @@ object CompareSnapshotBuilder {
             categories = if (sharing.categories) apps.groupBy { categoryOf(it.app.packageName).displayName }
                 .map { (name, values) -> CompareCategory(name, values.sumOf { it.duration.toMillis() }) }
                 .sortedByDescending { it.millis } else null,
-            apps = if (sharing.apps) apps.groupBy { it.app.label }.map { (label, values) ->
+            apps = if (sharing.apps) apps.groupBy { usage ->
+                usage.app.label.takeUnless { it == usage.app.packageName || it.matches(Regex("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")) }
+                    ?: "Unknown app"
+            }.map { (label, values) ->
                 CompareApp(label.take(50), values.sumOf { it.duration.toMillis() })
             }.sortedByDescending { it.millis }.take(8) else null,
         )

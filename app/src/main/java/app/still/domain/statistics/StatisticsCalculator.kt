@@ -30,11 +30,15 @@ object StatisticsCalculator {
         val hourly = hourlyDays.takeIf { it.isNotEmpty() }?.let { rows ->
             (0..23).map { hour -> rows.sumOf { it[hour] } / rows.size }
         }
+        val previousApps = previous.flatMap { it.apps.orEmpty() }.groupBy { it.app.packageName }
+            .mapValues { (_, values) -> values.sumOf { it.duration.toMillis() } }
         val apps = days.flatMap { it.apps.orEmpty() }
             .groupBy { it.app.packageName }
             .map { (id, values) ->
                 val total = values.fold(Duration.ZERO) { sum, item -> sum.plus(item.duration) }
-                StatisticsApp(values.first().app.label, id, total, Duration.ofMillis(total.toMillis() / valid.size.coerceAtLeast(1)))
+                val old = previousApps[id] ?: 0L
+                StatisticsApp(values.first().app.label, id, total, Duration.ofMillis(total.toMillis() / valid.size.coerceAtLeast(1)),
+                    if (previous.any { it.apps != null }) Duration.ofMillis(total.toMillis() - old) else null)
             }.sortedByDescending { it.total }.take(10)
         fun categoryTotals(source: List<StatisticsDay>): Map<AppCategory, Long> = source.flatMap { it.apps.orEmpty() }
             .groupBy { categoryOf(it.app.packageName) }
@@ -66,7 +70,8 @@ object StatisticsCalculator {
             priorAverage,
             days.mapNotNull { it.checkIns }.takeIf { it.isNotEmpty() }?.average(),
             days.mapNotNull { it.quickChecks }.takeIf { it.isNotEmpty() }?.average(),
-            null,
+            days.mapNotNull { day -> if (day.sessionCount != null && day.sessionTotalMillis != null) day.sessionCount to day.sessionTotalMillis else null }
+                .takeIf { it.isNotEmpty() }?.let { pairs -> val count = pairs.sumOf { it.first }; if (count > 0) Duration.ofMillis(pairs.sumOf { it.second } / count) else null },
             days.mapNotNull { it.longestSession }.maxOrNull(),
             days.mapNotNull { it.longestBreak?.toMillis() }.takeIf { it.isNotEmpty() }?.average()?.toLong()?.let(Duration::ofMillis),
             days.mapNotNull { it.firstUseMinute }.takeIf { it.isNotEmpty() }?.average()?.toInt(),
@@ -76,6 +81,17 @@ object StatisticsCalculator {
                 .takeIf { it.isNotEmpty() }?.let { pairs -> val count = pairs.sumOf { it.first }; if (count > 0) pairs.sumOf { it.second }.toDouble() / count else null },
             days.mapNotNull { it.appSwitches }.takeIf { it.isNotEmpty() }?.average(),
             apps, categories, points,
+            days.filter { it.date.dayOfWeek.value <= 5 }.mapNotNull { it.screenTime?.toMillis() }
+                .takeIf { it.isNotEmpty() }?.average()?.toLong()?.let(Duration::ofMillis),
+            days.filter { it.date.dayOfWeek.value > 5 }.mapNotNull { it.screenTime?.toMillis() }
+                .takeIf { it.isNotEmpty() }?.average()?.toLong()?.let(Duration::ofMillis),
+            days.filter { it.screenTime != null }.groupBy { it.date.dayOfWeek }
+                .mapValues { (_, values) -> values.mapNotNull { it.screenTime?.toMillis() }.average() }
+                .maxByOrNull { it.value }?.key,
+            valid.takeIf { it.size > 1 }?.let { values ->
+                val mean = values.average()
+                Duration.ofMillis(kotlin.math.sqrt(values.map { (it - mean) * (it - mean) }.average()).toLong())
+            },
         )
     }
 

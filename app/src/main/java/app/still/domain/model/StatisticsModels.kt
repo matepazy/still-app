@@ -35,9 +35,11 @@ data class StatisticsDay(
     val hourlyMillis: List<Long>?,
     val appSwitches: Int?,
     val apps: List<AppUsage>?,
+    val sessionCount: Int? = null,
+    val sessionTotalMillis: Long? = null,
 )
 
-data class StatisticsApp(val label: String, val packageName: String, val total: Duration, val dailyAverage: Duration)
+data class StatisticsApp(val label: String, val packageName: String, val total: Duration, val dailyAverage: Duration, val change: Duration? = null)
 data class StatisticsCategory(val category: AppCategory, val total: Duration, val share: Double, val change: Duration?)
 data class StatisticsPoint(val label: String, val value: Duration?, val start: LocalDate, val endInclusive: LocalDate)
 
@@ -65,4 +67,8 @@ data class StatisticsSummary(
     val topApps: List<StatisticsApp>,
     val categories: List<StatisticsCategory>,
     val points: List<StatisticsPoint>,
+    val weekdayAverage: Duration? = null,
+    val weekendAverage: Duration? = null,
+    val mostActiveWeekday: java.time.DayOfWeek? = null,
+    val dailyVariability: Duration? = null,
 )

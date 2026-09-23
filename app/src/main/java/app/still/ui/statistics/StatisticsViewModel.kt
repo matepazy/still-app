@@ -11,7 +11,9 @@ import app.still.domain.model.StatisticsSummary
 import app.still.domain.statistics.StatisticsCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 sealed interface StatisticsState {
@@ -22,7 +24,7 @@ sealed interface StatisticsState {
 
 class StatisticsViewModel(
     private val repository: UsageRepository,
-    private val overrides: Map<String, AppCategory>,
+    private var overrides: Map<String, AppCategory>,
 ) : ViewModel() {
     private val today = LocalDate.now()
     private val _state = MutableStateFlow<StatisticsState>(StatisticsState.Loading)
@@ -35,6 +37,13 @@ class StatisticsViewModel(
 
     init { refresh() }
 
+    fun updateCategories(value: Map<String, AppCategory>) {
+        if (overrides != value) {
+            overrides = value
+            refresh()
+        }
+    }
+
     fun select(period: StatisticsPeriod) {
         if (period == StatisticsPeriod.Custom) return
         _period.value = period
@@ -43,6 +52,10 @@ class StatisticsViewModel(
     }
 
     fun selectCustom(range: StatisticsRange) {
+        if (range.days > 3660 || range.endInclusive.isAfter(today)) {
+            _state.value = StatisticsState.Error("Choose a range ending today or earlier, up to ten years long.")
+            return
+        }
         _period.value = StatisticsPeriod.Custom
         _range.value = range
         refresh()
@@ -57,8 +70,10 @@ class StatisticsViewModel(
             runCatching {
                 val current = repository.statisticsDays(selected)
                 val previous = repository.statisticsDays(selected.previous)
-                StatisticsCalculator.calculate(selected, current, previous,
-                    { packageName -> overrides[packageName] ?: repository.categoryFor(packageName) }, period)
+                withContext(Dispatchers.Default) {
+                    StatisticsCalculator.calculate(selected, current, previous,
+                        { packageName -> overrides[packageName] ?: repository.categoryFor(packageName) }, period)
+                }
             }.onSuccess { if (token == request) _state.value = StatisticsState.Ready(it) }
                 .onFailure { if (token == request) _state.value = StatisticsState.Error(it.message ?: "Statistics unavailable") }
         }

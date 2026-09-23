@@ -314,6 +314,7 @@ private fun MainNavigation(
                     settings.appCategoryOverrides,
                 ),
             )
+            LaunchedEffect(settings.appCategoryOverrides) { statisticsViewModel.updateCategories(settings.appCategoryOverrides) }
             DestinationScaffold(
                 topBar = { StatisticsTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(StatisticsRoute, navController) },

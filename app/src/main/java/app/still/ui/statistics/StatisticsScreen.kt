@@ -79,19 +79,30 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, onCompare: (StatisticsRange
                 Spacer(Modifier.height(StillSpacing.medium))
                 Metric("Check-ins per detailed day", summary.checkInsAverage?.let { "%.1f".format(it) })
                 Metric("Quick checks per detailed day", summary.quickChecksAverage?.let { "%.1f".format(it) })
+                Metric("Average session", summary.sessionAverage?.compactDuration())
                 Metric("Longest session", summary.longestSession?.compactDuration())
                 Metric("Average longest break", summary.longestBreakAverage?.compactDuration())
+                Metric("Average first use", summary.firstUseAverageMinute?.let(::clockMinute))
+                Metric("Average last use", summary.lastUseAverageMinute?.let(::clockMinute))
                 Metric("Most active hour", summary.mostActiveHour?.let { "${it.toString().padStart(2, '0')}:00–${((it + 1) % 24).toString().padStart(2, '0')}:00" })
+                Metric("Quick checks / check-ins", summary.quickCheckShare?.let { "${(it * 100).toInt()}%" })
+                Metric("App switches per detailed day", summary.appSwitchesAverage?.let { "%.1f".format(it) })
                 summary.hourlyAverageMillis?.let { hours ->
-                    Text("Typical day", style = MaterialTheme.typography.titleMedium)
+                    Text(if (summary.days.count { it.hourlyMillis != null } > 1) "Typical day" else "Hourly activity", style = MaterialTheme.typography.titleMedium)
                     TypicalDay(hours)
                 }
                 Spacer(Modifier.height(StillSpacing.section))
+                Text("Patterns", style = MaterialTheme.typography.headlineSmall)
+                Metric("Weekday average", summary.weekdayAverage?.compactDuration())
+                Metric("Weekend average", summary.weekendAverage?.compactDuration())
+                Metric("Most active weekday", summary.mostActiveWeekday?.name?.lowercase()?.replaceFirstChar { it.uppercase() })
+                Metric("Daily variation", summary.dailyVariability?.compactDuration())
+                Spacer(Modifier.height(StillSpacing.section))
                 Text("Apps", style = MaterialTheme.typography.headlineSmall)
-                summary.topApps.take(5).forEach { Metric(it.label, it.total.compactDuration()) }
+                summary.topApps.take(5).forEach { Metric(it.label, it.total.compactDuration() + (it.change?.let { change -> " · ${signed(change)}" } ?: "")) }
                 Spacer(Modifier.height(StillSpacing.section))
                 Text("Categories", style = MaterialTheme.typography.headlineSmall)
-                summary.categories.forEach { Metric(it.category.displayName, "${it.total.compactDuration()} · ${(it.share * 100).toInt()}%") }
+                summary.categories.forEach { Metric(it.category.displayName, "${it.total.compactDuration()} · ${(it.share * 100).toInt()}%" + (it.change?.let { change -> " · ${signed(change)}" } ?: "")) }
             }
         }
         Spacer(Modifier.height(StillSpacing.section))
@@ -107,6 +118,9 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, onCompare: (StatisticsRange
         Spacer(Modifier.height(StillSpacing.section))
     }
 }
+
+private fun signed(duration: java.time.Duration): String = (if (duration.isNegative) "−" else "+") + duration.abs().compactDuration()
+private fun clockMinute(minute: Int): String = "${(minute / 60).toString().padStart(2, '0')}:${(minute % 60).toString().padStart(2, '0')}"
 
 @Composable
 private fun Metric(label: String, value: String?) {
