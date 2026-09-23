@@ -60,6 +60,7 @@ import app.still.ui.apps.AppsTopBar
 import app.still.ui.components.StillMark
 import app.still.ui.components.StillIcons
 import app.still.ui.onboarding.OnboardingScreen
+import app.still.ui.onboarding.UsageAccessFlow
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.settings.StoredDataScreen
@@ -110,16 +111,21 @@ fun StillApp(
             } else if (!settings.onboardingComplete) {
                 OnboardingScreen(
                     usageState = state.usage,
-                    onOpenRestrictedSettings = { context.startActivity(viewModel.restrictedSettingsIntent()) },
-                    onOpenUsageSettings = { context.startActivity(viewModel.usageSettingsIntent()) },
+                    hasUsageAccess = viewModel::hasUsageAccess,
+                    usageSettingsIntent = viewModel::usageSettingsIntent,
+                    appInfoIntent = viewModel::restrictedSettingsIntent,
+                    installedFromApk = viewModel::installedFromApk,
                     onComplete = viewModel::completeOnboarding,
                 )
             } else {
                 when (val usage = state.usage) {
                     UsageUiState.Loading -> LoadingScreen()
                     UsageUiState.PermissionRequired -> PermissionRequiredScreen(
-                        onOpenUsageSettings = { context.startActivity(viewModel.usageSettingsIntent()) },
-                        onOpenAppInfo = { context.startActivity(viewModel.restrictedSettingsIntent()) },
+                        hasUsageAccess = viewModel::hasUsageAccess,
+                        usageSettingsIntent = viewModel::usageSettingsIntent,
+                        appInfoIntent = viewModel::restrictedSettingsIntent,
+                        installedFromApk = viewModel::installedFromApk,
+                        onGranted = viewModel::onResume,
                     )
                     is UsageUiState.Error -> ErrorScreen(usage.message, viewModel::refresh)
                     is UsageUiState.Ready -> MainNavigation(
@@ -575,9 +581,13 @@ private fun LoadingScreen() {
 
 @Composable
 internal fun PermissionRequiredScreen(
-    onOpenUsageSettings: () -> Unit,
-    onOpenAppInfo: () -> Unit,
+    hasUsageAccess: () -> Boolean,
+    usageSettingsIntent: () -> android.content.Intent,
+    appInfoIntent: () -> android.content.Intent,
+    installedFromApk: () -> Boolean,
+    onGranted: () -> Unit,
 ) {
+    UsageAccessFlow(hasUsageAccess, usageSettingsIntent, appInfoIntent, installedFromApk, onGranted) { openUsageSettings ->
     Column(
         Modifier.fillMaxSize().padding(horizontal = 32.dp),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
@@ -589,26 +599,20 @@ internal fun PermissionRequiredScreen(
         ) {
             StillMark(size = 42.dp)
         }
-        Text("No usage access yet", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = StillSpacing.large))
+        Text("Allow screen-time access", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = StillSpacing.large))
         Text(
-            "Still needs Usage Access to calculate how long you use each app. Your screen-time history stays on this device.",
+            "Still needs Android's Usage Access permission to calculate how long you use each app. Your usage information is processed and stored on this device.",
             modifier = Modifier.padding(top = StillSpacing.medium, bottom = StillSpacing.large),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Button(
-            onClick = onOpenUsageSettings,
+            onClick = openUsageSettings,
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(25.dp),
-        ) { Text("Open Usage Access") }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            androidx.compose.material3.OutlinedButton(
-                onClick = onOpenAppInfo,
-                modifier = Modifier.padding(top = StillSpacing.small).fillMaxWidth().height(48.dp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-            ) { Text("Setting blocked? Open app info") }
-        }
+        ) { Text("Allow screen-time access") }
+    }
     }
 }
 

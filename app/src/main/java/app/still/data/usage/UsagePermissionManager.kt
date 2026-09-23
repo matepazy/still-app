@@ -3,10 +3,24 @@ package app.still.data.usage
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInstaller
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 
 class UsagePermissionManager(private val context: Context) {
+    fun installedFromApk(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
+        return try {
+            context.packageManager.getInstallSourceInfo(context.packageName).packageSource in setOf(
+                PackageInstaller.PACKAGE_SOURCE_LOCAL_FILE,
+                PackageInstaller.PACKAGE_SOURCE_DOWNLOADED_FILE,
+            )
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun hasUsageAccess(): Boolean {
         val appOps = context.getSystemService(AppOpsManager::class.java)
         val mode = try {

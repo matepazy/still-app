@@ -186,8 +186,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         _archiveBackupDeleteState.value = ArchiveBackupDeleteState.Idle
     }
 
-    fun completeOnboarding(versionCheckEnabled: Boolean) = viewModelScope.launch {
-        container.settingsRepository.completeOnboarding(versionCheckEnabled)
+    fun completeOnboarding() = viewModelScope.launch {
+        if (container.permissionManager.hasUsageAccess()) container.settingsRepository.completeOnboarding()
     }
     fun setTheme(value: ThemePreference) = viewModelScope.launch { container.settingsRepository.setTheme(value) }
     fun setDynamicColors(value: Boolean) = viewModelScope.launch { container.settingsRepository.setDynamicColors(value) }
@@ -346,6 +346,10 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun usageSettingsIntent() = container.permissionManager.usageSettingsIntent()
 
     fun restrictedSettingsIntent() = container.permissionManager.restrictedSettingsIntent()
+
+    fun hasUsageAccess() = container.permissionManager.hasUsageAccess()
+
+    fun installedFromApk() = container.permissionManager.installedFromApk()
 
     class Factory(private val container: AppContainer) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

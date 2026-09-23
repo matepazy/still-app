@@ -155,8 +155,7 @@ class SettingsRepository(private val context: Context) {
         )
     }
 
-    suspend fun completeOnboarding(versionCheckEnabled: Boolean) = context.settingsDataStore.edit {
-        it[Keys.versionCheckEnabled] = versionCheckEnabled
+    suspend fun completeOnboarding() = context.settingsDataStore.edit {
         it[Keys.onboarding] = true
     }
     suspend fun setTheme(value: ThemePreference) = context.settingsDataStore.edit { it[Keys.theme] = value.name }

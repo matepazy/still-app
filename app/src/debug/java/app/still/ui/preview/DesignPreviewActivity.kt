@@ -1,6 +1,8 @@
 package app.still.ui.preview
 
 import android.os.Bundle
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -55,8 +57,8 @@ class DesignPreviewActivity : ComponentActivity() {
 @Composable
 private fun DesignScreen(screen: String) {
     when (screen) {
-        "onboarding" -> OnboardingScreen(UsageUiState.PermissionRequired, {}, {}, { _ -> })
-        "permission" -> PermissionRequiredScreen({}, {})
+        "onboarding" -> OnboardingScreen(UsageUiState.PermissionRequired, { false }, { Intent(Settings.ACTION_SETTINGS) }, { Intent(Settings.ACTION_SETTINGS) }, { false }, {})
+        "permission" -> PermissionRequiredScreen({ false }, { Intent(Settings.ACTION_SETTINGS) }, { Intent(Settings.ACTION_SETTINGS) }, { false }, {})
         "detail" -> Scaffold(topBar = { AppDetailTopBar("Instagram", {}) }) { padding ->
             AppDetailScreen(PreviewFixtures.appDetail, Modifier.padding(padding))
         }
