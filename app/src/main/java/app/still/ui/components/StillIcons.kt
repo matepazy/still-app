@@ -12,6 +12,8 @@ object StillIcons {
     @DrawableRes val Timeline = R.drawable.ic_ui_timeline
     @DrawableRes val Apps = R.drawable.ic_ui_apps
     @DrawableRes val Statistics = R.drawable.ic_ui_statistics
+    @DrawableRes val Compare = R.drawable.ic_ui_compare
+    @DrawableRes val Check = R.drawable.ic_ui_check
     @DrawableRes val Settings = R.drawable.ic_ui_settings
     @DrawableRes val Back = R.drawable.ic_ui_back
     @DrawableRes val More = R.drawable.ic_ui_more

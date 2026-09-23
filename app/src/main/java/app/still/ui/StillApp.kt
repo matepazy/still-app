@@ -316,13 +316,13 @@ private fun MainNavigation(
             )
             LaunchedEffect(settings.appCategoryOverrides) { statisticsViewModel.updateCategories(settings.appCategoryOverrides) }
             DestinationScaffold(
-                topBar = { StatisticsTopBar { navController.navigate(SettingsRoute) } },
+                topBar = { StatisticsTopBar {
+                    compareRange = statisticsViewModel.range.value
+                    navController.navigate(CompareRoute)
+                } },
                 bottomBar = { StillNavigationBar(StatisticsRoute, navController) },
             ) { padding ->
-                StatisticsScreen(statisticsViewModel, onCompare = { range ->
-                    compareRange = range
-                    navController.navigate(CompareRoute)
-                }, modifier = Modifier.padding(padding))
+                StatisticsScreen(statisticsViewModel, modifier = Modifier.padding(padding))
             }
         }
         composable(CompareRoute) {
@@ -334,7 +334,9 @@ private fun MainNavigation(
                 ),
             )
             DestinationScaffold(
-                topBar = { CompareTopBar { if (!navController.popBackStack()) navController.navigate(StatisticsRoute) } },
+                topBar = { CompareTopBar {
+                    if (!compareViewModel.back() && !navController.popBackStack()) navController.navigate(StatisticsRoute)
+                } },
             ) { padding -> CompareScreen(compareViewModel, Modifier.padding(padding)) }
         }
         composable(AppDetailRoute) { entry ->

@@ -11,11 +11,15 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,9 +31,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
@@ -57,7 +70,10 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
         }
         return
     }
-    val previewView = remember { PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER } }
+    val previewView = remember { PreviewView(context).apply {
+        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        scaleType = PreviewView.ScaleType.FILL_CENTER
+    } }
     val executor = remember { Executors.newSingleThreadExecutor() }
     val delivered = remember { AtomicBoolean(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
@@ -93,15 +109,54 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
             executor.shutdown()
         }
     }
-    Box(modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
-        cameraError?.let { Text(it, modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error) }
-        val color = MaterialTheme.colorScheme.primary
+        val frameSide = minOf(maxWidth * 0.76f, maxHeight * 0.55f)
         Canvas(Modifier.fillMaxSize()) {
-            val side = size.width * 0.72f
+            val side = minOf(size.width * 0.76f, size.height * 0.55f)
             val left = (size.width - side) / 2
             val top = (size.height - side) / 2
-            drawRect(color, Offset(left, top), Size(side, side), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx()))
+            val right = left + side
+            val bottom = top + side
+            val shade = Color.Black.copy(alpha = 0.36f)
+            val corner = side * 0.24f
+            val radius = 20.dp.toPx()
+            drawPath(Path().apply {
+                fillType = PathFillType.EvenOdd
+                addRect(Rect(Offset.Zero, size))
+                addRoundRect(RoundRect(left, top, right, bottom, CornerRadius(radius)))
+            }, shade)
+            val stroke = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            listOf(
+                Path().apply {
+                    moveTo(left, top + corner); lineTo(left, top + radius)
+                    arcTo(Rect(left, top, left + 2 * radius, top + 2 * radius), 180f, 90f, false)
+                    lineTo(left + corner, top)
+                },
+                Path().apply {
+                    moveTo(right - corner, top); lineTo(right - radius, top)
+                    arcTo(Rect(right - 2 * radius, top, right, top + 2 * radius), 270f, 90f, false)
+                    lineTo(right, top + corner)
+                },
+                Path().apply {
+                    moveTo(right, bottom - corner); lineTo(right, bottom - radius)
+                    arcTo(Rect(right - 2 * radius, bottom - 2 * radius, right, bottom), 0f, 90f, false)
+                    lineTo(right - corner, bottom)
+                },
+                Path().apply {
+                    moveTo(left + corner, bottom); lineTo(left + radius, bottom)
+                    arcTo(Rect(left, bottom - 2 * radius, left + 2 * radius, bottom), 90f, 90f, false)
+                    lineTo(left, bottom - corner)
+                },
+            ).forEach { drawPath(it, Color.White, style = stroke) }
         }
+        Text("Point at your friend's QR code", modifier = Modifier.align(Alignment.Center)
+            .offset(y = frameSide / 2 + 32.dp)
+            .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(9.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+        cameraError?.let { Text(it, modifier = Modifier.align(Alignment.TopCenter).padding(24.dp)
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp)).padding(12.dp),
+            color = MaterialTheme.colorScheme.error) }
     }
 }

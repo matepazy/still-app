@@ -39,7 +39,12 @@ class CompareViewModel(
     private val overrides: Map<String, AppCategory>,
     inheritedRange: StatisticsRange,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(CompareUiState(range = inheritedRange))
+    private val _state = MutableStateFlow(CompareUiState(
+        range = inheritedRange,
+        period = StatisticsPeriod.entries.firstOrNull {
+            it != StatisticsPeriod.Custom && it.range(LocalDate.now()) == inheritedRange
+        } ?: StatisticsPeriod.Custom,
+    ))
     val state: StateFlow<CompareUiState> = _state
     private var local: CompareSnapshot? = null
     private var friend: CompareSnapshot? = null
@@ -64,6 +69,13 @@ class CompareViewModel(
     fun startOver() {
         local = null; friend = null; firstCodeHash = null
         _state.value = _state.value.copy(phase = ComparePhase.Start, code = null, result = null, error = null)
+    }
+
+    fun back(): Boolean = when (_state.value.phase) {
+        ComparePhase.Start, ComparePhase.Result -> false
+        ComparePhase.ScanFriend, ComparePhase.OwnQr -> { startOver(); true }
+        ComparePhase.ScanReply -> { _state.value = _state.value.copy(phase = ComparePhase.OwnQr, error = null); true }
+        ComparePhase.ReplyQr -> { _state.value = _state.value.copy(phase = ComparePhase.Result, error = null); true }
     }
 
     fun showOwnQr() {

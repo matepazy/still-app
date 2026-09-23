@@ -11,6 +11,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +37,14 @@ fun StatisticsPeriodSelector(selected: StatisticsPeriod, onSelect: (StatisticsPe
                 selected = selected == period,
                 onClick = { if (period == StatisticsPeriod.Custom) showPicker = true else onSelect(period) },
                 shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    activeBorderColor = MaterialTheme.colorScheme.outline,
+                    inactiveContainerColor = Color.Transparent,
+                    inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                    inactiveBorderColor = MaterialTheme.colorScheme.outline,
+                ),
                 label = { Text(period.label, maxLines = 1) },
             )
         }

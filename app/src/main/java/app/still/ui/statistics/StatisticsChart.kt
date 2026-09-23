@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun StatisticsChart(summary: StatisticsSummary, period: StatisticsPeriod) {
-    val points = if (period == StatisticsPeriod.Day) {
+    val points = if (summary.range.days == 1L) {
         summary.days.firstOrNull()?.hourlyMillis?.mapIndexed { index, value ->
             ("${index.toString().padStart(2, '0')}:00") to Duration.ofMillis(value)
         } ?: emptyList()
@@ -42,7 +42,7 @@ fun StatisticsChart(summary: StatisticsSummary, period: StatisticsPeriod) {
         if (selected in points.indices) {
             val point = points[selected]
             Text("${point.first} · ${point.second?.compactDuration() ?: "—"}", style = MaterialTheme.typography.labelMedium)
-        } else Text("Screen time", style = MaterialTheme.typography.titleMedium)
+        } else Text(if (summary.range.days == 1L) "By hour" else "Screen time trend", style = MaterialTheme.typography.titleMedium)
         val maximum = points.mapNotNull { it.second?.toMillis() }.maxOrNull()?.coerceAtLeast(1L) ?: 1L
         Canvas(Modifier.fillMaxWidth().height(150.dp).padding(top = 12.dp)
             .pointerInput(points) { detectTapGestures { position ->

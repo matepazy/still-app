@@ -1,10 +1,10 @@
 package app.still.ui.compare
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,7 +36,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.still.domain.model.CompareSharing
 import app.still.ui.components.StillIcons
 import app.still.ui.statistics.StatisticsPeriodSelector
 import app.still.ui.statistics.label
@@ -52,13 +52,9 @@ fun CompareTopBar(onBack: () -> Unit) {
 @Composable
 fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    BackHandler(enabled = state.phase != ComparePhase.Start && state.phase != ComparePhase.Result) { viewModel.back() }
     if (state.phase == ComparePhase.ScanFriend || state.phase == ComparePhase.ScanReply) {
-        Column(modifier.fillMaxSize()) {
-            Text("Scan a code", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(StillSpacing.large))
-            Text("Point your camera at your friend's Still QR code.", modifier = Modifier.padding(horizontal = StillSpacing.large))
-            Spacer(Modifier.height(StillSpacing.medium))
-            CompareScanner(viewModel::onScanned, Modifier.weight(1f))
-        }
+        CompareScanner(viewModel::onScanned, modifier.fillMaxSize())
         return
     }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.large)) {
@@ -66,30 +62,39 @@ fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error); Spacer(Modifier.height(StillSpacing.medium)) }
         when (state.phase) {
             ComparePhase.Start -> {
-                Text("Compare screen time\nwith a friend", style = MaterialTheme.typography.headlineLarge)
-                Spacer(Modifier.height(StillSpacing.medium))
-                Text("Share a snapshot of your usage through a QR code. Works offline. Nothing is uploaded.")
-                Spacer(Modifier.height(StillSpacing.section))
-                Text("Time period", style = MaterialTheme.typography.titleMedium)
-                Text(state.range.label(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(StillSpacing.medium))
+                Text("Compare with a friend", style = MaterialTheme.typography.headlineLarge)
+                Spacer(Modifier.height(StillSpacing.xLarge))
+                Text("Time period", style = MaterialTheme.typography.titleLarge)
+                Text(state.range.label(), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = StillSpacing.small, bottom = StillSpacing.medium))
                 StatisticsPeriodSelector(state.period, viewModel::selectPeriod, viewModel::selectCustom)
                 Spacer(Modifier.height(StillSpacing.section))
-                Text("What to share", style = MaterialTheme.typography.titleMedium)
-                ShareRow("Screen time", state.sharing.screenTime) { viewModel.setSharing(state.sharing.copy(screenTime = it)) }
-                ShareRow("Usage patterns", state.sharing.patterns) { viewModel.setSharing(state.sharing.copy(patterns = it)) }
-                ShareRow("App categories", state.sharing.categories) { viewModel.setSharing(state.sharing.copy(categories = it)) }
-                ShareRow("Individual apps", state.sharing.apps) { viewModel.setSharing(state.sharing.copy(apps = it)) }
-                Spacer(Modifier.height(StillSpacing.large))
-                Button(onClick = viewModel::showOwnQr, enabled = !state.busy && state.sharing.flags() != 0, modifier = Modifier.fillMaxWidth()) { Text("Show my QR code") }
-                Text("or", modifier = Modifier.align(Alignment.CenterHorizontally).padding(StillSpacing.small))
-                OutlinedButton(onClick = viewModel::scanFriend, modifier = Modifier.fillMaxWidth()) { Text("Scan a friend's code") }
+                Text("Include in your code", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(StillSpacing.medium))
+                Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                        ShareChip("Screen time", state.sharing.screenTime, Modifier.weight(1f)) { viewModel.setSharing(state.sharing.copy(screenTime = it)) }
+                        ShareChip("Patterns", state.sharing.patterns, Modifier.weight(1f)) { viewModel.setSharing(state.sharing.copy(patterns = it)) }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                        ShareChip("Categories", state.sharing.categories, Modifier.weight(1f)) { viewModel.setSharing(state.sharing.copy(categories = it)) }
+                        ShareChip("Apps", state.sharing.apps, Modifier.weight(1f)) { viewModel.setSharing(state.sharing.copy(apps = it)) }
+                    }
+                }
+                Spacer(Modifier.height(StillSpacing.xLarge))
+                Button(onClick = viewModel::showOwnQr, enabled = !state.busy && state.sharing.flags() != 0,
+                    modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Show my code") }
+                Spacer(Modifier.height(StillSpacing.small))
+                OutlinedButton(onClick = viewModel::scanFriend, enabled = state.sharing.flags() != 0,
+                    modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Scan friend's code") }
+                Text("QR only · Nothing is uploaded", modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = StillSpacing.medium),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (state.busy) CircularProgressIndicator()
             }
             ComparePhase.OwnQr, ComparePhase.ReplyQr -> {
-                Text(if (state.phase == ComparePhase.ReplyQr) "Reply code" else "Your QR code", style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.height(StillSpacing.small))
-                Text(if (state.phase == ComparePhase.ReplyQr) "Let your friend scan this reply so they can see the comparison." else "Let your friend scan this code with their Still app.")
+                Text(if (state.phase == ComparePhase.ReplyQr) "Show your reply" else "Show your code", style = MaterialTheme.typography.headlineMedium)
+                Text("Ask your friend to scan this", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(StillSpacing.large))
                 state.code?.let { code ->
                     val image = remember(code) { CompareQr.bitmap(code).asImageBitmap() }
@@ -98,13 +103,7 @@ fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(StillSpacing.medium))
                 Text(state.range.label(), modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(Modifier.height(StillSpacing.medium))
-                Text("This code contains", style = MaterialTheme.typography.titleSmall)
-                if (state.sharing.screenTime) Text("• Screen time")
-                if (state.sharing.patterns) Text("• Usage patterns")
-                if (state.sharing.categories) Text("• App categories")
-                if (state.sharing.apps) Text("• Individual app names")
-                Text("Nothing is sent over the internet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(StillSpacing.large))
+                Spacer(Modifier.height(StillSpacing.medium))
                 if (state.phase == ComparePhase.OwnQr) Button(onClick = viewModel::scanReply, modifier = Modifier.fillMaxWidth()) { Text("Scan their reply") }
                 if (state.phase == ComparePhase.ReplyQr && state.result != null) {
                     OutlinedButton(onClick = { viewModel.showResult() }, modifier = Modifier.fillMaxWidth()) { Text("View comparison") }
@@ -114,7 +113,7 @@ fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
             ComparePhase.Result -> {
                 state.result?.let { CompareResultView(it) }
                 Spacer(Modifier.height(StillSpacing.large))
-                if (state.result?.you?.replyTo != null) Button(onClick = viewModel::showReplyQr, modifier = Modifier.fillMaxWidth()) { Text("Let them see the comparison") }
+                if (state.result?.you?.replyTo != null) Button(onClick = viewModel::showReplyQr, modifier = Modifier.fillMaxWidth()) { Text("Show reply code") }
                 TextButton(onClick = viewModel::startOver) { Text("Start over") }
             }
             else -> Unit
@@ -124,9 +123,21 @@ fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ShareRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(label)
-        Checkbox(checked = checked, onCheckedChange = onChecked)
-    }
+private fun ShareChip(label: String, selected: Boolean, modifier: Modifier = Modifier, onSelected: (Boolean) -> Unit) {
+    FilterChip(
+        selected = selected,
+        onClick = { onSelected(!selected) },
+        label = { Text(label) },
+        leadingIcon = if (selected) {{
+            Icon(painterResource(StillIcons.Check), contentDescription = null, modifier = Modifier.size(18.dp))
+        }} else null,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        modifier = modifier.height(48.dp),
+    )
 }
