@@ -322,7 +322,7 @@ private fun MainNavigation(
                 } },
                 bottomBar = { StillNavigationBar(StatisticsRoute, navController) },
             ) { padding ->
-                StatisticsScreen(statisticsViewModel, modifier = Modifier.padding(padding))
+                StatisticsScreen(statisticsViewModel, availableDays.map { it.date }, modifier = Modifier.padding(padding))
             }
         }
         composable(CompareRoute) {
@@ -337,7 +337,7 @@ private fun MainNavigation(
                 topBar = { CompareTopBar {
                     if (!compareViewModel.back() && !navController.popBackStack()) navController.navigate(StatisticsRoute)
                 } },
-            ) { padding -> CompareScreen(compareViewModel, Modifier.padding(padding)) }
+            ) { padding -> CompareScreen(compareViewModel, availableDays.map { it.date }, Modifier.padding(padding)) }
         }
         composable(AppDetailRoute) { entry ->
             val packageName = entry.arguments?.getString("packageName").orEmpty()

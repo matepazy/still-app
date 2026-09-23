@@ -51,6 +51,13 @@ class StatisticsViewModel(
         refresh()
     }
 
+    fun selectDay(date: LocalDate) {
+        if (date.isAfter(today)) return
+        _period.value = StatisticsPeriod.Day
+        _range.value = StatisticsRange(date, date)
+        refresh()
+    }
+
     fun selectCustom(range: StatisticsRange) {
         if (range.days > 3660 || range.endInclusive.isAfter(today)) {
             _state.value = StatisticsState.Error("Choose a range ending today or earlier, up to ten years long.")

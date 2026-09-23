@@ -95,10 +95,12 @@ class StatisticsCalculatorTest {
         assertNotNull(result.dailyVariability)
     }
 
-    @Test fun yearUsesWeeklyDisplayAverages() {
-        val range = StatisticsPeriod.Year.range(today)
-        val result = calculate(range, listOf(day(range.start, 60)), period = StatisticsPeriod.Year)
-        assertTrue(result.points.size in 52..54)
+    @Test fun sixMonthsUsesWeeklyDisplayAverages() {
+        val range = StatisticsPeriod.SixMonths.range(today)
+        assertEquals(today.minusMonths(6).plusDays(1), range.start)
+        assertEquals(today, range.endInclusive)
+        val result = calculate(range, listOf(day(range.start, 60)), period = StatisticsPeriod.SixMonths)
+        assertTrue(result.points.size in 26..27)
         assertEquals(Duration.ofMinutes(60), result.points.first().value)
         assertNull(result.points[1].value)
     }

@@ -50,6 +50,7 @@ fun DaySelector(
     availableDates: List<LocalDate>,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    showTodayLabel: Boolean = true,
 ) {
     var pickerVisible by remember { mutableStateOf(false) }
     val locale = LocalLocale.current.platformLocale
@@ -63,7 +64,7 @@ fun DaySelector(
         modifier = modifier,
     ) {
         Text(
-            if (selectedDate == latestDate) "Today" else selectedDate.format(formatter),
+            if (showTodayLabel && selectedDate == latestDate) "Today" else selectedDate.format(formatter),
             style = MaterialTheme.typography.titleSmall,
         )
         Icon(painterResource(StillIcons.Calendar), contentDescription = "Choose day from calendar")
@@ -163,7 +164,7 @@ private fun CompactDatePickerDialog(
 }
 
 @Composable
-private fun MonthNavigation(
+internal fun MonthNavigation(
     month: YearMonth,
     formatter: DateTimeFormatter,
     canGoBack: Boolean,
@@ -199,7 +200,7 @@ private fun MonthNavigation(
 }
 
 @Composable
-private fun WeekdayHeader(
+internal fun WeekdayHeader(
     days: List<DayOfWeek>,
     locale: Locale,
     modifier: Modifier = Modifier,
@@ -218,11 +219,12 @@ private fun WeekdayHeader(
 }
 
 @Composable
-private fun MonthGrid(
+internal fun MonthGrid(
     month: YearMonth,
     firstDayOfWeek: DayOfWeek,
     availableEpochDays: Set<Long>,
     selectedDate: LocalDate,
+    selectedEndDate: LocalDate? = null,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -242,7 +244,8 @@ private fun MonthGrid(
                         if (date != null) {
                             DayCell(
                                 date = date,
-                                selected = date == selectedDate,
+                                selected = date == selectedDate || date == selectedEndDate,
+                                inRange = selectedEndDate != null && date.isAfter(selectedDate) && date.isBefore(selectedEndDate),
                                 enabled = date.toEpochDay() in availableEpochDays,
                                 onClick = { onDateSelected(date) },
                             )
@@ -258,12 +261,18 @@ private fun MonthGrid(
 private fun DayCell(
     date: LocalDate,
     selected: Boolean,
+    inRange: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val containerColor = when {
+        selected -> MaterialTheme.colorScheme.primary
+        inRange -> MaterialTheme.colorScheme.primaryContainer
+        else -> Color.Transparent
+    }
     val contentColor = when {
         selected -> MaterialTheme.colorScheme.onPrimary
+        inRange -> MaterialTheme.colorScheme.onPrimaryContainer
         enabled -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.42f)
     }

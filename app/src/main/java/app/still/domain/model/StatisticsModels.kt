@@ -11,12 +11,12 @@ data class StatisticsRange(val start: LocalDate, val endInclusive: LocalDate) {
 }
 
 enum class StatisticsPeriod(val label: String) {
-    Day("1D"), Week("1W"), Month("1M"), Year("1Y"), Custom("Custom");
+    Day("1D"), Week("1W"), Month("1M"), SixMonths("6M"), Custom("Custom");
     fun range(today: LocalDate): StatisticsRange = when (this) {
         Day -> StatisticsRange(today, today)
         Week -> StatisticsRange(today.minusDays(6), today)
         Month -> StatisticsRange(today.minusMonths(1).plusDays(1), today)
-        Year -> StatisticsRange(today.minusYears(1).plusDays(1), today)
+        SixMonths -> StatisticsRange(today.minusMonths(6).plusDays(1), today)
         Custom -> StatisticsRange(today.minusDays(6), today)
     }
 }

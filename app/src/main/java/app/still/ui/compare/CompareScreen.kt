@@ -37,9 +37,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.still.ui.components.StillIcons
+import app.still.ui.components.DaySelector
+import app.still.domain.model.StatisticsPeriod
 import app.still.ui.statistics.StatisticsPeriodSelector
 import app.still.ui.statistics.label
 import app.still.ui.theme.StillSpacing
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +53,7 @@ fun CompareTopBar(onBack: () -> Unit) {
 }
 
 @Composable
-fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
+fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BackHandler(enabled = state.phase != ComparePhase.Start && state.phase != ComparePhase.Result) { viewModel.back() }
     if (state.phase == ComparePhase.ScanFriend || state.phase == ComparePhase.ScanReply) {
@@ -65,9 +68,14 @@ fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
                 Text("Compare with a friend", style = MaterialTheme.typography.headlineLarge)
                 Spacer(Modifier.height(StillSpacing.xLarge))
                 Text("Time period", style = MaterialTheme.typography.titleLarge)
-                Text(state.range.label(), color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = StillSpacing.small, bottom = StillSpacing.medium))
-                StatisticsPeriodSelector(state.period, viewModel::selectPeriod, viewModel::selectCustom)
+                StatisticsPeriodSelector(state.period, state.range, availableDates, viewModel::selectPeriod, viewModel::selectCustom)
+                if (state.period == StatisticsPeriod.Day) {
+                    DaySelector(state.range.start, availableDates, viewModel::selectDay,
+                        modifier = Modifier.padding(top = StillSpacing.small), showTodayLabel = false)
+                } else {
+                    Text(state.range.label(), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = StillSpacing.medium))
+                }
                 Spacer(Modifier.height(StillSpacing.section))
                 Text("Include in your code", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(StillSpacing.medium))

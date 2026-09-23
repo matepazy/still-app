@@ -37,13 +37,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.still.domain.model.StatisticsRange
+import app.still.domain.model.StatisticsPeriod
 import app.still.data.settings.AppCategory
 import app.still.ui.components.StillIcons
+import app.still.ui.components.DaySelector
 import app.still.ui.components.AppIcon
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,15 +59,20 @@ fun StatisticsTopBar(onCompare: () -> Unit) {
 }
 
 @Composable
-fun StatisticsScreen(viewModel: StatisticsViewModel, modifier: Modifier = Modifier) {
+fun StatisticsScreen(viewModel: StatisticsViewModel, availableDates: List<LocalDate>, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val period by viewModel.period.collectAsStateWithLifecycle()
     val range by viewModel.range.collectAsStateWithLifecycle()
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.large)) {
         Spacer(Modifier.height(StillSpacing.large))
-        StatisticsPeriodSelector(period, viewModel::select, viewModel::selectCustom)
-        Text(range.label(), modifier = Modifier.padding(top = StillSpacing.medium), style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        StatisticsPeriodSelector(period, range, availableDates, viewModel::select, viewModel::selectCustom)
+        if (period == StatisticsPeriod.Day) {
+            DaySelector(range.start, availableDates, viewModel::selectDay,
+                modifier = Modifier.padding(top = StillSpacing.small), showTodayLabel = false)
+        } else {
+            Text(range.label(), modifier = Modifier.padding(top = StillSpacing.medium), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Spacer(Modifier.height(StillSpacing.large))
         when (val value = state) {
             StatisticsState.Loading -> CircularProgressIndicator()
@@ -92,7 +100,11 @@ private fun StatisticsContent(summary: app.still.domain.model.StatisticsSummary,
     Spacer(Modifier.height(StillSpacing.xLarge))
     TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
         Column {
-            StatisticsChart(summary, period)
+            if (period == StatisticsPeriod.Month || period == StatisticsPeriod.SixMonths) {
+                ScreenTimeHeatmap(summary, period)
+            } else {
+                StatisticsChart(summary, period)
+            }
             Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.SpaceBetween) {
                 if (singleDay) {
                     SmallValue("Peak hour", summary.mostActiveHour?.let { "${it.toString().padStart(2, '0')}:00" } ?: "—")

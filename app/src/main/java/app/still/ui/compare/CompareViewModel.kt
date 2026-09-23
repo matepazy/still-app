@@ -41,7 +41,7 @@ class CompareViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(CompareUiState(
         range = inheritedRange,
-        period = StatisticsPeriod.entries.firstOrNull {
+        period = if (inheritedRange.days == 1L) StatisticsPeriod.Day else StatisticsPeriod.entries.firstOrNull {
             it != StatisticsPeriod.Custom && it.range(LocalDate.now()) == inheritedRange
         } ?: StatisticsPeriod.Custom,
     ))
@@ -53,6 +53,10 @@ class CompareViewModel(
     fun setSharing(sharing: CompareSharing) { _state.value = _state.value.copy(sharing = sharing, error = null) }
     fun selectPeriod(period: StatisticsPeriod) {
         if (period != StatisticsPeriod.Custom) _state.value = _state.value.copy(period = period, range = period.range(LocalDate.now()), error = null)
+    }
+    fun selectDay(date: LocalDate) {
+        if (date.isAfter(LocalDate.now())) return
+        _state.value = _state.value.copy(period = StatisticsPeriod.Day, range = StatisticsRange(date, date), error = null)
     }
     fun selectCustom(range: StatisticsRange) {
         if (range.days > 3660 || range.endInclusive.isAfter(LocalDate.now())) {

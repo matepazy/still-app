@@ -1,19 +1,12 @@
 package app.still.ui.statistics
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,13 +15,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsRange
-import java.time.Instant
+import app.still.ui.components.CompactDateRangePickerDialog
 import java.time.LocalDate
-import java.time.ZoneOffset
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatisticsPeriodSelector(selected: StatisticsPeriod, onSelect: (StatisticsPeriod) -> Unit, onCustom: (StatisticsRange) -> Unit) {
+fun StatisticsPeriodSelector(
+    selected: StatisticsPeriod,
+    selectedRange: StatisticsRange,
+    availableDates: List<LocalDate>,
+    onSelect: (StatisticsPeriod) -> Unit,
+    onCustom: (StatisticsRange) -> Unit,
+) {
     var showPicker by remember { mutableStateOf(false) }
     val options = StatisticsPeriod.entries
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -50,23 +47,11 @@ fun StatisticsPeriodSelector(selected: StatisticsPeriod, onSelect: (StatisticsPe
         }
     }
     if (showPicker) {
-        val picker = rememberDateRangePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val start = picker.selectedStartDateMillis
-                    val end = picker.selectedEndDateMillis
-                    if (start != null && end != null) {
-                        onCustom(StatisticsRange(
-                            Instant.ofEpochMilli(start).atZone(ZoneOffset.UTC).toLocalDate(),
-                            Instant.ofEpochMilli(end).atZone(ZoneOffset.UTC).toLocalDate(),
-                        ))
-                        showPicker = false
-                    }
-                }) { Text("Apply") }
-            },
-            dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancel") } },
-        ) { DateRangePicker(state = picker) }
+        CompactDateRangePickerDialog(
+            selectedRange = selectedRange,
+            availableDates = availableDates,
+            onDismiss = { showPicker = false },
+            onConfirm = { range -> onCustom(range); showPicker = false },
+        )
     }
 }

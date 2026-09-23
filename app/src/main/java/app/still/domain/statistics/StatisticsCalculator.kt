@@ -51,7 +51,7 @@ object StatisticsCalculator {
                 priorCategories[category]?.let { Duration.ofMillis(millis - it) })
         }.sortedByDescending { it.total }
         val resolution = when {
-            period == StatisticsPeriod.Year || range.days > 45 -> 7L
+            period == StatisticsPeriod.SixMonths || range.days > 45 -> 7L
             else -> 1L
         }
         val points = days.chunked(resolution.toInt()).map { bucket ->
