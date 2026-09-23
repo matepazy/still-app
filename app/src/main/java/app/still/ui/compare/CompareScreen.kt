@@ -97,6 +97,12 @@ fun CompareScreen(viewModel: CompareViewModel, modifier: Modifier = Modifier) {
                 }
                 Spacer(Modifier.height(StillSpacing.medium))
                 Text(state.range.label(), modifier = Modifier.align(Alignment.CenterHorizontally))
+                Spacer(Modifier.height(StillSpacing.medium))
+                Text("This code contains", style = MaterialTheme.typography.titleSmall)
+                if (state.sharing.screenTime) Text("• Screen time")
+                if (state.sharing.patterns) Text("• Usage patterns")
+                if (state.sharing.categories) Text("• App categories")
+                if (state.sharing.apps) Text("• Individual app names")
                 Text("Nothing is sent over the internet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(StillSpacing.large))
                 if (state.phase == ComparePhase.OwnQr) Button(onClick = viewModel::scanReply, modifier = Modifier.fillMaxWidth()) { Text("Scan their reply") }

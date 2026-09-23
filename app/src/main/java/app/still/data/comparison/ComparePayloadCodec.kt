@@ -58,10 +58,11 @@ object ComparePayloadCodec {
         val sharing = snapshot.sharing
         require(snapshot.totalScreenTimeMillis == null || snapshot.totalScreenTimeMillis in 0..(3660L * 24 * 60 * 60 * 1000))
         require(snapshot.averageDailyScreenTimeMillis == null || snapshot.averageDailyScreenTimeMillis in 0..86_400_000L)
+        require(snapshot.screenTimeDays == null || snapshot.screenTimeDays in 1..range.days.toInt())
         require(snapshot.checkIns == null || snapshot.checkIns in 0..1_000_000)
         require(snapshot.quickChecks == null || snapshot.quickChecks in 0..1_000_000)
         require(snapshot.longestBreakMillis == null || snapshot.longestBreakMillis in 0..86_400_000L)
-        require(sharing.screenTime || (snapshot.totalScreenTimeMillis == null && snapshot.averageDailyScreenTimeMillis == null))
+        require(sharing.screenTime || (snapshot.totalScreenTimeMillis == null && snapshot.averageDailyScreenTimeMillis == null && snapshot.screenTimeDays == null))
         require(sharing.patterns || (snapshot.checkIns == null && snapshot.quickChecks == null && snapshot.longestBreakMillis == null))
         require(sharing.categories || snapshot.categories == null)
         require(sharing.apps || snapshot.apps == null)

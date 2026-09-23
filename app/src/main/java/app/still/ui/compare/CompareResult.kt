@@ -25,6 +25,7 @@ fun CompareResultView(result: CompareResult) {
         Text("Friend", modifier = Modifier.weight(1f))
     }
     ResultRow("Daily average", result.you.averageDailyScreenTimeMillis?.let(::duration), result.friend.averageDailyScreenTimeMillis?.let(::duration))
+    ResultRow("Days with data", result.you.screenTimeDays?.toString(), result.friend.screenTimeDays?.toString())
     ResultRow("Total", result.you.totalScreenTimeMillis?.let(::duration), result.friend.totalScreenTimeMillis?.let(::duration))
     ResultRow("Check-ins", result.you.checkIns?.toString(), result.friend.checkIns?.toString())
     ResultRow("Quick checks", result.you.quickChecks?.toString(), result.friend.quickChecks?.toString())

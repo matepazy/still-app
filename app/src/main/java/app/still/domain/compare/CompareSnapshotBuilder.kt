@@ -36,6 +36,7 @@ object CompareSnapshotBuilder {
             }.map { (label, values) ->
                 CompareApp(label.take(50), values.sumOf { it.duration.toMillis() })
             }.sortedByDescending { it.millis }.take(8) else null,
+            screenTimeDays = if (sharing.screenTime && valid.isNotEmpty()) valid.size else null,
         )
     }
 }

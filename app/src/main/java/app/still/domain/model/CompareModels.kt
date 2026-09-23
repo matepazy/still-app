@@ -36,6 +36,7 @@ data class CompareSnapshot(
     val longestBreakMillis: Long?,
     val categories: List<CompareCategory>?,
     val apps: List<CompareApp>?,
+    val screenTimeDays: Int? = null,
 ) {
     val range: StatisticsRange get() = StatisticsRange(LocalDate.parse(rangeStart), LocalDate.parse(rangeEnd))
     val sharing: CompareSharing get() = CompareSharing.fromFlags(sharingFlags)

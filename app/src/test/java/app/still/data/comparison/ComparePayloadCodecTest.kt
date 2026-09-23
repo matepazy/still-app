@@ -34,6 +34,7 @@ class ComparePayloadCodecTest {
         assertFalse(encoded.contains("secret.package.name"))
         assertFalse(encoded.contains("UsageEventRecord"))
         assertEquals(120 * 60_000L, model.totalScreenTimeMillis)
+        assertEquals(1, model.screenTimeDays)
     }
 
     @Test fun individualAppsAreOptInAndStillOmitPackageNames() {
