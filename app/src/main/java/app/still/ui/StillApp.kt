@@ -41,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -79,6 +80,8 @@ import app.still.ui.today.TodayScreen
 import app.still.ui.today.TodayTopBar
 import app.still.ui.statistics.StatisticsScreen
 import app.still.ui.statistics.StatisticsTopBar
+import app.still.ui.statistics.StatisticsViewModel
+import app.still.StillApplication
 import java.time.Duration
 import java.time.LocalDate
 
@@ -299,11 +302,17 @@ private fun MainNavigation(
             }
         }
         composable(StatisticsRoute) {
+            val statisticsViewModel: StatisticsViewModel = viewModel(
+                factory = StatisticsViewModel.Factory(
+                    (context.applicationContext as StillApplication).container.usageRepository,
+                    settings.appCategoryOverrides,
+                ),
+            )
             DestinationScaffold(
                 topBar = { StatisticsTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(StatisticsRoute, navController) },
             ) { padding ->
-                StatisticsScreen(modifier = Modifier.padding(padding))
+                StatisticsScreen(statisticsViewModel, onCompare = { }, modifier = Modifier.padding(padding))
             }
         }
         composable(AppDetailRoute) { entry ->

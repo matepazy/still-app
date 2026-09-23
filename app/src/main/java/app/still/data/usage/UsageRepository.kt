@@ -17,6 +17,10 @@ import app.still.domain.model.AppUsage
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.DailyAppUsage
 import app.still.domain.model.UsageDashboard
+import app.still.domain.model.StatisticsDay
+import app.still.domain.model.StatisticsRange
+import app.still.data.settings.AppCategory
+import app.still.domain.statistics.StatisticsCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -93,6 +97,52 @@ class UsageRepository(
             if (saveHistory) syncMutex.withLock { synchronizeArchive(clock.instant(), ZoneId.systemDefault()) }
         }
     }
+
+    suspend fun statisticsDays(range: StatisticsRange, cutoff: java.time.Instant? = null): List<StatisticsDay> = withContext(Dispatchers.IO) {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(clock)
+        val available = archive.dates().filter { !it.isBefore(range.start) && !it.isAfter(range.endInclusive) }.toSet()
+        (0 until range.days).map { offset ->
+            val date = range.start.plusDays(offset)
+            if (date !in available && date != today) return@map StatisticsCalculator.emptyDay(date)
+            val end = when {
+                date == today -> minOf(clock.instant(), cutoff ?: clock.instant())
+                else -> date.plusDays(1).atStartOfDay(zone).toInstant()
+            }
+            if (date == today && end.isBefore(date.atStartOfDay(zone).toInstant())) return@map StatisticsCalculator.emptyDay(date)
+            val day = if (cutoff != null && date == today) loadDetailedDay(date, end, zone)
+                else archive.day(date)?.let { stored ->
+                    if (stored.detailsAvailable) loadDetailedDay(date, end, zone) ?: stored else stored
+                } ?: if (date == today) loadDay(date, end, zone) else null
+            if (day == null) return@map StatisticsCalculator.emptyDay(date)
+            val detailed = day.detailsAvailable
+            val active = day.dayline.filter { it.kind == app.still.domain.model.DaylineKind.Active }
+            val hours = if (detailed && active.isNotEmpty()) (0..23).map { hour ->
+                val start = date.atTime(hour, 0).atZone(zone).toInstant()
+                val stop = date.atTime(hour, 0).plusHours(1).atZone(zone).toInstant()
+                active.sumOf { segment ->
+                    val overlapStart = maxOf(start, segment.start)
+                    val overlapEnd = minOf(stop, segment.end)
+                    Duration.between(overlapStart, overlapEnd).toMillis().coerceAtLeast(0)
+                }
+            } else null
+            fun minute(instant: java.time.Instant) = instant.atZone(zone).toLocalTime().toSecondOfDay() / 60
+            StatisticsDay(
+                date, day.total, if (detailed) day.checkInCount else null,
+                if (detailed) day.quickCheckCount else null,
+                if (detailed) day.unlocks else null, if (detailed) day.wakeups else null,
+                if (detailed) day.longestBreak else null,
+                if (detailed) day.sessions.maxOfOrNull { it.duration } else null,
+                if (detailed) active.minByOrNull { it.start }?.start?.let(::minute) else null,
+                if (detailed) active.maxByOrNull { it.end }?.end?.let(::minute) else null,
+                hours,
+                if (detailed) day.sessions.sumOf { (it.sequence.size - 1).coerceAtLeast(0) } else null,
+                day.apps,
+            )
+        }
+    }
+
+    fun categoryFor(packageName: String): AppCategory = AppCategory.forPackage(packageManager, packageName)
 
     suspend fun clearHistory(): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching { syncMutex.withLock { archive.clearHistory() } }
