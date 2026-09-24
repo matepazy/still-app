@@ -93,8 +93,11 @@ fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>, 
                 Button(onClick = viewModel::showOwnQr, enabled = !state.busy && state.sharing.flags() != 0,
                     modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Show my code") }
                 Spacer(Modifier.height(StillSpacing.small))
-                OutlinedButton(onClick = viewModel::scanFriend, enabled = state.sharing.flags() != 0,
+                OutlinedButton(onClick = viewModel::scanFriend,
                     modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Scan friend's code") }
+                Text("A reply shares the same types selected in your friend's code.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = StillSpacing.small))
                 Text("QR only · Nothing is uploaded", modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = StillSpacing.medium),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (state.busy) CircularProgressIndicator()

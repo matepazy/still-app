@@ -96,6 +96,19 @@ class ComparePayloadCodecTest {
         assertEquals(secondPhone.friend, firstPhone.you)
     }
 
+    @Test fun replyIncludesFirstCodesAppEvenWhenItIsOutsideRespondersTopEight() {
+        val first = snapshot(CompareSharing(screenTime = false, patterns = false, categories = false, apps = true))
+        val otherApps = (1..8).map { index ->
+            AppUsage(AppInfo("other.package.$index", "Other $index"), Duration.ofMinutes(20), 1)
+        } + AppUsage(AppInfo("secret.package.name", "Friendly app"), Duration.ofMinutes(5), 1)
+        val reply = CompareSnapshotBuilder.build(range, listOf(day.copy(apps = otherApps)), first.sharing,
+            { AppCategory.Social }, first.sessionId, null, ComparePayloadCodec.fingerprint(first),
+            first.apps!!.map { it.label })
+        assertEquals(first.sharingFlags, reply.sharingFlags)
+        assertEquals(listOf(CompareApp("Friendly app", 5 * 60_000L)), reply.apps)
+        assertEquals(reply, ComparePayloadCodec.decode(ComparePayloadCodec.encode(reply)).getOrThrow())
+    }
+
     @Test fun payloadFitsAndDecodesAsQr() {
         val code = ComparePayloadCodec.encode(snapshot())
         val matrix = QRCodeWriter().encode(code, BarcodeFormat.QR_CODE, 800, 800)

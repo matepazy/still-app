@@ -10,6 +10,8 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +46,8 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
@@ -55,6 +60,8 @@ import com.google.zxing.PlanarYUVLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.delay
+import app.still.ui.components.StillIcons
 
 @Composable
 fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
@@ -77,6 +84,15 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     val executor = remember { Executors.newSingleThreadExecutor() }
     val delivered = remember { AtomicBoolean(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
+    var detectedCode by remember { mutableStateOf<String?>(null) }
+    val successAlpha by animateFloatAsState(if (detectedCode == null) 0f else 1f,
+        animationSpec = tween(220), label = "QR scan confirmation")
+    LaunchedEffect(detectedCode) {
+        detectedCode?.let { code ->
+            delay(650)
+            onCode(code)
+        }
+    }
     DisposableEffect(owner) {
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -95,7 +111,7 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
                             val result = runCatching { reader.decodeWithState(BinaryBitmap(HybridBinarizer(source))) }
                                 .recoverCatching { reader.decodeWithState(BinaryBitmap(HybridBinarizer(source.rotateCounterClockwise()))) }.getOrNull()
                             if (result != null && delivered.compareAndSet(false, true)) {
-                                ContextCompat.getMainExecutor(context).execute { onCode(result.text) }
+                                ContextCompat.getMainExecutor(context).execute { detectedCode = result.text }
                             }
                         }
                     } finally { image.close() }
@@ -148,9 +164,15 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
                     arcTo(Rect(left, bottom - 2 * radius, left + 2 * radius, bottom), 90f, 90f, false)
                     lineTo(left, bottom - corner)
                 },
-            ).forEach { drawPath(it, Color.White, style = stroke) }
+            ).forEach { drawPath(it, if (detectedCode == null) Color.White else Color(0xFF9FE3B2), style = stroke) }
         }
-        Text("Point at your friend's QR code", modifier = Modifier.align(Alignment.Center)
+        Box(Modifier.align(Alignment.Center).alpha(successAlpha)
+            .background(Color(0xFF203D2A), RoundedCornerShape(100.dp)).padding(20.dp)) {
+            Icon(painterResource(StillIcons.Check), contentDescription = "Code scanned",
+                tint = Color(0xFF9FE3B2), modifier = Modifier.align(Alignment.Center))
+        }
+        Text(if (detectedCode == null) "Point at your friend's QR code" else "Code scanned",
+            modifier = Modifier.align(Alignment.Center)
             .offset(y = frameSide / 2 + 32.dp)
             .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(9.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp),

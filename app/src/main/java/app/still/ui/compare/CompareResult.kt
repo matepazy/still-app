@@ -13,13 +13,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.CompareResult
+import app.still.data.settings.AppCategory
+import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.compactDuration
 import app.still.ui.statistics.label
@@ -38,11 +44,11 @@ fun CompareResultView(result: CompareResult) {
     }
     val youAverage = result.you.averageDailyScreenTimeMillis
     val friendAverage = result.friend.averageDailyScreenTimeMillis
-    if (youAverage != null || friendAverage != null) {
+    if (result.you.sharing.screenTime || result.friend.sharing.screenTime) {
         Spacer(Modifier.height(StillSpacing.large))
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
             Column {
-                Text(if (singleDay) "Screen time" else "Daily average", style = MaterialTheme.typography.titleLarge)
+                LabelWithIcon(if (singleDay) "Screen time" else "Daily average", StillIcons.Statistics)
                 Spacer(Modifier.height(StillSpacing.medium))
                 PairedBars(youAverage, friendAverage, ::duration)
                 if (youAverage != null && friendAverage != null) {
@@ -57,57 +63,100 @@ fun CompareResultView(result: CompareResult) {
             }
         }
     }
-    if (!singleDay && (result.you.totalScreenTimeMillis != null || result.friend.totalScreenTimeMillis != null)) {
-        ResultHeading("Total screen time")
+    if (!singleDay && result.you.totalScreenTimeMillis != null && result.friend.totalScreenTimeMillis != null) {
+        ResultHeading("Total screen time", StillIcons.Statistics)
         PairedBars(result.you.totalScreenTimeMillis, result.friend.totalScreenTimeMillis, ::duration)
     }
-    if (!singleDay && (result.you.screenTimeDays != null || result.friend.screenTimeDays != null)) {
-        Text("Based on ${result.you.screenTimeDays ?: "—"} of your days and ${result.friend.screenTimeDays ?: "—"} of your friend's days with data",
+    if (!singleDay && result.you.screenTimeDays != null && result.friend.screenTimeDays != null) {
+        Text("Based on ${result.you.screenTimeDays} of your days and ${result.friend.screenTimeDays} of your friend's days with data",
             modifier = Modifier.padding(top = StillSpacing.small), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     val patterns = listOf(
         Triple("Check-ins", result.you.checkIns?.toLong(), result.friend.checkIns?.toLong()),
         Triple("Quick checks", result.you.quickChecks?.toLong(), result.friend.quickChecks?.toLong()),
-    ).filter { it.second != null || it.third != null }
-    if (patterns.isNotEmpty() || result.you.longestBreakMillis != null || result.friend.longestBreakMillis != null) {
-        ResultHeading(if (singleDay) "That day's rhythm" else "Usage rhythm")
-        patterns.forEach { (label, you, friend) ->
-            Text(label, style = MaterialTheme.typography.titleMedium)
-            PairedBars(you, friend) { it.toString() }
-            Spacer(Modifier.height(StillSpacing.medium))
-        }
-        if (result.you.longestBreakMillis != null || result.friend.longestBreakMillis != null) {
-            Text("Longest break", style = MaterialTheme.typography.titleMedium)
-            PairedBars(result.you.longestBreakMillis, result.friend.longestBreakMillis, ::duration)
+    ).filter { it.second != null && it.third != null }
+    if (result.you.sharing.patterns && result.friend.sharing.patterns &&
+        (patterns.isNotEmpty() || (result.you.longestBreakMillis != null && result.friend.longestBreakMillis != null))) {
+        ResultHeading(if (singleDay) "That day's rhythm" else "Usage rhythm", StillIcons.Timeline)
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
+            Column {
+                patterns.forEach { (label, you, friend) ->
+                    Text(label, style = MaterialTheme.typography.titleMedium)
+                    PairedBars(you, friend) { it.toString() }
+                    Spacer(Modifier.height(StillSpacing.medium))
+                }
+                if (result.you.longestBreakMillis != null && result.friend.longestBreakMillis != null) {
+                    Text("Longest break", style = MaterialTheme.typography.titleMedium)
+                    PairedBars(result.you.longestBreakMillis, result.friend.longestBreakMillis, ::duration)
+                }
+            }
         }
     }
     val categories = (result.you.categories.orEmpty().map { it.name } + result.friend.categories.orEmpty().map { it.name }).distinct()
-    if (categories.isNotEmpty()) {
-        ResultHeading("By category")
-        categories.forEach { name ->
-            Text(name, style = MaterialTheme.typography.titleMedium)
-            PairedBars(result.you.categories?.firstOrNull { it.name == name }?.millis,
-                result.friend.categories?.firstOrNull { it.name == name }?.millis, ::duration)
-            Spacer(Modifier.height(StillSpacing.medium))
+    if (result.you.sharing.categories && result.friend.sharing.categories && categories.isNotEmpty()) {
+        ResultHeading("By category", StillIcons.Statistics)
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
+            Column {
+                categories.forEachIndexed { index, name ->
+                    if (index > 0) HorizontalDivider(Modifier.padding(vertical = StillSpacing.medium),
+                        color = MaterialTheme.colorScheme.outlineVariant)
+                    LabelWithIcon(name, categoryIcon(name))
+                    Spacer(Modifier.height(StillSpacing.small))
+                    PairedBars(result.you.categories?.firstOrNull { it.name == name }?.millis ?: 0L,
+                        result.friend.categories?.firstOrNull { it.name == name }?.millis ?: 0L, ::duration)
+                }
+            }
         }
     }
-    val apps = (result.you.apps.orEmpty().map { it.label } + result.friend.apps.orEmpty().map { it.label }).distinct()
-    if (apps.isNotEmpty()) {
-        ResultHeading("Individual apps")
-        apps.forEach { name ->
-            Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            PairedBars(result.you.apps?.firstOrNull { it.label == name }?.millis,
-                result.friend.apps?.firstOrNull { it.label == name }?.millis, ::duration)
-            Spacer(Modifier.height(StillSpacing.medium))
+    val firstCode = if (result.you.replyTo == null) result.you else result.friend
+    val apps = firstCode.apps.orEmpty().map { it.label }
+    if (result.you.sharing.apps && result.friend.sharing.apps && apps.isNotEmpty()) {
+        ResultHeading("Individual apps", StillIcons.Apps)
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
+            Column {
+                apps.forEachIndexed { index, name ->
+                    if (index > 0) HorizontalDivider(Modifier.padding(vertical = StillSpacing.medium),
+                        color = MaterialTheme.colorScheme.outlineVariant)
+                    LabelWithIcon(name, StillIcons.Apps)
+                    Spacer(Modifier.height(StillSpacing.small))
+                    PairedBars(result.you.apps?.firstOrNull { it.label == name }?.millis ?: 0L,
+                        result.friend.apps?.firstOrNull { it.label == name }?.millis ?: 0L, ::duration)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun ResultHeading(title: String) {
-    Text(title, style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.padding(top = StillSpacing.section, bottom = StillSpacing.medium))
+private fun ResultHeading(title: String, icon: Int) {
+    Row(Modifier.padding(top = StillSpacing.section, bottom = StillSpacing.medium),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        Text(title, style = MaterialTheme.typography.headlineSmall)
+    }
+}
+
+@Composable
+private fun LabelWithIcon(label: String, icon: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp))
+        Text(label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+private fun categoryIcon(name: String): Int = when (AppCategory.entries.firstOrNull { it.displayName == name }) {
+    AppCategory.Social -> StillIcons.CategorySocial
+    AppCategory.Games -> StillIcons.CategoryGames
+    AppCategory.Video -> StillIcons.CategoryVideo
+    AppCategory.MusicAndAudio -> StillIcons.CategoryMusic
+    AppCategory.Photography -> StillIcons.CategoryPhotography
+    AppCategory.News -> StillIcons.CategoryNews
+    AppCategory.MapsAndNavigation -> StillIcons.CategoryMaps
+    AppCategory.Productivity -> StillIcons.CategoryProductivity
+    AppCategory.Accessibility -> StillIcons.CategoryAccessibility
+    else -> StillIcons.CategoryOther
 }
 
 @Composable
@@ -130,12 +179,16 @@ private fun PairedBars(you: Long?, friend: Long?, format: (Long) -> String) {
 @Composable
 private fun PersonBar(value: Long?, maximum: Long, format: (Long) -> String, color: Color, modifier: Modifier = Modifier) {
     Column(modifier) {
-        Text(value?.let(format) ?: "—", style = MaterialTheme.typography.titleLarge)
+        Text(value?.let(format) ?: "Not shared", style = MaterialTheme.typography.titleLarge,
+            color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant else color)
         Spacer(Modifier.height(5.dp))
         Box(Modifier.fillMaxWidth().height(7.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(4.dp))) {
             if (value != null && value > 0) Box(Modifier.fillMaxWidth((value.toFloat() / maximum).coerceIn(0f, 1f))
                 .height(7.dp).background(color, RoundedCornerShape(4.dp)))
         }
+        Text(if (color == MaterialTheme.colorScheme.primary) "You" else "Friend",
+            modifier = Modifier.padding(top = 5.dp), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

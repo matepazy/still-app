@@ -14,10 +14,23 @@ object CompareSnapshotBuilder {
         sessionId: String = UUID.randomUUID().toString().replace("-", ""),
         cutoff: Instant? = null,
         replyTo: String? = null,
+        requestedApps: List<String>? = null,
     ): CompareSnapshot {
         require(range.days in 1..3660)
         val valid = days.mapNotNull { it.screenTime?.toMillis() }
         val apps = days.flatMap { it.apps.orEmpty() }
+        val appTotals = if (sharing.apps) apps.groupBy { usage ->
+            usage.app.label.takeUnless { it == usage.app.packageName ||
+                it.matches(Regex("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")) } ?: "Unknown app"
+        }.mapValues { (_, values) -> values.sumOf { it.duration.toMillis() } } else emptyMap()
+        val sharedApps = when {
+            !sharing.apps -> null
+            requestedApps != null -> requestedApps.distinct().take(8).map { label ->
+                CompareApp(label.take(50), appTotals[label] ?: 0L)
+            }
+            else -> appTotals.map { (label, millis) -> CompareApp(label.take(50), millis) }
+                .sortedByDescending { it.millis }.take(8)
+        }
         return CompareSnapshot(
             version = 1, sessionId = sessionId, replyTo = replyTo,
             rangeStart = range.start.toString(), rangeEnd = range.endInclusive.toString(),
@@ -30,12 +43,7 @@ object CompareSnapshotBuilder {
             categories = if (sharing.categories) apps.groupBy { categoryOf(it.app.packageName).displayName }
                 .map { (name, values) -> CompareCategory(name, values.sumOf { it.duration.toMillis() }) }
                 .sortedByDescending { it.millis } else null,
-            apps = if (sharing.apps) apps.groupBy { usage ->
-                usage.app.label.takeUnless { it == usage.app.packageName || it.matches(Regex("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")) }
-                    ?: "Unknown app"
-            }.map { (label, values) ->
-                CompareApp(label.take(50), values.sumOf { it.duration.toMillis() })
-            }.sortedByDescending { it.millis }.take(8) else null,
+            apps = sharedApps,
             screenTimeDays = if (sharing.screenTime && valid.isNotEmpty()) valid.size else null,
         )
     }

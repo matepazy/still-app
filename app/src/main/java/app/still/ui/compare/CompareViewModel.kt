@@ -64,9 +64,7 @@ class CompareViewModel(
         } else _state.value = _state.value.copy(period = StatisticsPeriod.Custom, range = range, error = null)
     }
     fun scanFriend() {
-        if (_state.value.sharing.flags() == 0) {
-            _state.value = _state.value.copy(error = "Choose at least one thing to share.")
-        } else _state.value = _state.value.copy(phase = ComparePhase.ScanFriend, error = null)
+        _state.value = _state.value.copy(phase = ComparePhase.ScanFriend, error = null)
     }
     fun scanReply() { _state.value = _state.value.copy(phase = ComparePhase.ScanReply, error = null) }
     fun showResult() { if (_state.value.result != null) _state.value = _state.value.copy(phase = ComparePhase.Result) }
@@ -123,12 +121,14 @@ class CompareViewModel(
             runCatching {
                 val cutoff = decoded.cutoffEpochMillis?.let(Instant::ofEpochMilli)
                 require(cutoff == null || !Instant.now().isBefore(cutoff)) { "This phone's clock is earlier than the comparison cutoff." }
-                val own = build(decoded.range, chosen.sharing, cutoff, decoded.sessionId, ComparePayloadCodec.fingerprint(decoded))
+                val own = build(decoded.range, decoded.sharing, cutoff, decoded.sessionId,
+                    ComparePayloadCodec.fingerprint(decoded), decoded.apps?.map { it.label })
                 CompareEngine.result(own, decoded, null)
             }.onSuccess { result ->
                 friend = decoded
                 local = result.you
-                _state.value = chosen.copy(phase = ComparePhase.Result, range = decoded.range, result = result, busy = false)
+                _state.value = chosen.copy(phase = ComparePhase.Result, range = decoded.range,
+                    sharing = decoded.sharing, result = result, busy = false)
             }.onFailure { _state.value = chosen.copy(phase = ComparePhase.Start, busy = false, error = it.message) }
         }
     }
@@ -140,12 +140,13 @@ class CompareViewModel(
             .onFailure { _state.value = _state.value.copy(error = it.message) }
     }
 
-    private suspend fun build(range: StatisticsRange, sharing: CompareSharing, cutoff: Instant?, sessionId: String? = null, replyTo: String? = null): CompareSnapshot {
+    private suspend fun build(range: StatisticsRange, sharing: CompareSharing, cutoff: Instant?, sessionId: String? = null,
+        replyTo: String? = null, requestedApps: List<String>? = null): CompareSnapshot {
         val days = repository.statisticsDays(range, cutoff)
         return withContext(Dispatchers.Default) {
             CompareSnapshotBuilder.build(range, days, sharing,
                 { packageName -> overrides[packageName] ?: repository.categoryFor(packageName) },
-                sessionId ?: java.util.UUID.randomUUID().toString().replace("-", ""), cutoff, replyTo)
+                sessionId ?: java.util.UUID.randomUUID().toString().replace("-", ""), cutoff, replyTo, requestedApps)
         }
     }
 
