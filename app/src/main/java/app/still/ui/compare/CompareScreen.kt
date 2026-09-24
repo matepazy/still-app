@@ -42,6 +42,7 @@ import app.still.domain.model.StatisticsPeriod
 import app.still.ui.statistics.StatisticsPeriodSelector
 import app.still.ui.statistics.label
 import app.still.ui.theme.StillSpacing
+import app.still.domain.model.AppInfo
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +54,8 @@ fun CompareTopBar(onBack: () -> Unit) {
 }
 
 @Composable
-fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>, modifier: Modifier = Modifier) {
+fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>,
+    localApps: Map<String, AppInfo>, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BackHandler(enabled = state.phase != ComparePhase.Start && state.phase != ComparePhase.Result) { viewModel.back() }
     if (state.phase == ComparePhase.ScanFriend || state.phase == ComparePhase.ScanReply) {
@@ -91,13 +93,28 @@ fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>, 
                 }
                 Spacer(Modifier.height(StillSpacing.xLarge))
                 Button(onClick = viewModel::showOwnQr, enabled = !state.busy && state.sharing.flags() != 0,
-                    modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Show my code") }
+                    modifier = Modifier.fillMaxWidth().height(76.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                        Icon(painterResource(StillIcons.QrCode), contentDescription = null, modifier = Modifier.size(28.dp))
+                        Column {
+                            Text("Show my code", style = MaterialTheme.typography.titleMedium)
+                            Text("Friend scans this phone", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
                 Spacer(Modifier.height(StillSpacing.small))
                 OutlinedButton(onClick = viewModel::scanFriend,
-                    modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Scan friend's code") }
-                Text("A reply shares the same types selected in your friend's code.",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = StillSpacing.small))
+                    modifier = Modifier.fillMaxWidth().height(76.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                        Icon(painterResource(StillIcons.Scan), contentDescription = null, modifier = Modifier.size(28.dp))
+                        Column {
+                            Text("Scan friend's code", style = MaterialTheme.typography.titleMedium)
+                            Text("Use your camera", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
                 Text("QR only · Nothing is uploaded", modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = StillSpacing.medium),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (state.busy) CircularProgressIndicator()
@@ -122,7 +139,7 @@ fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>, 
                 TextButton(onClick = viewModel::startOver) { Text("Start over") }
             }
             ComparePhase.Result -> {
-                state.result?.let { CompareResultView(it) }
+                state.result?.let { CompareResultView(it, localApps) }
                 Spacer(Modifier.height(StillSpacing.large))
                 if (state.result?.you?.replyTo != null) Button(onClick = viewModel::showReplyQr, modifier = Modifier.fillMaxWidth()) { Text("Show reply code") }
                 TextButton(onClick = viewModel::startOver) { Text("Start over") }

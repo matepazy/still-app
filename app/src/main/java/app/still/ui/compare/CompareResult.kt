@@ -24,8 +24,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.CompareResult
+import app.still.domain.model.AppInfo
 import app.still.data.settings.AppCategory
 import app.still.ui.components.StillIcons
+import app.still.ui.components.AppIcon
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.compactDuration
 import app.still.ui.statistics.label
@@ -33,7 +35,7 @@ import app.still.ui.theme.StillSpacing
 import java.time.Duration
 
 @Composable
-fun CompareResultView(result: CompareResult) {
+fun CompareResultView(result: CompareResult, localApps: Map<String, AppInfo>) {
     val singleDay = result.you.range.days == 1L
     Text("Side by side", style = MaterialTheme.typography.headlineMedium)
     Text(result.you.range.label(), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -64,7 +66,7 @@ fun CompareResultView(result: CompareResult) {
         }
     }
     if (!singleDay && result.you.totalScreenTimeMillis != null && result.friend.totalScreenTimeMillis != null) {
-        ResultHeading("Total screen time", StillIcons.Statistics)
+        ResultHeading("Total screen time", StillIcons.Clock)
         PairedBars(result.you.totalScreenTimeMillis, result.friend.totalScreenTimeMillis, ::duration)
     }
     if (!singleDay && result.you.screenTimeDays != null && result.friend.screenTimeDays != null) {
@@ -95,7 +97,7 @@ fun CompareResultView(result: CompareResult) {
     }
     val categories = (result.you.categories.orEmpty().map { it.name } + result.friend.categories.orEmpty().map { it.name }).distinct()
     if (result.you.sharing.categories && result.friend.sharing.categories && categories.isNotEmpty()) {
-        ResultHeading("By category", StillIcons.Statistics)
+        ResultHeading("By category", StillIcons.CategoryOther)
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
             Column {
                 categories.forEachIndexed { index, name ->
@@ -110,18 +112,24 @@ fun CompareResultView(result: CompareResult) {
         }
     }
     val firstCode = if (result.you.replyTo == null) result.you else result.friend
-    val apps = firstCode.apps.orEmpty().map { it.label }
+    val apps = firstCode.apps.orEmpty()
     if (result.you.sharing.apps && result.friend.sharing.apps && apps.isNotEmpty()) {
         ResultHeading("Individual apps", StillIcons.Apps)
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
             Column {
-                apps.forEachIndexed { index, name ->
+                apps.forEachIndexed { index, app ->
                     if (index > 0) HorizontalDivider(Modifier.padding(vertical = StillSpacing.medium),
                         color = MaterialTheme.colorScheme.outlineVariant)
-                    LabelWithIcon(name, StillIcons.Apps)
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                        AppIcon(localApps[app.label]?.packageName.orEmpty(), app.label, size = 24.dp,
+                            fallbackIcon = categoryIcon(app.category ?: AppCategory.Other.displayName))
+                        Text(app.label, style = MaterialTheme.typography.titleMedium, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis)
+                    }
                     Spacer(Modifier.height(StillSpacing.small))
-                    PairedBars(result.you.apps?.firstOrNull { it.label == name }?.millis ?: 0L,
-                        result.friend.apps?.firstOrNull { it.label == name }?.millis ?: 0L, ::duration)
+                    PairedBars(result.you.apps?.firstOrNull { it.label == app.label }?.millis ?: 0L,
+                        result.friend.apps?.firstOrNull { it.label == app.label }?.millis ?: 0L, ::duration)
                 }
             }
         }

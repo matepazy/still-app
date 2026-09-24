@@ -1,7 +1,11 @@
 package app.still.ui.compare
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -20,6 +24,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.material3.Button
@@ -53,6 +60,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
@@ -62,18 +72,57 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.delay
 import app.still.ui.components.StillIcons
+import app.still.ui.theme.StillSpacing
 
 @Composable
 fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
-    LaunchedEffect(Unit) { if (!granted) launcher.launch(Manifest.permission.CAMERA) }
+    var denied by remember { mutableStateOf(false) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        granted = it
+        denied = !it
+    }
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
     if (!granted) {
-        Column(modifier.padding(24.dp)) {
-            Text("Camera access lets Still scan your friend's QR code. The image stays on this phone.")
-            Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) { Text("Allow camera") }
+        val openSettings = denied && (context as? Activity)?.let {
+            !ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA)
+        } == true
+        Column(modifier.fillMaxSize().padding(StillSpacing.large),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(88.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(28.dp)),
+                contentAlignment = Alignment.Center) {
+                Icon(painterResource(StillIcons.Scan), contentDescription = null,
+                    modifier = Modifier.size(42.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            Spacer(Modifier.height(24.dp))
+            Text("Scan a friend's code", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(8.dp))
+            Text("Allow camera access to scan the QR code.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(24.dp))
+            Button(onClick = {
+                if (openSettings) context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:${context.packageName}")))
+                else launcher.launch(Manifest.permission.CAMERA)
+            }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                Text(if (openSettings) "Open app settings" else "Continue to camera")
+            }
+            Spacer(Modifier.height(16.dp))
+            Text("Scanning happens on this phone. No image is saved or uploaded.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }

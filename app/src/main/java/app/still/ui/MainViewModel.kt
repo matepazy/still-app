@@ -125,7 +125,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             return
         }
         viewModelScope.launch {
-            usageState.value = UsageUiState.Loading
+            // Keep the navigation tree (and an active scanner) alive during a resume refresh.
+            if (usageState.value !is UsageUiState.Ready) usageState.value = UsageUiState.Loading
             val saveHistory = container.settingsRepository.settings.first().saveUsageHistory
             usageState.value = container.usageRepository.dashboard(saveHistory).fold(
                 onSuccess = UsageUiState::Ready,

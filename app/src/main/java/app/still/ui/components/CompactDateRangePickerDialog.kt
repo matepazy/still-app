@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -14,9 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +33,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.WeekFields
+import kotlinx.coroutines.launch
 
 @Composable
 fun CompactDateRangePickerDialog(
@@ -50,13 +53,16 @@ fun CompactDateRangePickerDialog(
         val last = YearMonth.from(today)
         (0..ChronoUnit.MONTHS.between(first, last).toInt()).map { first.plusMonths(it.toLong()) }
     }
-    val availableEpochDays = remember(earliestDate, today) {
-        (0..ChronoUnit.DAYS.between(earliestDate, today).toInt())
-            .mapTo(hashSetOf()) { earliestDate.plusDays(it.toLong()).toEpochDay() }
+    val availableEpochDays = remember(availableDates, earliestDate, today) {
+        availableDates.asSequence()
+            .filter { !it.isBefore(earliestDate) && !it.isAfter(today) }
+            .mapTo(hashSetOf(), LocalDate::toEpochDay)
     }
-    var visibleMonthIndex by remember(selectedRange, months) {
-        mutableIntStateOf(months.indexOf(YearMonth.from(selectedRange.endInclusive)).coerceIn(0, months.lastIndex))
-    }
+    val pagerState = rememberPagerState(
+        initialPage = months.indexOf(YearMonth.from(selectedRange.endInclusive)).coerceIn(0, months.lastIndex),
+        pageCount = { months.size },
+    )
+    val scope = rememberCoroutineScope()
     var pendingStart by remember(selectedRange) { mutableStateOf(selectedRange.start) }
     var pendingEnd by remember(selectedRange) { mutableStateOf<LocalDate?>(selectedRange.endInclusive) }
     val dateFormatter = remember(locale) { DateTimeFormatter.ofPattern("MMM d, yyyy", locale) }
@@ -80,30 +86,31 @@ fun CompactDateRangePickerDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 MonthNavigation(
-                    month = months[visibleMonthIndex],
+                    month = months[pagerState.currentPage],
                     formatter = monthFormatter,
-                    canGoBack = visibleMonthIndex > 0,
-                    canGoForward = visibleMonthIndex < months.lastIndex,
-                    onBack = { visibleMonthIndex-- },
-                    onForward = { visibleMonthIndex++ },
+                    canGoBack = pagerState.currentPage > 0,
+                    canGoForward = pagerState.currentPage < months.lastIndex,
+                    onBack = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
+                    onForward = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
                     modifier = Modifier.padding(top = StillSpacing.large),
                 )
                 WeekdayHeader(weekDays, locale, Modifier.padding(top = StillSpacing.small))
-                MonthGrid(
-                    month = months[visibleMonthIndex],
-                    firstDayOfWeek = firstDayOfWeek,
-                    availableEpochDays = availableEpochDays,
-                    selectedDate = pendingStart,
-                    selectedEndDate = pendingEnd,
-                    onDateSelected = { date ->
-                        when {
-                            pendingEnd != null -> { pendingStart = date; pendingEnd = null }
-                            date.isBefore(pendingStart) -> pendingStart = date
-                            else -> pendingEnd = date
-                        }
-                    },
-                    modifier = Modifier.padding(top = StillSpacing.xSmall),
-                )
+                HorizontalPager(state = pagerState, modifier = Modifier.padding(top = StillSpacing.xSmall)) { page ->
+                    MonthGrid(
+                        month = months[page],
+                        firstDayOfWeek = firstDayOfWeek,
+                        availableEpochDays = availableEpochDays,
+                        selectedDate = pendingStart,
+                        selectedEndDate = pendingEnd,
+                        onDateSelected = { date ->
+                            when {
+                                pendingEnd != null -> { pendingStart = date; pendingEnd = null }
+                                date.isBefore(pendingStart) -> pendingStart = date
+                                else -> pendingEnd = date
+                            }
+                        },
+                    )
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = StillSpacing.medium),
                     horizontalArrangement = Arrangement.End,
@@ -112,7 +119,8 @@ fun CompactDateRangePickerDialog(
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Button(
                         onClick = { pendingEnd?.let { onConfirm(StatisticsRange(pendingStart, it)) } },
-                        enabled = pendingEnd != null,
+                        enabled = pendingStart.toEpochDay() in availableEpochDays &&
+                            pendingEnd?.toEpochDay()?.let(availableEpochDays::contains) == true,
                         modifier = Modifier.padding(start = StillSpacing.small),
                     ) { Text("Apply") }
                 }

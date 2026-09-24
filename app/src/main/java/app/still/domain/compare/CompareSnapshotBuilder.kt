@@ -19,16 +19,21 @@ object CompareSnapshotBuilder {
         require(range.days in 1..3660)
         val valid = days.mapNotNull { it.screenTime?.toMillis() }
         val apps = days.flatMap { it.apps.orEmpty() }
-        val appTotals = if (sharing.apps) apps.groupBy { usage ->
+        val appGroups = if (sharing.apps) apps.groupBy { usage ->
             usage.app.label.takeUnless { it == usage.app.packageName ||
                 it.matches(Regex("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")) } ?: "Unknown app"
-        }.mapValues { (_, values) -> values.sumOf { it.duration.toMillis() } } else emptyMap()
+        } else emptyMap()
+        val appTotals = appGroups.mapValues { (_, values) -> values.sumOf { it.duration.toMillis() } }
+        fun sharedApp(label: String, millis: Long) = CompareApp(
+            label.take(50), millis,
+            appGroups[label]?.maxByOrNull { it.duration }?.let { categoryOf(it.app.packageName).displayName },
+        )
         val sharedApps = when {
             !sharing.apps -> null
             requestedApps != null -> requestedApps.distinct().take(8).map { label ->
-                CompareApp(label.take(50), appTotals[label] ?: 0L)
+                sharedApp(label, appTotals[label] ?: 0L)
             }
-            else -> appTotals.map { (label, millis) -> CompareApp(label.take(50), millis) }
+            else -> appTotals.map { (label, millis) -> sharedApp(label, millis) }
                 .sortedByDescending { it.millis }.take(8)
         }
         return CompareSnapshot(

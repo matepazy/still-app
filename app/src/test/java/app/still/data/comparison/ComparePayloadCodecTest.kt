@@ -40,6 +40,10 @@ class ComparePayloadCodecTest {
     @Test fun individualAppsAreOptInAndStillOmitPackageNames() {
         val model = snapshot(CompareSharing(apps = true))
         assertEquals("Friendly app", model.apps!!.first().label)
+        assertEquals(AppCategory.Social.displayName, model.apps!!.first().category)
+        assertEquals(model, ComparePayloadCodec.decode(ComparePayloadCodec.encode(model)).getOrThrow())
+        assertEquals(ComparePayloadCodec.fingerprint(model.copy(apps = model.apps!!.map { it.copy(category = null) })),
+            ComparePayloadCodec.fingerprint(model))
         assertFalse(ComparePayloadCodec.encode(model).contains("secret.package.name"))
         val unnamed = day.copy(apps = listOf(AppUsage(AppInfo("secret.package.name", "secret.package.name"), Duration.ofMinutes(5), 1)))
         val sanitized = CompareSnapshotBuilder.build(range, listOf(unnamed), CompareSharing(apps = true), { AppCategory.Social },
@@ -105,7 +109,7 @@ class ComparePayloadCodecTest {
             { AppCategory.Social }, first.sessionId, null, ComparePayloadCodec.fingerprint(first),
             first.apps!!.map { it.label })
         assertEquals(first.sharingFlags, reply.sharingFlags)
-        assertEquals(listOf(CompareApp("Friendly app", 5 * 60_000L)), reply.apps)
+        assertEquals(listOf(CompareApp("Friendly app", 5 * 60_000L, AppCategory.Social.displayName)), reply.apps)
         assertEquals(reply, ComparePayloadCodec.decode(ComparePayloadCodec.encode(reply)).getOrThrow())
     }
 

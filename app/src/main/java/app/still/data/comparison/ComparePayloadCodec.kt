@@ -47,7 +47,9 @@ object ComparePayloadCodec {
     }
 
     fun fingerprint(snapshot: CompareSnapshot): String = MessageDigest.getInstance("SHA-256")
-        .digest(encode(snapshot).toByteArray(Charsets.UTF_8)).take(12).joinToString("") { "%02x".format(it) }
+        // Keep the reply handshake stable for devices that do not know the optional icon hint.
+        .digest(encode(snapshot.copy(apps = snapshot.apps?.map { it.copy(category = null) }))
+            .toByteArray(Charsets.UTF_8)).take(12).joinToString("") { "%02x".format(it) }
 
     private fun validate(snapshot: CompareSnapshot) {
         require(snapshot.version == 1) { "Unsupported comparison version." }
@@ -68,7 +70,8 @@ object ComparePayloadCodec {
         require(sharing.apps || snapshot.apps == null)
         require(snapshot.categories.orEmpty().size <= 10 && snapshot.apps.orEmpty().size <= 8)
         require(snapshot.categories.orEmpty().all { item -> AppCategory.entries.any { it.displayName == item.name } && item.millis >= 0 })
-        require(snapshot.apps.orEmpty().all { it.label.length <= 50 && it.millis >= 0 })
+        require(snapshot.apps.orEmpty().all { it.label.length <= 50 && it.millis >= 0 &&
+            (it.category == null || AppCategory.entries.any { category -> category.displayName == it.category }) })
         snapshot.cutoffEpochMillis?.let {
             require(range.endInclusive == LocalDate.now())
             require(it in 0..(System.currentTimeMillis() + 300_000))

@@ -19,7 +19,7 @@ data class CompareSharing(
 }
 
 data class CompareCategory(val name: String, val millis: Long)
-data class CompareApp(val label: String, val millis: Long)
+data class CompareApp(val label: String, val millis: Long, val category: String? = null)
 
 data class CompareSnapshot(
     val version: Int,

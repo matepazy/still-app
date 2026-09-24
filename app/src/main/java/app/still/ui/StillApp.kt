@@ -1,5 +1,7 @@
 package app.still.ui
 
+import android.content.pm.LauncherApps
+import android.os.Process
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.scaleOut
@@ -52,6 +54,7 @@ import app.still.data.settings.ThemePreference
 import app.still.data.settings.AppCategory
 import app.still.data.settings.LastDestination
 import app.still.domain.model.AppDetail
+import app.still.domain.model.AppInfo
 import app.still.domain.model.DailyAppUsage
 import app.still.domain.model.UsageDashboard
 import app.still.ui.appdetail.AppDetailScreen
@@ -337,7 +340,20 @@ private fun MainNavigation(
                 topBar = { CompareTopBar {
                     if (!compareViewModel.back() && !navController.popBackStack()) navController.navigate(StatisticsRoute)
                 } },
-            ) { padding -> CompareScreen(compareViewModel, availableDays.map { it.date }, Modifier.padding(padding)) }
+            ) { padding ->
+                val localApps = remember(availableDays) {
+                    val installed = runCatching {
+                        context.getSystemService(LauncherApps::class.java)
+                            ?.getActivityList(null, Process.myUserHandle()).orEmpty()
+                            .map { AppInfo(it.applicationInfo.packageName, it.label.toString()) }
+                    }.getOrDefault(emptyList())
+                    (installed + availableDays.flatMap { it.apps.orEmpty() }.map { it.app })
+                        .groupBy { it.label }.mapNotNull { (label, matches) ->
+                            matches.distinctBy { it.packageName }.singleOrNull()?.let { label to it }
+                        }.toMap()
+                }
+                CompareScreen(compareViewModel, availableDays.map { it.date }, localApps, Modifier.padding(padding))
+            }
         }
         composable(AppDetailRoute) { entry ->
             val packageName = entry.arguments?.getString("packageName").orEmpty()

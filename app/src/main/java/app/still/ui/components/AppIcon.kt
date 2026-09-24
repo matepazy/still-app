@@ -27,11 +27,12 @@ private const val IconBitmapSize = 96
 private const val AppIconCornerPercent = 24
 
 @Composable
-fun AppIcon(packageName: String, label: String, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+fun AppIcon(packageName: String, label: String, modifier: Modifier = Modifier, size: Dp = 40.dp,
+    fallbackIcon: Int = StillIcons.Apps) {
     val context = LocalContext.current
     val packageManager = context.packageManager
     val drawable: Drawable? = remember(packageName) {
-        runCatching {
+        if (packageName.isBlank()) null else runCatching {
             context.getSystemService(LauncherApps::class.java)
                 ?.getActivityList(packageName, Process.myUserHandle())
                 ?.firstOrNull()
@@ -63,7 +64,7 @@ fun AppIcon(packageName: String, label: String, modifier: Modifier = Modifier, s
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                painter = painterResource(StillIcons.Apps),
+                painter = painterResource(fallbackIcon),
                 contentDescription = "$label app icon unavailable",
                 modifier = Modifier.size(size * .48f),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,

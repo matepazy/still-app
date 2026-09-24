@@ -13,6 +13,9 @@ object StillIcons {
     @DrawableRes val Apps = R.drawable.ic_ui_apps
     @DrawableRes val Statistics = R.drawable.ic_ui_statistics
     @DrawableRes val Compare = R.drawable.ic_ui_compare
+    @DrawableRes val QrCode = R.drawable.ic_ui_qr_code
+    @DrawableRes val Scan = R.drawable.ic_ui_scan
+    @DrawableRes val Clock = R.drawable.ic_ui_clock
     @DrawableRes val Check = R.drawable.ic_ui_check
     @DrawableRes val Settings = R.drawable.ic_ui_settings
     @DrawableRes val Back = R.drawable.ic_ui_back
