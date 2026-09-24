@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -20,9 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +43,10 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
 import java.time.temporal.WeekFields
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 @Composable
 fun DaySelector(
@@ -93,11 +97,15 @@ private fun CompactDatePickerDialog(
     onConfirm: (LocalDate) -> Unit,
 ) {
     val availableEpochDays = remember(availableDates) { availableDates.mapTo(hashSetOf(), LocalDate::toEpochDay) }
-    val months = remember(availableDates) { availableDates.map(YearMonth::from).distinct() }
-    val initialMonthIndex = months.indexOf(YearMonth.from(selectedDate)).coerceAtLeast(0)
-    var visibleMonthIndex by remember(selectedDate, months) { mutableIntStateOf(initialMonthIndex) }
+    val months = remember(availableDates) {
+        val first = YearMonth.from(availableDates.first())
+        val last = YearMonth.from(availableDates.last())
+        (0..ChronoUnit.MONTHS.between(first, last).toInt()).map { first.plusMonths(it.toLong()) }
+    }
+    val initialMonthIndex = months.indexOf(YearMonth.from(selectedDate)).coerceIn(0, months.lastIndex)
+    val pagerState = rememberPagerState(initialPage = initialMonthIndex, pageCount = { months.size })
+    val scope = rememberCoroutineScope()
     var pendingDate by remember(selectedDate) { mutableStateOf(selectedDate) }
-    val visibleMonth = months[visibleMonthIndex]
     val fullDateFormatter = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale) }
     val monthFormatter = remember(locale) { DateTimeFormatter.ofPattern("MMMM yyyy", locale) }
     val firstDayOfWeek = remember(locale) { WeekFields.of(locale).firstDayOfWeek }
@@ -126,24 +134,28 @@ private fun CompactDatePickerDialog(
                 )
 
                 MonthNavigation(
-                    month = visibleMonth,
+                    month = months[pagerState.currentPage],
                     formatter = monthFormatter,
-                    canGoBack = visibleMonthIndex > 0,
-                    canGoForward = visibleMonthIndex < months.lastIndex,
-                    onBack = { visibleMonthIndex-- },
-                    onForward = { visibleMonthIndex++ },
+                    canGoBack = pagerState.currentPage > 0,
+                    canGoForward = pagerState.currentPage < months.lastIndex,
+                    onBack = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
+                    onForward = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
                     modifier = Modifier.padding(top = StillSpacing.large),
                 )
 
                 WeekdayHeader(weekDays, locale, Modifier.padding(top = StillSpacing.small))
-                MonthGrid(
-                    month = visibleMonth,
-                    firstDayOfWeek = firstDayOfWeek,
-                    availableEpochDays = availableEpochDays,
-                    selectedDate = pendingDate,
-                    onDateSelected = { pendingDate = it },
-                    modifier = Modifier.padding(top = StillSpacing.xSmall),
-                )
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.padding(top = StillSpacing.xSmall).height(264.dp),
+                ) { page ->
+                    MonthGrid(
+                        month = months[page],
+                        firstDayOfWeek = firstDayOfWeek,
+                        availableEpochDays = availableEpochDays,
+                        selectedDate = pendingDate,
+                        onDateSelected = { pendingDate = it },
+                    )
+                }
 
                 Row(
                     modifier = Modifier
@@ -229,7 +241,7 @@ internal fun MonthGrid(
     modifier: Modifier = Modifier,
 ) {
     val leadingEmptyCells = (month.atDay(1).dayOfWeek.value - firstDayOfWeek.value + 7) % 7
-    val cellCount = ((leadingEmptyCells + month.lengthOfMonth() + 6) / 7) * 7
+    val cellCount = 42
 
     Column(modifier.fillMaxWidth()) {
         repeat(cellCount / 7) { week ->

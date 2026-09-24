@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
@@ -95,7 +96,10 @@ fun CompactDateRangePickerDialog(
                     modifier = Modifier.padding(top = StillSpacing.large),
                 )
                 WeekdayHeader(weekDays, locale, Modifier.padding(top = StillSpacing.small))
-                HorizontalPager(state = pagerState, modifier = Modifier.padding(top = StillSpacing.xSmall)) { page ->
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.padding(top = StillSpacing.xSmall).height(264.dp),
+                ) { page ->
                     MonthGrid(
                         month = months[page],
                         firstDayOfWeek = firstDayOfWeek,
