@@ -399,7 +399,9 @@ private fun MainNavigation(
             ) { padding ->
                 ThemeSettingsScreen(
                     selectedTheme = settings.theme,
+                    promotedSimpleTheme = settings.promotedSimpleTheme,
                     onThemeChange = viewModel::setTheme,
+                    onDrawerThemeChange = viewModel::setThemeFromDrawer,
                     modifier = Modifier.padding(padding),
                 )
             }

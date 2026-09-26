@@ -41,6 +41,7 @@ enum class LastDestination {
 data class UserSettings(
     val onboardingComplete: Boolean = false,
     val theme: ThemePreference = ThemePreference.System,
+    val promotedSimpleTheme: ThemePreference? = null,
     val dailyTargetMinutes: Long? = null,
     val versionCheckEnabled: Boolean? = null,
     val updateChannel: String = "release",
@@ -75,6 +76,7 @@ class SettingsRepository(private val context: Context) {
     private object Keys {
         val onboarding = booleanPreferencesKey("onboarding_complete")
         val theme = stringPreferencesKey("theme")
+        val promotedSimpleTheme = stringPreferencesKey("promoted_simple_theme")
         val dynamic = booleanPreferencesKey("dynamic_colors")
         val target = longPreferencesKey("daily_target_minutes")
         val versionCheckEnabled = booleanPreferencesKey("version_check_enabled")
@@ -117,6 +119,8 @@ class SettingsRepository(private val context: Context) {
             theme = if (preferences[Keys.dynamic] == true) ThemePreference.Wallpaper else
                 preferences[Keys.theme]?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() }
                     ?: ThemePreference.System,
+            promotedSimpleTheme = preferences[Keys.promotedSimpleTheme]
+                ?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() },
             dailyTargetMinutes = preferences[Keys.target],
             versionCheckEnabled = preferences[Keys.versionCheckEnabled],
             updateChannel = preferences[Keys.updateChannel] ?: "release",
@@ -160,6 +164,11 @@ class SettingsRepository(private val context: Context) {
     }
     suspend fun setTheme(value: ThemePreference) = context.settingsDataStore.edit {
         it[Keys.theme] = value.name
+        it.remove(Keys.dynamic)
+    }
+    suspend fun setThemeFromDrawer(value: ThemePreference) = context.settingsDataStore.edit {
+        it[Keys.theme] = value.name
+        it[Keys.promotedSimpleTheme] = value.name
         it.remove(Keys.dynamic)
     }
     suspend fun setDailyTargetMinutes(value: Long?) = context.settingsDataStore.edit {

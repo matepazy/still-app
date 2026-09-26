@@ -222,6 +222,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         if (container.permissionManager.hasUsageAccess()) container.settingsRepository.completeOnboarding()
     }
     fun setTheme(value: ThemePreference) = viewModelScope.launch { container.settingsRepository.setTheme(value) }
+    fun setThemeFromDrawer(value: ThemePreference) = viewModelScope.launch {
+        container.settingsRepository.setThemeFromDrawer(value)
+    }
     fun setSaveUsageHistory(value: Boolean) = viewModelScope.launch {
         container.settingsRepository.setSaveUsageHistory(value)
         if (value) {
