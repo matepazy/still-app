@@ -202,21 +202,21 @@ fun SettingsScreen(
                     supporting = "See exactly what Still keeps locally",
                     onClick = onStoredDataClick,
                 )
-                Hairline()
-                SettingRow(
-                    title = "Restore backup",
-                    supporting = when {
-                        archiveRestoreState == ArchiveRestoreState.Restoring -> "Restoring previous archive…"
-                        storedDataSummary == null -> "Checking for a migration backup…"
-                        storedDataSummary.storageFormat == ArchiveStorageFormat.Legacy -> "Previous archive format is active"
-                        storedDataSummary.backupAvailable -> "Return to the archive saved before compression"
-                        else -> "No migration backup is available"
-                    },
-                    enabled = storedDataSummary?.let {
-                        it.backupAvailable && it.storageFormat == ArchiveStorageFormat.Compact
-                    } == true && archiveRestoreState != ArchiveRestoreState.Restoring,
-                    onClick = { restoreArchiveDialog = true },
-                )
+                if (storedDataSummary?.backupAvailable == true &&
+                    storedDataSummary.storageFormat == ArchiveStorageFormat.Compact
+                ) {
+                    Hairline()
+                    SettingRow(
+                        title = "Restore backup",
+                        supporting = if (archiveRestoreState == ArchiveRestoreState.Restoring) {
+                            "Restoring previous archive…"
+                        } else {
+                            "Return to the archive saved before compression"
+                        },
+                        enabled = archiveRestoreState != ArchiveRestoreState.Restoring,
+                        onClick = { restoreArchiveDialog = true },
+                    )
+                }
             }
         }
 
