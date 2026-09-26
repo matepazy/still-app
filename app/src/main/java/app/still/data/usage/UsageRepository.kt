@@ -171,6 +171,10 @@ class UsageRepository(
         runCatching { syncMutex.withLock { archive.restoreLegacyBackup() } }
     }
 
+    suspend fun upgradeLegacyArchive(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching { syncMutex.withLock { archive.upgradeLegacyArchive() } }
+    }
+
     suspend fun deleteLegacyBackup(): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching { syncMutex.withLock { archive.deleteLegacyBackup() } }
     }

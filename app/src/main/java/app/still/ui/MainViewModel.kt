@@ -52,6 +52,13 @@ sealed interface ArchiveRestoreState {
     data class Error(val message: String) : ArchiveRestoreState
 }
 
+sealed interface ArchiveUpgradeState {
+    data object Idle : ArchiveUpgradeState
+    data object Upgrading : ArchiveUpgradeState
+    data object Upgraded : ArchiveUpgradeState
+    data class Error(val message: String) : ArchiveUpgradeState
+}
+
 sealed interface ArchiveBackupDeleteState {
     data object Idle : ArchiveBackupDeleteState
     data object Deleting : ArchiveBackupDeleteState
@@ -74,6 +81,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     val archiveMigrationNotice: StateFlow<ArchiveMigrationNotice?> = _archiveMigrationNotice
     private val _archiveRestoreState = MutableStateFlow<ArchiveRestoreState>(ArchiveRestoreState.Idle)
     val archiveRestoreState: StateFlow<ArchiveRestoreState> = _archiveRestoreState
+    private val _archiveUpgradeState = MutableStateFlow<ArchiveUpgradeState>(ArchiveUpgradeState.Idle)
+    val archiveUpgradeState: StateFlow<ArchiveUpgradeState> = _archiveUpgradeState
     private val _archiveBackupDeleteState = MutableStateFlow<ArchiveBackupDeleteState>(ArchiveBackupDeleteState.Idle)
     val archiveBackupDeleteState: StateFlow<ArchiveBackupDeleteState> = _archiveBackupDeleteState
     val state: StateFlow<MainUiState> = combine(container.settingsRepository.settings, usageState) { settings, usage ->
@@ -165,6 +174,28 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
 
     fun dismissArchiveRestoreResult() {
         _archiveRestoreState.value = ArchiveRestoreState.Idle
+    }
+
+    fun upgradeArchive() = viewModelScope.launch {
+        if (_archiveUpgradeState.value == ArchiveUpgradeState.Upgrading) return@launch
+        _archiveUpgradeState.value = ArchiveUpgradeState.Upgrading
+        container.usageRepository.upgradeLegacyArchive().fold(
+            onSuccess = {
+                _archiveUpgradeState.value = ArchiveUpgradeState.Upgraded
+                refreshStoredDataSummary()
+                refresh()
+                WidgetUpdateDispatcher.updateAll(container.applicationContext)
+            },
+            onFailure = {
+                _archiveUpgradeState.value = ArchiveUpgradeState.Error(
+                    it.message ?: "The archive could not be upgraded. Your previous archive is unchanged.",
+                )
+            },
+        )
+    }
+
+    fun dismissArchiveUpgradeResult() {
+        _archiveUpgradeState.value = ArchiveUpgradeState.Idle
     }
 
     fun deleteArchiveBackup() = viewModelScope.launch {

@@ -108,6 +108,7 @@ fun StillApp(
     val storedDataSummary by viewModel.storedDataSummary.collectAsStateWithLifecycle()
     val archiveMigrationNotice by viewModel.archiveMigrationNotice.collectAsStateWithLifecycle()
     val archiveRestoreState by viewModel.archiveRestoreState.collectAsStateWithLifecycle()
+    val archiveUpgradeState by viewModel.archiveUpgradeState.collectAsStateWithLifecycle()
     val archiveBackupDeleteState by viewModel.archiveBackupDeleteState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var activeUpdate by remember { mutableStateOf<UpdateState.UpdateAvailable?>(null) }
@@ -148,6 +149,7 @@ fun StillApp(
                         viewModel,
                         storedDataSummary,
                         archiveRestoreState,
+                        archiveUpgradeState,
                         archiveBackupDeleteState,
                         navigationRequest,
                         onNavigationRequestHandled,
@@ -189,6 +191,7 @@ private fun MainNavigation(
     viewModel: MainViewModel,
     storedDataSummary: app.still.data.usage.StoredDataSummary?,
     archiveRestoreState: ArchiveRestoreState,
+    archiveUpgradeState: ArchiveUpgradeState,
     archiveBackupDeleteState: ArchiveBackupDeleteState,
     navigationRequest: NavigationRequest?,
     onNavigationRequestHandled: (Int) -> Unit,
@@ -378,8 +381,11 @@ private fun MainNavigation(
                     onSaveUsageHistoryChange = viewModel::setSaveUsageHistory,
                     storedDataSummary = storedDataSummary,
                     archiveRestoreState = archiveRestoreState,
+                    archiveUpgradeState = archiveUpgradeState,
                     onRestoreArchive = viewModel::restoreArchiveBackup,
+                    onUpgradeArchive = viewModel::upgradeArchive,
                     onDismissArchiveRestoreResult = viewModel::dismissArchiveRestoreResult,
+                    onDismissArchiveUpgradeResult = viewModel::dismissArchiveUpgradeResult,
                     updateState = updateState,
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,

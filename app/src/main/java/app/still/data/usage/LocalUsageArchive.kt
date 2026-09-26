@@ -163,6 +163,22 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         updateControl(writableDatabase, "notice_pending", 0)
     }
 
+    fun upgradeLegacyArchive() {
+        val db = writableDatabase
+        require(!isCompact(db)) { "The compact archive is already active" }
+        db.beginTransaction()
+        try {
+            migrateLegacyArchive(db)
+            // The manual action reports its result in Settings instead of the startup notice.
+            updateControl(db, "notice_pending", 0)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        runCatching { db.execSQL("VACUUM") }
+            .onSuccess { updateControl(db, "compacted", 1) }
+    }
+
     fun deleteLegacyBackup() {
         require(isCompact(readableDatabase)) { "The safety backup can only be deleted while the compact archive is active" }
         require(legacyBackupFile.isFile) { "No archive backup is available" }

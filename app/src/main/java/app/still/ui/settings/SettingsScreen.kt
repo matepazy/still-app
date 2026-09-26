@@ -95,6 +95,7 @@ import app.still.ui.theme.StillSpacing
 import app.still.ui.components.StillIcons
 import app.still.update.UpdateState
 import app.still.ui.ArchiveRestoreState
+import app.still.ui.ArchiveUpgradeState
 import app.still.ui.ArchiveBackupDeleteState
 import java.time.Duration
 import java.time.Instant
@@ -133,8 +134,11 @@ fun SettingsScreen(
     onSaveUsageHistoryChange: (Boolean) -> Unit = {},
     storedDataSummary: StoredDataSummary? = null,
     archiveRestoreState: ArchiveRestoreState = ArchiveRestoreState.Idle,
+    archiveUpgradeState: ArchiveUpgradeState = ArchiveUpgradeState.Idle,
     onRestoreArchive: () -> Unit = {},
+    onUpgradeArchive: () -> Unit = {},
     onDismissArchiveRestoreResult: () -> Unit = {},
+    onDismissArchiveUpgradeResult: () -> Unit = {},
     modifier: Modifier = Modifier,
     updateState: UpdateState = UpdateState.Idle,
     onVersionCheckChange: (Boolean) -> Unit = {},
@@ -145,6 +149,7 @@ fun SettingsScreen(
     var updateChannelDialog by remember { mutableStateOf(false) }
     var stopSavingDialog by remember { mutableStateOf(false) }
     var restoreArchiveDialog by remember { mutableStateOf(false) }
+    var upgradeArchiveDialog by remember { mutableStateOf(false) }
     Column(
         modifier
             .fillMaxSize()
@@ -202,6 +207,19 @@ fun SettingsScreen(
                     supporting = "See exactly what Still keeps locally",
                     onClick = onStoredDataClick,
                 )
+                if (storedDataSummary?.storageFormat == ArchiveStorageFormat.Legacy) {
+                    Hairline()
+                    SettingRow(
+                        title = "Upgrade archive",
+                        supporting = if (archiveUpgradeState == ArchiveUpgradeState.Upgrading) {
+                            "Upgrading usage history…"
+                        } else {
+                            "Convert previous history to the compact format"
+                        },
+                        enabled = archiveUpgradeState != ArchiveUpgradeState.Upgrading,
+                        onClick = { upgradeArchiveDialog = true },
+                    )
+                }
                 if (storedDataSummary?.backupAvailable == true &&
                     storedDataSummary.storageFormat == ArchiveStorageFormat.Compact
                 ) {
@@ -339,6 +357,20 @@ fun SettingsScreen(
             },
         )
     }
+    if (upgradeArchiveDialog) {
+        AlertDialog(
+            onDismissRequest = { upgradeArchiveDialog = false },
+            title = { Text("Upgrade usage history?") },
+            text = { Text("Still will convert your previous archive to the compact format and keep a local safety backup when there is saved history. You can restore it from Settings › Data.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    upgradeArchiveDialog = false
+                    onUpgradeArchive()
+                }) { Text("Upgrade archive") }
+            },
+            dismissButton = { TextButton(onClick = { upgradeArchiveDialog = false }) { Text("Cancel") } },
+        )
+    }
     when (archiveRestoreState) {
         ArchiveRestoreState.Restored -> AlertDialog(
             onDismissRequest = onDismissArchiveRestoreResult,
@@ -353,6 +385,25 @@ fun SettingsScreen(
             confirmButton = { TextButton(onClick = onDismissArchiveRestoreResult) { Text("Close") } },
         )
         ArchiveRestoreState.Idle, ArchiveRestoreState.Restoring -> Unit
+    }
+    when (archiveUpgradeState) {
+        ArchiveUpgradeState.Upgraded -> AlertDialog(
+            onDismissRequest = onDismissArchiveUpgradeResult,
+            title = { Text("Usage history upgraded") },
+            text = { Text(if (storedDataSummary?.backupAvailable == true) {
+                "Still is using the compact archive. Your previous history is saved as a local safety backup."
+            } else {
+                "Still is using the compact archive."
+            }) },
+            confirmButton = { TextButton(onClick = onDismissArchiveUpgradeResult) { Text("Done") } },
+        )
+        is ArchiveUpgradeState.Error -> AlertDialog(
+            onDismissRequest = onDismissArchiveUpgradeResult,
+            title = { Text("Archive wasn’t upgraded") },
+            text = { Text(archiveUpgradeState.message) },
+            confirmButton = { TextButton(onClick = onDismissArchiveUpgradeResult) { Text("Close") } },
+        )
+        ArchiveUpgradeState.Idle, ArchiveUpgradeState.Upgrading -> Unit
     }
 }
 
