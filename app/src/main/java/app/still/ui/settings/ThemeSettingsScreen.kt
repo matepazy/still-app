@@ -107,7 +107,8 @@ fun ThemeSettingsScreen(
             horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
         ) {
             listOf(ThemePreference.Black, ThemePreference.White, ThemePreference.LightBlue,
-                ThemePreference.Sage, ThemePreference.Sand).forEach { option ->
+                ThemePreference.Sage, ThemePreference.Sand, ThemePreference.Midnight,
+                ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach).forEach { option ->
                 ThemeCard(
                     option = option,
                     selected = selectedTheme == option,
@@ -157,6 +158,10 @@ private fun ThemeCard(
         ThemePreference.LightBlue -> "Light Blue"
         ThemePreference.Sage -> "Sage"
         ThemePreference.Sand -> "Sand"
+        ThemePreference.Midnight -> "Midnight"
+        ThemePreference.Lavender -> "Lavender"
+        ThemePreference.Rose -> "Rose"
+        ThemePreference.Peach -> "Peach"
     }
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val textColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
@@ -210,14 +215,16 @@ private fun ThemePreview(
         ThemePreference.Dark -> dark.surface
         ThemePreference.Wallpaper -> wallpaperBackground
         ThemePreference.Black, ThemePreference.White -> simple!!.surface
-        ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand -> simple!!.primaryContainer
+        ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
+        ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach -> simple!!.primaryContainer
     }
     val ink = when (option) {
         ThemePreference.System, ThemePreference.Light -> light.onSurface
         ThemePreference.Dark -> dark.onSurface
         ThemePreference.Wallpaper -> wallpaperInk
         ThemePreference.Black, ThemePreference.White -> simple!!.onSurface
-        ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand -> simple!!.onPrimaryContainer
+        ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
+        ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach -> simple!!.onPrimaryContainer
     }
     Canvas(modifier) {
         val corner = CornerRadius(12.dp.toPx())
