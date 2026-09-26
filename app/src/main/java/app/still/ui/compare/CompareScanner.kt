@@ -73,6 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.delay
 import app.still.ui.components.StillIcons
 import app.still.ui.theme.StillSpacing
+import app.still.data.comparison.ComparePayloadCodec
 
 @Composable
 fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
@@ -134,7 +135,14 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     val delivered = remember { AtomicBoolean(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
     var detectedCode by remember { mutableStateOf<String?>(null) }
-    val successAlpha by animateFloatAsState(if (detectedCode == null) 0f else 1f,
+    val validCode = remember(detectedCode) { detectedCode?.let { ComparePayloadCodec.decode(it).isSuccess } }
+    val confirmationColor = when (validCode) {
+        true -> Color(0xFF9FE3B2)
+        false -> Color(0xFFFFA8A8)
+        null -> Color.White
+    }
+    val confirmationBackground = if (validCode == false) Color(0xFF4A2024) else Color(0xFF203D2A)
+    val confirmationAlpha by animateFloatAsState(if (detectedCode == null) 0f else 1f,
         animationSpec = tween(220), label = "QR scan confirmation")
     LaunchedEffect(detectedCode) {
         detectedCode?.let { code ->
@@ -213,14 +221,19 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
                     arcTo(Rect(left, bottom - 2 * radius, left + 2 * radius, bottom), 90f, 90f, false)
                     lineTo(left, bottom - corner)
                 },
-            ).forEach { drawPath(it, if (detectedCode == null) Color.White else Color(0xFF9FE3B2), style = stroke) }
+            ).forEach { drawPath(it, confirmationColor, style = stroke) }
         }
-        Box(Modifier.align(Alignment.Center).alpha(successAlpha)
-            .background(Color(0xFF203D2A), RoundedCornerShape(100.dp)).padding(20.dp)) {
-            Icon(painterResource(StillIcons.Check), contentDescription = "Code scanned",
-                tint = Color(0xFF9FE3B2), modifier = Modifier.align(Alignment.Center))
+        Box(Modifier.align(Alignment.Center).alpha(confirmationAlpha)
+            .background(confirmationBackground, RoundedCornerShape(100.dp)).padding(20.dp)) {
+            Icon(painterResource(if (validCode == false) StillIcons.Close else StillIcons.Check),
+                contentDescription = if (validCode == false) "Invalid Still code" else "Code scanned",
+                tint = confirmationColor, modifier = Modifier.align(Alignment.Center))
         }
-        Text(if (detectedCode == null) "Point at your friend's QR code" else "Code scanned",
+        Text(when (validCode) {
+            true -> "Code scanned"
+            false -> "Not a Still code"
+            null -> "Point at your friend's QR code"
+        },
             modifier = Modifier.align(Alignment.Center)
             .offset(y = frameSide / 2 + 32.dp)
             .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(9.dp))
