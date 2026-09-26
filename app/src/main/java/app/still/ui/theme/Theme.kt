@@ -5,6 +5,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -84,6 +85,155 @@ internal val StillLightColors = lightColorScheme(
     error = Color(0xFFBA1A1A),
 )
 
+internal fun simpleThemeColors(preference: ThemePreference): ColorScheme? = when (preference) {
+    ThemePreference.Black -> StillDarkColors.copy(
+        primary = Color.White,
+        onPrimary = Color.Black,
+        primaryContainer = Color(0xFF292929),
+        onPrimaryContainer = Color.White,
+        inversePrimary = Color(0xFF343434),
+        secondary = Color(0xFFD0D0D0),
+        onSecondary = Color.Black,
+        secondaryContainer = Color(0xFF303030),
+        onSecondaryContainer = Color.White,
+        tertiary = Color(0xFFBDBDBD),
+        onTertiary = Color.Black,
+        tertiaryContainer = Color(0xFF383838),
+        onTertiaryContainer = Color.White,
+        surfaceTint = Color.White,
+        background = Color.Black,
+        onBackground = Color.White,
+        surface = Color.Black,
+        onSurface = Color.White,
+        surfaceVariant = Color(0xFF181818),
+        surfaceContainerLowest = Color.Black,
+        surfaceContainerLow = Color(0xFF0C0C0C),
+        surfaceContainer = Color(0xFF141414),
+        surfaceContainerHigh = Color(0xFF202020),
+        surfaceContainerHighest = Color(0xFF2B2B2B),
+        onSurfaceVariant = Color(0xFFC4C4C4),
+        outline = Color(0xFF8A8A8A),
+        outlineVariant = Color(0xFF444444),
+    )
+    ThemePreference.White -> StillLightColors.copy(
+        primary = Color(0xFF343434),
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFE8E8E8),
+        onPrimaryContainer = Color(0xFF202020),
+        inversePrimary = Color(0xFFD0D0D0),
+        secondary = Color(0xFF5C5C5C),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFEAEAEA),
+        onSecondaryContainer = Color(0xFF252525),
+        tertiary = Color(0xFF696969),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFEEEEEE),
+        onTertiaryContainer = Color(0xFF262626),
+        surfaceTint = Color(0xFF343434),
+        background = Color.White,
+        onBackground = Color(0xFF191919),
+        surface = Color.White,
+        onSurface = Color(0xFF191919),
+        surfaceVariant = Color(0xFFF4F4F4),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = Color(0xFFFAFAFA),
+        surfaceContainer = Color(0xFFF4F4F4),
+        surfaceContainerHigh = Color(0xFFEDEDED),
+        surfaceContainerHighest = Color(0xFFE5E5E5),
+        onSurfaceVariant = Color(0xFF585858),
+        outline = Color(0xFF777777),
+        outlineVariant = Color(0xFFD5D5D5),
+    )
+    ThemePreference.LightBlue -> StillLightColors.copy(
+        primary = Color(0xFF285B8A),
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFD3E8FA),
+        onPrimaryContainer = Color(0xFF173D60),
+        inversePrimary = Color(0xFFAAD3F4),
+        secondary = Color(0xFF4D6982),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFDCEAF5),
+        onSecondaryContainer = Color(0xFF253E55),
+        tertiary = Color(0xFF566886),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFE2E7F7),
+        onTertiaryContainer = Color(0xFF2D3E5B),
+        surfaceTint = Color(0xFF285B8A),
+        background = Color(0xFFF4F9FF),
+        onBackground = Color(0xFF172534),
+        surface = Color(0xFFF4F9FF),
+        onSurface = Color(0xFF172534),
+        surfaceVariant = Color(0xFFE6F0FA),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = Color(0xFFEDF5FD),
+        surfaceContainer = Color(0xFFE6F0FA),
+        surfaceContainerHigh = Color(0xFFDDEBF8),
+        surfaceContainerHighest = Color(0xFFD2E4F4),
+        onSurfaceVariant = Color(0xFF4C6073),
+        outline = Color(0xFF73899C),
+        outlineVariant = Color(0xFFC8D9E8),
+    )
+    ThemePreference.Sage -> StillLightColors.copy(
+        primary = Color(0xFF41664D),
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFD8EBD9),
+        onPrimaryContainer = Color(0xFF284432),
+        inversePrimary = Color(0xFFAACDB0),
+        secondary = Color(0xFF5A705D),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFDFEBDD),
+        onSecondaryContainer = Color(0xFF334934),
+        tertiary = Color(0xFF66745A),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFE5EBD6),
+        onTertiaryContainer = Color(0xFF3D4932),
+        surfaceTint = Color(0xFF41664D),
+        background = Color(0xFFF5F8F1),
+        onBackground = Color(0xFF202B20),
+        surface = Color(0xFFF5F8F1),
+        onSurface = Color(0xFF202B20),
+        surfaceVariant = Color(0xFFE9F0E5),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = Color(0xFFF0F5EC),
+        surfaceContainer = Color(0xFFE9F0E5),
+        surfaceContainerHigh = Color(0xFFE2ECDD),
+        surfaceContainerHighest = Color(0xFFD9E6D5),
+        onSurfaceVariant = Color(0xFF536351),
+        outline = Color(0xFF7C8D79),
+        outlineVariant = Color(0xFFCFDDCB),
+    )
+    ThemePreference.Sand -> StillLightColors.copy(
+        primary = Color(0xFF795A38),
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFF4E3C8),
+        onPrimaryContainer = Color(0xFF50391F),
+        inversePrimary = Color(0xFFE5C398),
+        secondary = Color(0xFF79654F),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFF3E6D3),
+        onSecondaryContainer = Color(0xFF4C3C2A),
+        tertiary = Color(0xFF80654A),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFF6E5D1),
+        onTertiaryContainer = Color(0xFF503A24),
+        surfaceTint = Color(0xFF795A38),
+        background = Color(0xFFFFFAF2),
+        onBackground = Color(0xFF31271C),
+        surface = Color(0xFFFFFAF2),
+        onSurface = Color(0xFF31271C),
+        surfaceVariant = Color(0xFFF6EDDF),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = Color(0xFFFCF5EA),
+        surfaceContainer = Color(0xFFF6EDDF),
+        surfaceContainerHigh = Color(0xFFF1E6D6),
+        surfaceContainerHighest = Color(0xFFEBDDCA),
+        onSurfaceVariant = Color(0xFF6B5C4B),
+        outline = Color(0xFF94826C),
+        outlineVariant = Color(0xFFE5D7C4),
+    )
+    else -> null
+}
+
 private val StillTypography = androidx.compose.material3.Typography(
     displayLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-2).sp),
     headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.4).sp),
@@ -109,12 +259,15 @@ fun StillTheme(
     val dark = when (themePreference) {
         ThemePreference.System, ThemePreference.Wallpaper -> systemDark
         ThemePreference.Light -> false
-        ThemePreference.Dark -> true
+        ThemePreference.Dark, ThemePreference.Black -> true
+        ThemePreference.White, ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand -> false
     }
     val context = LocalContext.current
+    val simpleColors = simpleThemeColors(themePreference)
     val colors = when {
         themePreference == ThemePreference.Wallpaper && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        simpleColors != null -> simpleColors
         dark -> StillDarkColors
         else -> StillLightColors
     }

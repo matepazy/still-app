@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore by preferencesDataStore("still_settings")
 
-enum class ThemePreference { System, Light, Dark, Wallpaper }
+enum class ThemePreference { System, Light, Dark, Wallpaper, Black, White, LightBlue, Sage, Sand }
 
 enum class WidgetAppearance { System, Light, Dark }
 

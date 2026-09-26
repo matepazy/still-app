@@ -2,10 +2,12 @@ package app.still.ui.settings
 
 import android.os.Build
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,12 +19,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -31,12 +37,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import app.still.data.settings.ThemePreference
+import app.still.ui.components.StillIcons
 import app.still.ui.theme.StillDarkColors
 import app.still.ui.theme.StillLightColors
 import app.still.ui.theme.StillSpacing
+import app.still.ui.theme.simpleThemeColors
 
 @Composable
 fun ThemeSettingsScreen(
@@ -50,7 +59,7 @@ fun ThemeSettingsScreen(
         if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else null
 
-    Column(modifier.fillMaxSize().padding(top = StillSpacing.large)) {
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = StillSpacing.large)) {
         Text(
             "Default themes",
             style = MaterialTheme.typography.titleLarge,
@@ -62,7 +71,7 @@ fun ThemeSettingsScreen(
                 .padding(horizontal = StillSpacing.large),
             horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
         ) {
-            ThemePreference.entries.forEach { option ->
+            listOf(ThemePreference.System, ThemePreference.Light, ThemePreference.Dark, ThemePreference.Wallpaper).forEach { option ->
                 val available = option != ThemePreference.Wallpaper || supportsWallpaper
                 ThemeCard(
                     option = option,
@@ -82,6 +91,50 @@ fun ThemeSettingsScreen(
                 modifier = Modifier.padding(horizontal = StillSpacing.large, vertical = StillSpacing.medium),
             )
         }
+        Text(
+            "Simple colors",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(
+                start = StillSpacing.large,
+                end = StillSpacing.large,
+                top = StillSpacing.xLarge,
+                bottom = StillSpacing.medium,
+            ),
+        )
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).selectableGroup()
+                .padding(horizontal = StillSpacing.large),
+            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+        ) {
+            listOf(ThemePreference.Black, ThemePreference.White, ThemePreference.LightBlue,
+                ThemePreference.Sage, ThemePreference.Sand).forEach { option ->
+                ThemeCard(
+                    option = option,
+                    selected = selectedTheme == option,
+                    enabled = true,
+                    wallpaperBackground = Color.Unspecified,
+                    wallpaperInk = Color.Unspecified,
+                    onClick = { onThemeChange(option) },
+                )
+            }
+        }
+        Text(
+            "Special themes",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(
+                start = StillSpacing.large,
+                end = StillSpacing.large,
+                top = StillSpacing.xLarge,
+                bottom = StillSpacing.medium,
+            ),
+        )
+        Text(
+            "No special themes yet, but stay tuned!",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = StillSpacing.large),
+        )
+        Spacer(Modifier.height(StillSpacing.xLarge))
     }
 }
 
@@ -99,6 +152,11 @@ private fun ThemeCard(
         ThemePreference.Light -> "Light"
         ThemePreference.Dark -> "Dark"
         ThemePreference.Wallpaper -> "Wallpaper"
+        ThemePreference.Black -> "Black"
+        ThemePreference.White -> "White"
+        ThemePreference.LightBlue -> "Light Blue"
+        ThemePreference.Sage -> "Sage"
+        ThemePreference.Sand -> "Sand"
     }
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val textColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
@@ -106,14 +164,32 @@ private fun ThemeCard(
         Modifier.size(width = 104.dp, height = 178.dp)
             .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick),
     ) {
-        ThemePreview(
-            option = option,
-            wallpaperBackground = wallpaperBackground,
-            wallpaperInk = wallpaperInk,
-            modifier = Modifier.size(width = 104.dp, height = 138.dp)
-                .border(if (selected) 2.dp else 1.dp, border, RoundedCornerShape(16.dp))
-                .padding(4.dp),
-        )
+        Box(Modifier.size(width = 104.dp, height = 138.dp)) {
+            ThemePreview(
+                option = option,
+                wallpaperBackground = wallpaperBackground,
+                wallpaperInk = wallpaperInk,
+                modifier = Modifier.fillMaxSize()
+                    .border(if (selected) 2.dp else 1.dp, border, RoundedCornerShape(16.dp))
+                    .padding(4.dp),
+            )
+            if (selected) {
+                Box(
+                    Modifier.align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .size(28.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(StillIcons.Check),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(StillSpacing.small))
         Text(label, style = MaterialTheme.typography.labelLarge, color = textColor)
     }
@@ -128,15 +204,20 @@ private fun ThemePreview(
 ) {
     val light = StillLightColors
     val dark = StillDarkColors
+    val simple = simpleThemeColors(option)
     val background = when (option) {
         ThemePreference.System, ThemePreference.Light -> light.surface
         ThemePreference.Dark -> dark.surface
         ThemePreference.Wallpaper -> wallpaperBackground
+        ThemePreference.Black, ThemePreference.White -> simple!!.surface
+        ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand -> simple!!.primaryContainer
     }
     val ink = when (option) {
         ThemePreference.System, ThemePreference.Light -> light.onSurface
         ThemePreference.Dark -> dark.onSurface
         ThemePreference.Wallpaper -> wallpaperInk
+        ThemePreference.Black, ThemePreference.White -> simple!!.onSurface
+        ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand -> simple!!.onPrimaryContainer
     }
     Canvas(modifier) {
         val corner = CornerRadius(12.dp.toPx())

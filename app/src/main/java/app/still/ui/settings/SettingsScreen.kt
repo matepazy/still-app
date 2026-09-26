@@ -1139,6 +1139,11 @@ private val ThemePreference.displayName: String
         ThemePreference.Light -> "Light"
         ThemePreference.Dark -> "Dark"
         ThemePreference.Wallpaper -> "Wallpaper"
+        ThemePreference.Black -> "Black"
+        ThemePreference.White -> "White"
+        ThemePreference.LightBlue -> "Light Blue"
+        ThemePreference.Sage -> "Sage"
+        ThemePreference.Sand -> "Sand"
     }
 
 private val WidgetLabel.displayName: String
