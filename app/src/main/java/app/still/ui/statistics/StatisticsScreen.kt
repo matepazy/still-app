@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -63,147 +63,162 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, availableDates: List<LocalD
     val state by viewModel.state.collectAsStateWithLifecycle()
     val period by viewModel.period.collectAsStateWithLifecycle()
     val range by viewModel.range.collectAsStateWithLifecycle()
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.large)) {
-        Spacer(Modifier.height(StillSpacing.large))
-        StatisticsPeriodSelector(period, range, availableDates, viewModel::select, viewModel::selectCustom)
-        if (period == StatisticsPeriod.Day) {
-            DaySelector(range.start, availableDates, viewModel::selectDay,
-                modifier = Modifier.padding(top = StillSpacing.small), showTodayLabel = false)
-        } else {
-            Text(range.label(), modifier = Modifier.padding(top = StillSpacing.medium), style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+    LazyColumn(modifier.fillMaxSize().padding(horizontal = StillSpacing.large)) {
+        item {
+            Spacer(Modifier.height(StillSpacing.large))
+            StatisticsPeriodSelector(period, range, availableDates, viewModel::select, viewModel::selectCustom)
+            if (period == StatisticsPeriod.Day) {
+                DaySelector(range.start, availableDates, viewModel::selectDay,
+                    modifier = Modifier.padding(top = StillSpacing.small), showTodayLabel = false)
+            } else {
+                Text(range.label(), modifier = Modifier.padding(top = StillSpacing.medium), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(StillSpacing.large))
         }
-        Spacer(Modifier.height(StillSpacing.large))
         when (val value = state) {
-            StatisticsState.Loading -> CircularProgressIndicator()
-            is StatisticsState.Error -> Text(value.message, color = MaterialTheme.colorScheme.error)
-            is StatisticsState.Ready -> StatisticsContent(value.summary, period)
+            StatisticsState.Loading -> item { CircularProgressIndicator() }
+            is StatisticsState.Error -> item { Text(value.message, color = MaterialTheme.colorScheme.error) }
+            is StatisticsState.Ready -> statisticsContent(value.summary, period)
         }
-        Spacer(Modifier.height(StillSpacing.section))
+        item { Spacer(Modifier.height(StillSpacing.section)) }
     }
 }
 
-@Composable
-private fun StatisticsContent(summary: app.still.domain.model.StatisticsSummary, period: app.still.domain.model.StatisticsPeriod) {
+private fun LazyListScope.statisticsContent(summary: app.still.domain.model.StatisticsSummary, period: app.still.domain.model.StatisticsPeriod) {
     val singleDay = summary.range.days == 1L
     val day = summary.days.firstOrNull()
-    Text(if (singleDay) "Screen time" else "Daily average", style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Text((if (singleDay) day?.screenTime else summary.dailyAverage)?.compactDuration() ?: "—",
-        style = MaterialTheme.typography.displayLarge)
-    val change = summary.change
-    Text(when {
-        change == null -> if (singleDay) "No data for the previous day" else "No previous period to compare"
-        change.isZero -> if (singleDay) "Same as the previous day" else "Same as the previous period"
-        else -> "${change.abs().compactDuration()} ${if (change.isNegative) "less" else "more"} than ${if (singleDay) "the previous day" else "the previous period"}"
-    }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Spacer(Modifier.height(StillSpacing.xLarge))
-    TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
-        Column {
-            if (period == StatisticsPeriod.Month || period == StatisticsPeriod.SixMonths) {
-                ScreenTimeHeatmap(summary, period)
-            } else {
-                StatisticsChart(summary, period)
-            }
-            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.SpaceBetween) {
-                if (singleDay) {
-                    SmallValue("Peak hour", summary.mostActiveHour?.let { "${it.toString().padStart(2, '0')}:00" } ?: "—")
-                    SmallValue("Longest session", day?.longestSession?.compactDuration() ?: "—")
+    item {
+        Text(if (singleDay) "Screen time" else "Daily average", style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text((if (singleDay) day?.screenTime else summary.dailyAverage)?.compactDuration() ?: "—",
+            style = MaterialTheme.typography.displayLarge)
+        val change = summary.change
+        Text(when {
+            change == null -> if (singleDay) "No data for the previous day" else "No previous period to compare"
+            change.isZero -> if (singleDay) "Same as the previous day" else "Same as the previous period"
+            else -> "${change.abs().compactDuration()} ${if (change.isNegative) "less" else "more"} than ${if (singleDay) "the previous day" else "the previous period"}"
+        }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(StillSpacing.xLarge))
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
+            Column {
+                if (period == StatisticsPeriod.Month || period == StatisticsPeriod.SixMonths) {
+                    ScreenTimeHeatmap(summary, period)
                 } else {
-                    SmallValue("Total", summary.total?.compactDuration() ?: "—")
-                    SmallValue("Median day", summary.median?.compactDuration() ?: "—")
+                    StatisticsChart(summary, period)
+                }
+                Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.SpaceBetween) {
+                    if (singleDay) {
+                        SmallValue("Peak hour", summary.mostActiveHour?.let { "${it.toString().padStart(2, '0')}:00" } ?: "—")
+                        SmallValue("Longest session", day?.longestSession?.compactDuration() ?: "—")
+                    } else {
+                        SmallValue("Total", summary.total?.compactDuration() ?: "—")
+                        SmallValue("Median day", summary.median?.compactDuration() ?: "—")
+                    }
                 }
             }
         }
     }
     if (summary.hourlyAverageMillis != null || summary.checkInsAverage != null || summary.sessionAverage != null) {
-        SectionTitle(if (singleDay) "On this day" else "Daily rhythm")
-        if (!singleDay) summary.hourlyAverageMillis?.let { hours ->
-            Text(if (summary.days.count { it.hourlyMillis != null } > 1) "Typical day" else "Hourly activity",
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TypicalDay(hours)
-            summary.mostActiveHour?.let {
-                Text("Most active around ${it.toString().padStart(2, '0')}:00", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item {
+            SectionTitle(if (singleDay) "On this day" else "Daily rhythm")
+            if (!singleDay) summary.hourlyAverageMillis?.let { hours ->
+                Text(if (summary.days.count { it.hourlyMillis != null } > 1) "Typical day" else "Hourly activity",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TypicalDay(hours)
+                summary.mostActiveHour?.let {
+                    Text("Most active around ${it.toString().padStart(2, '0')}:00", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-        }
-        Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-            RhythmValue(if (singleDay) "Check-ins" else "Check-ins / day",
-                if (singleDay) day?.checkIns?.toString() ?: "—" else summary.checkInsAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
-            RhythmValue(if (singleDay) "Quick checks" else "Quick checks / day",
-                if (singleDay) day?.quickChecks?.toString() ?: "—" else summary.quickChecksAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
-        }
-        Row(Modifier.fillMaxWidth().padding(top = StillSpacing.small), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-            RhythmValue(if (singleDay) "Longest break" else "Average session",
-                (if (singleDay) day?.longestBreak else summary.sessionAverage)?.compactDuration() ?: "—", Modifier.weight(1f))
-            RhythmValue(if (singleDay) "App switches" else "Longest break / day",
-                if (singleDay) day?.appSwitches?.toString() ?: "—" else summary.longestBreakAverage?.compactDuration() ?: "—", Modifier.weight(1f))
-        }
-        if (!singleDay) {
+            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                RhythmValue(if (singleDay) "Check-ins" else "Check-ins / day",
+                    if (singleDay) day?.checkIns?.toString() ?: "—" else summary.checkInsAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
+                RhythmValue(if (singleDay) "Quick checks" else "Quick checks / day",
+                    if (singleDay) day?.quickChecks?.toString() ?: "—" else summary.quickChecksAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
+            }
             Row(Modifier.fillMaxWidth().padding(top = StillSpacing.small), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                RhythmValue("App switches / day", summary.appSwitchesAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
-                RhythmValue("Longest session", summary.longestSession?.compactDuration() ?: "—", Modifier.weight(1f))
+                RhythmValue(if (singleDay) "Longest break" else "Average session",
+                    (if (singleDay) day?.longestBreak else summary.sessionAverage)?.compactDuration() ?: "—", Modifier.weight(1f))
+                RhythmValue(if (singleDay) "App switches" else "Longest break / day",
+                    if (singleDay) day?.appSwitches?.toString() ?: "—" else summary.longestBreakAverage?.compactDuration() ?: "—", Modifier.weight(1f))
             }
-        } else if (summary.sessionAverage != null) {
-            Spacer(Modifier.height(StillSpacing.medium))
-            SmallValue("Average session", summary.sessionAverage.compactDuration())
-        }
-        val first = if (singleDay) day?.firstUseMinute else summary.firstUseAverageMinute
-        val last = if (singleDay) day?.lastUseMinute else summary.lastUseAverageMinute
-        if (first != null && last != null) UseWindow(first, last, singleDay)
-        summary.quickCheckShare?.let { share ->
-            Spacer(Modifier.height(StillSpacing.medium))
-            UsageBar("Quick checks / check-ins", "${(share * 100).toInt()}%", share.toFloat())
+            if (!singleDay) {
+                Row(Modifier.fillMaxWidth().padding(top = StillSpacing.small), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                    RhythmValue("App switches / day", summary.appSwitchesAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
+                    RhythmValue("Longest session", summary.longestSession?.compactDuration() ?: "—", Modifier.weight(1f))
+                }
+            } else if (summary.sessionAverage != null) {
+                Spacer(Modifier.height(StillSpacing.medium))
+                SmallValue("Average session", summary.sessionAverage.compactDuration())
+            }
+            val first = if (singleDay) day?.firstUseMinute else summary.firstUseAverageMinute
+            val last = if (singleDay) day?.lastUseMinute else summary.lastUseAverageMinute
+            if (first != null && last != null) UseWindow(first, last, singleDay)
+            summary.quickCheckShare?.let { share ->
+                Spacer(Modifier.height(StillSpacing.medium))
+                UsageBar("Quick checks / check-ins", "${(share * 100).toInt()}%", share.toFloat())
+            }
         }
     }
     if (!singleDay && (summary.weekdayAverage != null || summary.weekendAverage != null)) {
-        SectionTitle("Week at a glance")
-        val max = maxOf(summary.weekdayAverage?.toMillis() ?: 0L, summary.weekendAverage?.toMillis() ?: 0L, 1L)
-        UsageBar("Weekdays", summary.weekdayAverage?.compactDuration(), (summary.weekdayAverage?.toMillis() ?: 0L).toFloat() / max)
-        UsageBar("Weekends", summary.weekendAverage?.compactDuration(), (summary.weekendAverage?.toMillis() ?: 0L).toFloat() / max)
+        item {
+            SectionTitle("Week at a glance")
+            val max = maxOf(summary.weekdayAverage?.toMillis() ?: 0L, summary.weekendAverage?.toMillis() ?: 0L, 1L)
+            UsageBar("Weekdays", summary.weekdayAverage?.compactDuration(), (summary.weekdayAverage?.toMillis() ?: 0L).toFloat() / max)
+            UsageBar("Weekends", summary.weekendAverage?.compactDuration(), (summary.weekendAverage?.toMillis() ?: 0L).toFloat() / max)
+        }
     }
     if (!singleDay && (summary.highest != null || summary.lowest != null)) {
-        Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.SpaceBetween) {
-            SmallValue("Highest · ${summary.highest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
-                summary.highest?.screenTime?.compactDuration() ?: "—")
-            SmallValue("Lowest · ${summary.lowest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
-                summary.lowest?.screenTime?.compactDuration() ?: "—")
+        item {
+            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.SpaceBetween) {
+                SmallValue("Highest · ${summary.highest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
+                    summary.highest?.screenTime?.compactDuration() ?: "—")
+                SmallValue("Lowest · ${summary.lowest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
+                    summary.lowest?.screenTime?.compactDuration() ?: "—")
+            }
         }
     }
     if (!singleDay && (summary.mostActiveWeekday != null || summary.dailyVariability != null)) {
-        Row(Modifier.fillMaxWidth().padding(top = StillSpacing.large), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-            Icon(painterResource(StillIcons.Calendar), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Text(buildString {
-                summary.mostActiveWeekday?.let { append("Most active: ").append(it.name.lowercase().replaceFirstChar { c -> c.uppercase() }) }
-                summary.dailyVariability?.let { if (isNotEmpty()) append(" · "); append(it.compactDuration()).append(" day to day variation") }
-            }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item {
+            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.large), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                Icon(painterResource(StillIcons.Calendar), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(buildString {
+                    summary.mostActiveWeekday?.let { append("Most active: ").append(it.name.lowercase().replaceFirstChar { c -> c.uppercase() }) }
+                    summary.dailyVariability?.let { if (isNotEmpty()) append(" · "); append(it.compactDuration()).append(" day to day variation") }
+                }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
     if (summary.topApps.isNotEmpty()) {
-        SectionTitle("Most used apps")
-        val max = summary.topApps.maxOf { it.total.toMillis() }.coerceAtLeast(1L)
-        summary.topApps.take(5).forEach { app ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                AppIcon(app.packageName, app.label, size = 32.dp)
-                Spacer(Modifier.width(StillSpacing.medium))
-                Box(Modifier.weight(1f)) {
-                    UsageBar(app.label, app.total.compactDuration() + (app.change?.let { " · ${signed(it)}" } ?: ""),
-                        app.total.toMillis().toFloat() / max)
+        item {
+            SectionTitle("Most used apps")
+            val max = summary.topApps.maxOf { it.total.toMillis() }.coerceAtLeast(1L)
+            summary.topApps.take(5).forEach { app ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    AppIcon(app.packageName, app.label, size = 32.dp)
+                    Spacer(Modifier.width(StillSpacing.medium))
+                    Box(Modifier.weight(1f)) {
+                        UsageBar(app.label, app.total.compactDuration() + (app.change?.let { " · ${signed(it)}" } ?: ""),
+                            app.total.toMillis().toFloat() / max)
+                    }
                 }
             }
         }
     }
     if (summary.categories.isNotEmpty()) {
-        SectionTitle("By category")
-        summary.categories.filter { it.share > 0.0 }.forEach { category ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(categoryIcon(category.category)), contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(StillSpacing.medium))
-                Box(Modifier.weight(1f)) {
-                    UsageBar(category.category.displayName,
-                        "${(category.share * 100).toInt()}% · ${category.total.compactDuration()}" +
-                            (category.change?.let { " · ${signed(it)}" } ?: ""), category.share.toFloat())
+        item {
+            SectionTitle("By category")
+            summary.categories.filter { it.share > 0.0 }.forEach { category ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(categoryIcon(category.category)), contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(StillSpacing.medium))
+                    Box(Modifier.weight(1f)) {
+                        UsageBar(category.category.displayName,
+                            "${(category.share * 100).toInt()}% · ${category.total.compactDuration()}" +
+                                (category.change?.let { " · ${signed(it)}" } ?: ""), category.share.toFloat())
+                    }
                 }
             }
         }

@@ -229,18 +229,22 @@ private fun MainNavigation(
     val selectedDay = availableDays.firstOrNull { it.date == selectedDate } ?: dashboard.today
     val selectDate: (LocalDate) -> Unit = { selectedDateValue = it.toString() }
     var compareRange by remember { mutableStateOf(StatisticsPeriod.Week.range(LocalDate.now())) }
+    val statisticsViewModel: StatisticsViewModel = viewModel(
+        factory = StatisticsViewModel.Factory(
+            (context.applicationContext as StillApplication).container.usageRepository,
+            settings.appCategoryOverrides,
+        ),
+    )
+    LaunchedEffect(settings.appCategoryOverrides) { statisticsViewModel.updateCategories(settings.appCategoryOverrides) }
 
     NavHost(
         navController = navController,
         startDestination = initialDestination.route,
         modifier = Modifier.fillMaxSize(),
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
         popEnterTransition = { EnterTransition.None },
-        popExitTransition = {
-            scaleOut(
-                targetScale = 0.9f,
-                transformOrigin = TransformOrigin.Center,
-            )
-        },
+        popExitTransition = { ExitTransition.None },
         predictivePopEnterTransition = { _ -> EnterTransition.None },
         predictivePopExitTransition = { _ ->
             scaleOut(
@@ -249,13 +253,7 @@ private fun MainNavigation(
             )
         },
     ) {
-        composable(
-            route = TodayRoute,
-            enterTransition = { EnterTransition.None },
-            exitTransition = { ExitTransition.None },
-            popEnterTransition = { EnterTransition.None },
-            popExitTransition = { ExitTransition.None },
-        ) {
+        composable(TodayRoute) {
             DestinationScaffold(
                 topBar = { TodayTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(TodayRoute, navController) },
@@ -271,13 +269,7 @@ private fun MainNavigation(
                 )
             }
         }
-        composable(
-            route = TimelineRoute,
-            enterTransition = { EnterTransition.None },
-            exitTransition = { ExitTransition.None },
-            popEnterTransition = { EnterTransition.None },
-            popExitTransition = { ExitTransition.None },
-        ) {
+        composable(TimelineRoute) {
             DestinationScaffold(
                 topBar = { TimelineTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(TimelineRoute, navController) },
@@ -290,13 +282,7 @@ private fun MainNavigation(
                 )
             }
         }
-        composable(
-            route = AppsRoute,
-            enterTransition = { EnterTransition.None },
-            exitTransition = { ExitTransition.None },
-            popEnterTransition = { EnterTransition.None },
-            popExitTransition = { ExitTransition.None },
-        ) {
+        composable(AppsRoute) {
             DestinationScaffold(
                 topBar = { AppsTopBar { navController.navigate(SettingsRoute) } },
                 bottomBar = { StillNavigationBar(AppsRoute, navController) },
@@ -311,13 +297,6 @@ private fun MainNavigation(
             }
         }
         composable(StatisticsRoute) {
-            val statisticsViewModel: StatisticsViewModel = viewModel(
-                factory = StatisticsViewModel.Factory(
-                    (context.applicationContext as StillApplication).container.usageRepository,
-                    settings.appCategoryOverrides,
-                ),
-            )
-            LaunchedEffect(settings.appCategoryOverrides) { statisticsViewModel.updateCategories(settings.appCategoryOverrides) }
             DestinationScaffold(
                 topBar = { StatisticsTopBar {
                     compareRange = statisticsViewModel.range.value
@@ -504,19 +483,15 @@ private fun MainNavigation(
 private fun NavHostController.navigateTo(destination: LastDestination) {
     when (destination) {
         LastDestination.Today -> {
-            val returnedHome = popBackStack(TodayRoute, inclusive = false)
-            if (!returnedHome && currentDestination?.route != TodayRoute) {
+            if (currentDestination?.route != TodayRoute && !popBackStack(TodayRoute, inclusive = false)) {
                 navigate(TodayRoute) {
                     popUpTo(graph.findStartDestination().id) { inclusive = true }
                     launchSingleTop = true
                 }
             }
         }
-        LastDestination.Timeline, LastDestination.Apps, LastDestination.Statistics -> navigate(destination.route) {
-            popUpTo(graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
+        LastDestination.Timeline, LastDestination.Apps, LastDestination.Statistics ->
+            navigateTopLevel(destination.route)
         LastDestination.Settings -> navigate(SettingsRoute) { launchSingleTop = true }
         LastDestination.WidgetSettings -> {
             navigate(SettingsRoute) { launchSingleTop = true }
@@ -532,6 +507,16 @@ private fun NavHostController.navigateTo(destination: LastDestination) {
             navigate(WidgetSettingsRoute) { launchSingleTop = true }
             navigate(DaylineWidgetSettingsRoute) { launchSingleTop = true }
         }
+    }
+}
+
+private fun NavHostController.navigateTopLevel(route: String) {
+    if (currentDestination?.route == route) return
+    if (route == TodayRoute && popBackStack(TodayRoute, inclusive = false)) return
+    navigate(route) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = route != TodayRoute
     }
 }
 
@@ -567,16 +552,7 @@ private fun StillNavigationBar(currentRoute: String, navController: NavHostContr
         ).forEach { (route, label, icon) ->
             NavigationBarItem(
                 selected = currentRoute == route,
-                onClick = {
-                    val returnedHome = route == TodayRoute && navController.popBackStack(TodayRoute, inclusive = false)
-                    if (!returnedHome) {
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = route != TodayRoute
-                        }
-                    }
-                },
+                onClick = { navController.navigateTopLevel(route) },
                 icon = { Icon(painterResource(icon), contentDescription = null) },
                 label = { Text(label) },
                 colors = NavigationBarItemDefaults.colors(

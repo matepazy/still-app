@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.still.domain.model.StatisticsPeriod
@@ -26,7 +26,7 @@ fun StatisticsPeriodSelector(
     onSelect: (StatisticsPeriod) -> Unit,
     onCustom: (StatisticsRange) -> Unit,
 ) {
-    var showPicker by remember { mutableStateOf(false) }
+    var showPicker by rememberSaveable { mutableStateOf(false) }
     val options = StatisticsPeriod.entries
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, period ->
