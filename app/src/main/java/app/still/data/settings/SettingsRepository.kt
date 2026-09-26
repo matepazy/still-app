@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore by preferencesDataStore("still_settings")
 
-enum class ThemePreference { System, Light, Dark }
+enum class ThemePreference { System, Light, Dark, Wallpaper }
 
 enum class WidgetAppearance { System, Light, Dark }
 
@@ -41,7 +41,6 @@ enum class LastDestination {
 data class UserSettings(
     val onboardingComplete: Boolean = false,
     val theme: ThemePreference = ThemePreference.System,
-    val useDynamicColors: Boolean = false,
     val dailyTargetMinutes: Long? = null,
     val versionCheckEnabled: Boolean? = null,
     val updateChannel: String = "release",
@@ -115,9 +114,9 @@ class SettingsRepository(private val context: Context) {
         }
         UserSettings(
             onboardingComplete = preferences[Keys.onboarding] ?: false,
-            theme = preferences[Keys.theme]?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() }
-                ?: ThemePreference.System,
-            useDynamicColors = preferences[Keys.dynamic] ?: false,
+            theme = if (preferences[Keys.dynamic] == true) ThemePreference.Wallpaper else
+                preferences[Keys.theme]?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() }
+                    ?: ThemePreference.System,
             dailyTargetMinutes = preferences[Keys.target],
             versionCheckEnabled = preferences[Keys.versionCheckEnabled],
             updateChannel = preferences[Keys.updateChannel] ?: "release",
@@ -159,8 +158,10 @@ class SettingsRepository(private val context: Context) {
     suspend fun completeOnboarding() = context.settingsDataStore.edit {
         it[Keys.onboarding] = true
     }
-    suspend fun setTheme(value: ThemePreference) = context.settingsDataStore.edit { it[Keys.theme] = value.name }
-    suspend fun setDynamicColors(value: Boolean) = context.settingsDataStore.edit { it[Keys.dynamic] = value }
+    suspend fun setTheme(value: ThemePreference) = context.settingsDataStore.edit {
+        it[Keys.theme] = value.name
+        it.remove(Keys.dynamic)
+    }
     suspend fun setDailyTargetMinutes(value: Long?) = context.settingsDataStore.edit {
         if (value == null) it.remove(Keys.target) else it[Keys.target] = value
     }

@@ -47,7 +47,7 @@ class DesignPreviewActivity : ComponentActivity() {
         val screen = intent.getStringExtra("screen") ?: "today"
         val light = intent.getBooleanExtra("light", false)
         setContent {
-            StillTheme(if (light) ThemePreference.Light else ThemePreference.Dark, false) {
+            StillTheme(if (light) ThemePreference.Light else ThemePreference.Dark) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { DesignScreen(screen) }
             }
         }
@@ -64,9 +64,8 @@ private fun DesignScreen(screen: String) {
         }
         "settings" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             SettingsScreen(
-                settings = UserSettings(true, ThemePreference.Dark, false, null),
-                onThemeChange = {},
-                onDynamicChange = {},
+                settings = UserSettings(onboardingComplete = true, theme = ThemePreference.Dark),
+                onThemeClick = {},
                 onRefresh = {},
                 onWidgetClick = {},
                 onStoredDataClick = {},

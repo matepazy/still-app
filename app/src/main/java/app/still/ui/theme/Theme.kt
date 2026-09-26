@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import app.still.data.settings.ThemePreference
 
-private val StillDarkColors = darkColorScheme(
+internal val StillDarkColors = darkColorScheme(
     primary = Color(0xFF9FE3B2),
     onPrimary = Color(0xFF073919),
     primaryContainer = Color(0xFF203D2A),
@@ -53,7 +53,7 @@ private val StillDarkColors = darkColorScheme(
     error = Color(0xFFFFB4AB),
 )
 
-private val StillLightColors = lightColorScheme(
+internal val StillLightColors = lightColorScheme(
     primary = Color(0xFF27683C),
     onPrimary = Color.White,
     primaryContainer = Color(0xFFB8F2C5),
@@ -103,18 +103,17 @@ private val StillTypography = androidx.compose.material3.Typography(
 @Composable
 fun StillTheme(
     themePreference: ThemePreference,
-    useDynamicColors: Boolean,
     content: @Composable () -> Unit,
 ) {
     val systemDark = isSystemInDarkTheme()
     val dark = when (themePreference) {
-        ThemePreference.System -> systemDark
+        ThemePreference.System, ThemePreference.Wallpaper -> systemDark
         ThemePreference.Light -> false
         ThemePreference.Dark -> true
     }
     val context = LocalContext.current
     val colors = when {
-        useDynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+        themePreference == ThemePreference.Wallpaper && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         dark -> StillDarkColors
         else -> StillLightColors

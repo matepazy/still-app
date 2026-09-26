@@ -1,7 +1,6 @@
 package app.still.ui.settings
 
 import android.graphics.Color as AndroidColor
-import android.os.Build
 import android.text.format.Formatter
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
@@ -126,8 +125,7 @@ fun SettingsTopBar(
 @Composable
 fun SettingsScreen(
     settings: UserSettings,
-    onThemeChange: (ThemePreference) -> Unit,
-    onDynamicChange: (Boolean) -> Unit,
+    onThemeClick: () -> Unit,
     onRefresh: () -> Unit,
     onWidgetClick: () -> Unit,
     onStoredDataClick: () -> Unit,
@@ -145,7 +143,6 @@ fun SettingsScreen(
     onUpdateChannelChange: (String) -> Unit = {},
     onCheckForUpdates: () -> Unit = {},
 ) {
-    var themeDialog by remember { mutableStateOf(false) }
     var updateChannelDialog by remember { mutableStateOf(false) }
     var stopSavingDialog by remember { mutableStateOf(false) }
     var restoreArchiveDialog by remember { mutableStateOf(false) }
@@ -162,19 +159,7 @@ fun SettingsScreen(
                 SettingRow(
                     title = "Theme",
                     supporting = settings.theme.displayName,
-                    onClick = { themeDialog = true },
-                )
-                Hairline()
-                SettingSwitch(
-                    title = "Use wallpaper colors",
-                    supporting = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        "Match Still to your wallpaper"
-                    } else {
-                        "Available on Android 12 and later"
-                    },
-                    checked = settings.useDynamicColors,
-                    enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-                    onCheckedChange = onDynamicChange,
+                    onClick = onThemeClick,
                 )
                 Hairline()
                 SettingRow(
@@ -292,14 +277,6 @@ fun SettingsScreen(
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
 
-    if (themeDialog) {
-        ChoiceDialog(
-            title = "Theme",
-            options = ThemePreference.entries.map { it.displayName to { onThemeChange(it) } },
-            selected = settings.theme.displayName,
-            onDismiss = { themeDialog = false },
-        )
-    }
     if (updateChannelDialog) {
         ChoiceDialog(
             title = "Update channel",
@@ -1158,9 +1135,10 @@ private val WidgetAppearance.shortDisplayName: String
 
 private val ThemePreference.displayName: String
     get() = when (this) {
-        ThemePreference.System -> "Follow system"
+        ThemePreference.System -> "Use system"
         ThemePreference.Light -> "Light"
         ThemePreference.Dark -> "Dark"
+        ThemePreference.Wallpaper -> "Wallpaper"
     }
 
 private val WidgetLabel.displayName: String

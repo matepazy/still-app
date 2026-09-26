@@ -66,6 +66,7 @@ import app.still.ui.components.StillIcons
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.onboarding.UsageAccessFlow
 import app.still.ui.settings.SettingsScreen
+import app.still.ui.settings.ThemeSettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.settings.StoredDataScreen
 import app.still.ui.settings.ArchiveMigrationDialog
@@ -117,7 +118,6 @@ fun StillApp(
     }
     StillTheme(
         themePreference = if (settings?.onboardingComplete == false) ThemePreference.Dark else settings?.theme ?: ThemePreference.System,
-        useDynamicColors = settings?.useDynamicColors ?: false,
     ) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             if (settings == null) {
@@ -373,8 +373,7 @@ private fun MainNavigation(
             ) { padding ->
                 SettingsScreen(
                     settings = settings,
-                    onThemeChange = viewModel::setTheme,
-                    onDynamicChange = viewModel::setDynamicColors,
+                    onThemeClick = { navController.navigate(ThemeSettingsRoute) },
                     onRefresh = viewModel::refresh,
                     onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
                     onStoredDataClick = { navController.navigate(StoredDataRoute) },
@@ -390,6 +389,17 @@ private fun MainNavigation(
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
                     onCheckForUpdates = viewModel::triggerVersionCheck,
+                    modifier = Modifier.padding(padding),
+                )
+            }
+        }
+        composable(ThemeSettingsRoute) {
+            DestinationScaffold(
+                topBar = { SettingsTopBar(title = "Theme", onBack = { navController.popBackStack() }) },
+            ) { padding ->
+                ThemeSettingsScreen(
+                    selectedTheme = settings.theme,
+                    onThemeChange = viewModel::setTheme,
                     modifier = Modifier.padding(padding),
                 )
             }
