@@ -17,6 +17,8 @@ object StillIcons {
     @DrawableRes val Scan = R.drawable.ic_ui_scan
     @DrawableRes val Clock = R.drawable.ic_ui_clock
     @DrawableRes val Check = R.drawable.ic_ui_check
+    @DrawableRes val CheckIn = R.drawable.ic_ui_check_in
+    @DrawableRes val Break = R.drawable.ic_ui_break
     @DrawableRes val Settings = R.drawable.ic_ui_settings
     @DrawableRes val Back = R.drawable.ic_ui_back
     @DrawableRes val More = R.drawable.ic_ui_more

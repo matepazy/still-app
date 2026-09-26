@@ -95,14 +95,14 @@ fun TodayScreen(
                 value = "${today.checkInCount}",
                 label = "check-ins",
                 detail = quickCheckText(today),
-                icon = { Icon(painterResource(StillIcons.History), contentDescription = null) },
+                icon = { Icon(painterResource(StillIcons.CheckIn), contentDescription = null) },
                 modifier = Modifier.weight(1f),
             )
             MetricPanel(
                 value = today.longestBreak?.compactDuration() ?: "—",
                 label = "longest break",
                 detail = if (today.longestBreak == null) "After first use" else "Today",
-                icon = { Icon(painterResource(StillIcons.Calendar), contentDescription = null) },
+                icon = { Icon(painterResource(StillIcons.Break), contentDescription = null) },
                 modifier = Modifier.weight(1f),
             )
         }
