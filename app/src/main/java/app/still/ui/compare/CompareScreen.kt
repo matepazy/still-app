@@ -17,7 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,9 +33,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.still.ui.components.StillIcons
+import app.still.ui.components.LoadingSkeleton
 import app.still.ui.components.DaySelector
 import app.still.domain.model.StatisticsPeriod
 import app.still.ui.statistics.StatisticsPeriodSelector
@@ -92,32 +94,40 @@ fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>,
                     }
                 }
                 Spacer(Modifier.height(StillSpacing.xLarge))
-                Button(onClick = viewModel::showOwnQr, enabled = !state.busy && state.sharing.flags() != 0,
-                    modifier = Modifier.fillMaxWidth().height(76.dp)) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                        Icon(painterResource(StillIcons.QrCode), contentDescription = null, modifier = Modifier.size(28.dp))
-                        Column {
-                            Text("Show my code", style = MaterialTheme.typography.titleMedium)
-                            Text("Friend scans this phone", style = MaterialTheme.typography.bodySmall)
+                if (state.busy) {
+                    Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "Preparing comparison code" },
+                        horizontalAlignment = Alignment.CenterHorizontally) {
+                        LoadingSkeleton(Modifier.size(240.dp))
+                        Spacer(Modifier.height(StillSpacing.medium))
+                        LoadingSkeleton(Modifier.size(width = 140.dp, height = 18.dp))
+                    }
+                } else {
+                    Button(onClick = viewModel::showOwnQr, enabled = state.sharing.flags() != 0,
+                        modifier = Modifier.fillMaxWidth().height(76.dp)) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                            Icon(painterResource(StillIcons.QrCode), contentDescription = null, modifier = Modifier.size(28.dp))
+                            Column {
+                                Text("Show my code", style = MaterialTheme.typography.titleMedium)
+                                Text("Friend scans this phone", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
-                }
-                Spacer(Modifier.height(StillSpacing.small))
-                OutlinedButton(onClick = viewModel::scanFriend,
-                    modifier = Modifier.fillMaxWidth().height(76.dp)) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                        Icon(painterResource(StillIcons.Scan), contentDescription = null, modifier = Modifier.size(28.dp))
-                        Column {
-                            Text("Scan friend's code", style = MaterialTheme.typography.titleMedium)
-                            Text("Use your camera", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(StillSpacing.small))
+                    OutlinedButton(onClick = viewModel::scanFriend,
+                        modifier = Modifier.fillMaxWidth().height(76.dp)) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                            Icon(painterResource(StillIcons.Scan), contentDescription = null, modifier = Modifier.size(28.dp))
+                            Column {
+                                Text("Scan friend's code", style = MaterialTheme.typography.titleMedium)
+                                Text("Use your camera", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
+                    Text("QR only · Nothing is uploaded", modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = StillSpacing.medium),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text("QR only · Nothing is uploaded", modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = StillSpacing.medium),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (state.busy) CircularProgressIndicator()
             }
             ComparePhase.OwnQr, ComparePhase.ReplyQr -> {
                 Text(if (state.phase == ComparePhase.ReplyQr) "Show your reply" else "Show your code", style = MaterialTheme.typography.headlineMedium)

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +33,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.still.domain.model.StatisticsRange
@@ -43,6 +44,7 @@ import app.still.ui.components.StillIcons
 import app.still.ui.components.DaySelector
 import app.still.ui.components.AppIcon
 import app.still.ui.components.TonalPanel
+import app.still.ui.components.LoadingSkeleton
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.format.DateTimeFormatter
@@ -77,11 +79,48 @@ fun StatisticsScreen(viewModel: StatisticsViewModel, availableDates: List<LocalD
             Spacer(Modifier.height(StillSpacing.large))
         }
         when (val value = state) {
-            StatisticsState.Loading -> item { CircularProgressIndicator() }
+            StatisticsState.Loading -> item { StatisticsLoadingContent(period) }
             is StatisticsState.Error -> item { Text(value.message, color = MaterialTheme.colorScheme.error) }
             is StatisticsState.Ready -> statisticsContent(value.summary, period)
         }
         item { Spacer(Modifier.height(StillSpacing.section)) }
+    }
+}
+
+@Composable
+private fun StatisticsLoadingContent(period: StatisticsPeriod) {
+    Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "Loading statistics" }) {
+        LoadingSkeleton(Modifier.width(112.dp).height(20.dp))
+        Spacer(Modifier.height(StillSpacing.medium))
+        LoadingSkeleton(Modifier.width(172.dp).height(52.dp))
+        Spacer(Modifier.height(StillSpacing.small))
+        LoadingSkeleton(Modifier.width(226.dp).height(16.dp))
+        Spacer(Modifier.height(StillSpacing.xLarge))
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
+            Column {
+                Row(
+                    Modifier.fillMaxWidth().height(if (period == StatisticsPeriod.Month || period == StatisticsPeriod.SixMonths) 150.dp else 180.dp),
+                    horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    listOf(0.35f, 0.6f, 0.45f, 0.8f, 0.55f, 0.7f, 0.5f).forEach { fraction ->
+                        LoadingSkeleton(Modifier.weight(1f).height((150f * fraction).dp))
+                    }
+                }
+                Spacer(Modifier.height(StillSpacing.large))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    LoadingSkeleton(Modifier.width(92.dp).height(36.dp))
+                    LoadingSkeleton(Modifier.width(92.dp).height(36.dp))
+                }
+            }
+        }
+        Spacer(Modifier.height(StillSpacing.section))
+        LoadingSkeleton(Modifier.width(144.dp).height(28.dp))
+        Spacer(Modifier.height(StillSpacing.medium))
+        repeat(3) {
+            LoadingSkeleton(Modifier.fillMaxWidth().height(32.dp))
+            Spacer(Modifier.height(StillSpacing.small))
+        }
     }
 }
 

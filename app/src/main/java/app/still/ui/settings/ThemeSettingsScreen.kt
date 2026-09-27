@@ -32,7 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -72,6 +74,11 @@ fun ThemeSettingsScreen(
     )
     val orderedSimpleThemes = simpleThemes.promotedFirst(promotedSimpleTheme)
     var showAllSimpleThemes by remember { mutableStateOf(false) }
+    val simpleThemesScrollState = rememberScrollState()
+    var scrollToFrontRequest by remember { mutableIntStateOf(0) }
+    LaunchedEffect(promotedSimpleTheme, scrollToFrontRequest) {
+        simpleThemesScrollState.scrollTo(0)
+    }
     val context = LocalContext.current
     val wallpaperColors = if (supportsWallpaper) {
         if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -120,7 +127,7 @@ fun ThemeSettingsScreen(
             ),
         )
         Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).selectableGroup()
+            Modifier.fillMaxWidth().horizontalScroll(simpleThemesScrollState).selectableGroup()
                 .padding(horizontal = StillSpacing.large),
             horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
         ) {
@@ -164,6 +171,7 @@ fun ThemeSettingsScreen(
             onDismiss = { showAllSimpleThemes = false },
             onSelect = { option ->
                 onDrawerThemeChange(option)
+                scrollToFrontRequest++
                 showAllSimpleThemes = false
             },
         )
