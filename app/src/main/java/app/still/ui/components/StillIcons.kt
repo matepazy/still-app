@@ -25,6 +25,7 @@ object StillIcons {
     @DrawableRes val More = R.drawable.ic_ui_more
     @DrawableRes val Refresh = R.drawable.ic_ui_refresh
     @DrawableRes val ChevronRight = R.drawable.ic_ui_chevron_right
+    @DrawableRes val ExternalLink = R.drawable.ic_ui_external_link
     @DrawableRes val ChevronDown = R.drawable.ic_ui_chevron_down
     @DrawableRes val ChevronUp = R.drawable.ic_ui_chevron_up
     @DrawableRes val ArrowDown = R.drawable.ic_ui_arrow_down

@@ -13,6 +13,7 @@ internal const val WidgetSettingsRoute = "settings/widget"
 internal const val ScreenTimeWidgetSettingsRoute = "settings/widget/screen-time"
 internal const val DaylineWidgetSettingsRoute = "settings/widget/dayline"
 internal const val StoredDataRoute = "settings/data"
+internal const val IssueReportRoute = "settings/report-issue"
 
 data class NavigationRequest(
     val destination: LastDestination,

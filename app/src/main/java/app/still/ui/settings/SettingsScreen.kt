@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,8 +84,7 @@ import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
 import app.still.data.settings.WIDGET_PILL_RADIUS
 import app.still.data.settings.parseWidgetColor
-import app.still.data.settings.widgetContrastColors
-import app.still.data.settings.systemWidgetColors
+import app.still.widget.WidgetPalette
 import app.still.ui.components.compactDuration
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.StillWordmark
@@ -129,6 +127,10 @@ fun SettingsScreen(
     onRefresh: () -> Unit,
     onWidgetClick: () -> Unit,
     onStoredDataClick: () -> Unit,
+    onReportIssueClick: () -> Unit = {},
+    onDeveloperClick: () -> Unit = {},
+    reportSubmitted: Boolean = false,
+    onDismissReportSubmitted: () -> Unit = {},
     onSaveUsageHistoryChange: (Boolean) -> Unit = {},
     storedDataSummary: StoredDataSummary? = null,
     archiveRestoreState: ArchiveRestoreState = ArchiveRestoreState.Idle,
@@ -274,9 +276,32 @@ fun SettingsScreen(
                 }
             }
         }
+        Spacer(Modifier.height(StillSpacing.medium))
+        TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            Column {
+                SettingRow(
+                    title = "Report an issue",
+                    onClick = onReportIssueClick,
+                )
+                Hairline()
+                SettingRow(
+                    title = "Developed by matepazy",
+                    trailingIcon = StillIcons.ExternalLink,
+                    onClick = onDeveloperClick,
+                )
+            }
+        }
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
 
+    if (reportSubmitted) {
+        AlertDialog(
+            onDismissRequest = onDismissReportSubmitted,
+            title = { Text("Issue submitted") },
+            text = { Text("Thanks for reporting this issue. We'll try to fix it in our latest patch.") },
+            confirmButton = { TextButton(onClick = onDismissReportSubmitted) { Text("Done") } },
+        )
+    }
     if (updateChannelDialog) {
         ChoiceDialog(
             title = "Update channel",
@@ -757,7 +782,7 @@ fun WidgetSettingsScreen(
                         title = "Theme",
                         options = WidgetAppearance.entries.map { appearance ->
                             DirectChoiceOption(
-                                label = appearance.shortDisplayName,
+                                label = if (appearance == WidgetAppearance.App) "App · ${settings.theme.displayName}" else "System",
                                 selected = settings.widgetAppearance == appearance,
                                 onClick = { onWidgetThemeChange(appearance) },
                             )
@@ -977,7 +1002,7 @@ fun DaylineWidgetSettingsScreen(
                         title = "Theme",
                         options = WidgetAppearance.entries.map { appearance ->
                             DirectChoiceOption(
-                                label = appearance.shortDisplayName,
+                                label = if (appearance == WidgetAppearance.App) "App · ${settings.theme.displayName}" else "System",
                                 selected = settings.daylineWidgetAppearance == appearance,
                                 onClick = { onWidgetThemeChange(appearance) },
                             )
@@ -1122,15 +1147,7 @@ private fun DirectChoice(title: String, options: List<DirectChoiceOption>) {
 private val WidgetAppearance.displayName: String
     get() = when (this) {
         WidgetAppearance.System -> "Follow system"
-        WidgetAppearance.Light -> "Light"
-        WidgetAppearance.Dark -> "Dark"
-    }
-
-private val WidgetAppearance.shortDisplayName: String
-    get() = when (this) {
-        WidgetAppearance.System -> "System"
-        WidgetAppearance.Light -> "Light"
-        WidgetAppearance.Dark -> "Dark"
+        WidgetAppearance.App -> "App theme"
     }
 
 private val ThemePreference.displayName: String
@@ -1202,22 +1219,10 @@ private fun displayWidgetColor(color: String?): String = when (color) {
 @Composable
 private fun WidgetPreview(settings: UserSettings, duration: Duration) {
     val context = LocalContext.current
-    val dark = when (settings.widgetAppearance) {
-        WidgetAppearance.System -> isSystemInDarkTheme()
-        WidgetAppearance.Light -> false
-        WidgetAppearance.Dark -> true
-    }
-    val customColors = parseWidgetColor(settings.widgetColor)?.let(::widgetContrastColors)
-    val systemColors = if (settings.widgetAppearance == WidgetAppearance.System) systemWidgetColors(context, dark) else null
-    val background = customColors?.let { Color(it.background) }
-        ?: systemColors?.let { Color(it.background) }
-        ?: if (dark) Color(0xFF18201B) else Color(0xFFF1F5F1)
-    val primary = customColors?.let { Color(it.foreground) }
-        ?: systemColors?.let { Color(it.primary) }
-        ?: if (dark) Color(0xFFE9F5EC) else Color(0xFF172019)
-    val secondary = customColors?.let { Color(it.foreground) }
-        ?: systemColors?.let { Color(it.secondary) }
-        ?: if (dark) Color(0xFFAAB7AD) else Color(0xFF526057)
+    val palette = WidgetPalette.resolve(context, settings)
+    val background = Color(palette.background)
+    val primary = Color(palette.primary)
+    val secondary = Color(palette.secondary)
     val label = when (settings.widgetLabel) {
         WidgetLabel.ScreenTime -> "Screen time"
         WidgetLabel.Today -> "Today"
@@ -1257,22 +1262,10 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
 @Composable
 private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
     val context = LocalContext.current
-    val dark = when (settings.daylineWidgetAppearance) {
-        WidgetAppearance.System -> isSystemInDarkTheme()
-        WidgetAppearance.Light -> false
-        WidgetAppearance.Dark -> true
-    }
-    val customColors = parseWidgetColor(settings.daylineWidgetColor)?.let(::widgetContrastColors)
-    val systemColors = if (settings.daylineWidgetAppearance == WidgetAppearance.System) systemWidgetColors(context, dark) else null
-    val background = customColors?.let { Color(it.background) }
-        ?: systemColors?.let { Color(it.background) }
-        ?: if (dark) Color(0xFF18201B) else Color(0xFFF1F5F1)
-    val primary = customColors?.let { Color(it.foreground) }
-        ?: systemColors?.let { Color(it.primary) }
-        ?: if (dark) Color(0xFFE9F5EC) else Color(0xFF172019)
-    val secondary = customColors?.let { Color(it.foreground) }
-        ?: systemColors?.let { Color(it.secondary) }
-        ?: if (dark) Color(0xFFAAB7AD) else Color(0xFF526057)
+    val palette = WidgetPalette.resolve(context, settings.daylineWidgetAppearance, settings.daylineWidgetColor, settings.theme)
+    val background = Color(palette.background)
+    val primary = Color(palette.primary)
+    val secondary = Color(palette.secondary)
     val label = when (settings.daylineWidgetLabel) {
         DaylineWidgetLabel.Dayline -> "Dayline"
         DaylineWidgetLabel.Today -> "Today"
@@ -1652,7 +1645,8 @@ private fun SectionTitle(text: String) {
 @Composable
 private fun SettingRow(
     title: String,
-    supporting: String,
+    supporting: String? = null,
+    @DrawableRes trailingIcon: Int = StillIcons.ChevronRight,
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
@@ -1669,10 +1663,12 @@ private fun SettingRow(
                 style = MaterialTheme.typography.titleMedium,
                 color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            supporting?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         Icon(
-            painterResource(StillIcons.ChevronRight),
+            painterResource(trailingIcon),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else .38f),
         )

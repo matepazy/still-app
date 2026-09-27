@@ -1,6 +1,8 @@
 package app.still.ui
 
+import android.content.Intent
 import android.content.pm.LauncherApps
+import android.net.Uri
 import android.os.Process
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -72,6 +74,7 @@ import app.still.ui.components.LoadingSkeleton
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.onboarding.UsageAccessFlow
 import app.still.ui.settings.SettingsScreen
+import app.still.ui.settings.IssueReportBrowser
 import app.still.ui.settings.ThemeSettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.settings.StoredDataScreen
@@ -204,6 +207,7 @@ private fun MainNavigation(
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
+    var reportSubmitted by rememberSaveable { mutableStateOf(false) }
     val initialDestination = remember { navigationRequest?.destination ?: settings.lastDestination }
     val initialRequestId = remember { navigationRequest?.id }
     var navigationReady by remember { mutableStateOf(false) }
@@ -383,6 +387,12 @@ private fun MainNavigation(
                     onRefresh = viewModel::refresh,
                     onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
                     onStoredDataClick = { navController.navigate(StoredDataRoute) },
+                    onReportIssueClick = { navController.navigate(IssueReportRoute) },
+                    reportSubmitted = reportSubmitted,
+                    onDismissReportSubmitted = { reportSubmitted = false },
+                    onDeveloperClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://matepazy.hu")))
+                    },
                     onSaveUsageHistoryChange = viewModel::setSaveUsageHistory,
                     storedDataSummary = storedDataSummary,
                     archiveRestoreState = archiveRestoreState,
@@ -395,6 +405,22 @@ private fun MainNavigation(
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
                     onCheckForUpdates = viewModel::triggerVersionCheck,
+                    modifier = Modifier.padding(padding),
+                )
+            }
+        }
+        composable(IssueReportRoute) {
+            DestinationScaffold(
+                topBar = {
+                    SettingsTopBar(title = "Report an issue", onBack = { navController.popBackStack() })
+                },
+            ) { padding ->
+                IssueReportBrowser(
+                    onSubmitted = {
+                        reportSubmitted = true
+                        navController.popBackStack()
+                    },
+                    onClose = { navController.popBackStack() },
                     modifier = Modifier.padding(padding),
                 )
             }

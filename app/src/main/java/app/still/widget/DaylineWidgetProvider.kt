@@ -94,7 +94,7 @@ class DaylineWidgetProvider : AppWidgetProvider() {
         content: DaylineWidgetContent,
         settings: UserSettings,
     ) {
-        val palette = WidgetPalette.resolve(context, settings.daylineWidgetAppearance, settings.daylineWidgetColor)
+        val palette = WidgetPalette.resolve(context, settings.daylineWidgetAppearance, settings.daylineWidgetColor, settings.theme)
         ids.forEach { id ->
             val options = manager.getAppWidgetOptions(id)
             val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 110).coerceIn(110, 300)

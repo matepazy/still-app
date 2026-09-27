@@ -15,7 +15,7 @@ private val Context.settingsDataStore by preferencesDataStore("still_settings")
 
 enum class ThemePreference { System, Light, Dark, Wallpaper, Black, White, LightBlue, Sage, Sand, Midnight, Lavender, Rose, Peach }
 
-enum class WidgetAppearance { System, Light, Dark }
+enum class WidgetAppearance { System, App }
 
 enum class WidgetLabel { ScreenTime, Today, Hidden }
 
@@ -127,7 +127,7 @@ class SettingsRepository(private val context: Context) {
             deferredUpdate = deferredUpdate,
             saveUsageHistory = preferences[Keys.saveUsageHistory] ?: true,
             widgetAppearance = preferences[Keys.widgetAppearance]
-                ?.let { runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
+                ?.let { if (it == "Light" || it == "Dark") WidgetAppearance.App else runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
                 ?: WidgetAppearance.System,
             widgetColor = normalizeWidgetColor(preferences[Keys.widgetColor]),
             widgetLabel = preferences[Keys.widgetLabel]
@@ -143,7 +143,7 @@ class SettingsRepository(private val context: Context) {
             widgetCornerRadiusDp = normalizeWidgetRadius(preferences[Keys.widgetCornerRadius] ?: 24),
             widgetBackgroundOpacityPercent = (preferences[Keys.widgetBackgroundOpacity] ?: 100).coerceIn(20, 100),
             daylineWidgetAppearance = preferences[Keys.daylineWidgetAppearance]
-                ?.let { runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
+                ?.let { if (it == "Light" || it == "Dark") WidgetAppearance.App else runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
                 ?: WidgetAppearance.System,
             daylineWidgetColor = normalizeWidgetColor(preferences[Keys.daylineWidgetColor]),
             daylineWidgetLabel = preferences[Keys.daylineWidgetLabel]

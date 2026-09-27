@@ -1,4 +1,5 @@
 <resources>
+    <color name="still_window_background">#111713</color>
     <color name="still_icon_background">#0D1B17</color>
     <color name="widget_background">#F1F5F1</color>
     <color name="widget_primary">#172019</color>

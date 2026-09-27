@@ -4,9 +4,12 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
+import androidx.compose.ui.graphics.toArgb
 import app.still.R
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
+import app.still.data.settings.ThemePreference
+import app.still.ui.theme.appColorScheme
 import app.still.data.settings.WIDGET_PILL_RADIUS
 import app.still.data.settings.parseWidgetColor
 import app.still.data.settings.systemWidgetColors
@@ -34,22 +37,30 @@ internal data class WidgetPalette(
 ) {
     companion object {
         fun resolve(context: Context, settings: UserSettings): WidgetPalette {
-            return resolve(context, settings.widgetAppearance, settings.widgetColor)
+            return resolve(context, settings.widgetAppearance, settings.widgetColor, settings.theme)
         }
 
         fun resolve(
             context: Context,
             appearance: WidgetAppearance,
             customColor: String?,
+            appTheme: ThemePreference,
         ): WidgetPalette {
             parseWidgetColor(customColor)?.let { background ->
                 val colors = widgetContrastColors(background)
                 return WidgetPalette(colors.background, colors.foreground, colors.foreground)
             }
+            if (appearance == WidgetAppearance.App) {
+                val colors = appColorScheme(context, appTheme)
+                return WidgetPalette(
+                    colors.surfaceContainer.toArgb(),
+                    colors.onSurface.toArgb(),
+                    colors.onSurfaceVariant.toArgb(),
+                )
+            }
             val dark = when (appearance) {
                 WidgetAppearance.System -> context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-                WidgetAppearance.Light -> false
-                WidgetAppearance.Dark -> true
+                WidgetAppearance.App -> error("Handled above")
             }
             if (appearance == WidgetAppearance.System) {
                 systemWidgetColors(context, dark)?.let { colors ->

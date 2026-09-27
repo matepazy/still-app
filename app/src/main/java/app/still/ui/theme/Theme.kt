@@ -1,6 +1,8 @@
 package app.still.ui.theme
 
 import android.app.Activity
+import android.content.Context
+import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -350,6 +352,19 @@ internal fun simpleThemeColors(preference: ThemePreference): ColorScheme? = when
     else -> null
 }
 
+internal fun appColorScheme(context: Context, preference: ThemePreference): ColorScheme {
+    val systemDark = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    return when (preference) {
+        ThemePreference.Wallpaper -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (systemDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        } else if (systemDark) StillDarkColors else StillLightColors
+        ThemePreference.System -> if (systemDark) StillDarkColors else StillLightColors
+        ThemePreference.Light -> StillLightColors
+        ThemePreference.Dark -> StillDarkColors
+        else -> requireNotNull(simpleThemeColors(preference))
+    }
+}
+
 private val StillTypography = androidx.compose.material3.Typography(
     displayLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-2).sp),
     headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.4).sp),
@@ -380,14 +395,7 @@ fun StillTheme(
         ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach -> false
     }
     val context = LocalContext.current
-    val simpleColors = simpleThemeColors(themePreference)
-    val colors = when {
-        themePreference == ThemePreference.Wallpaper && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        simpleColors != null -> simpleColors
-        dark -> StillDarkColors
-        else -> StillLightColors
-    }
+    val colors = appColorScheme(context, themePreference)
     val view = LocalView.current
     if (!view.isInEditMode) {
         val window = (context as Activity).window
