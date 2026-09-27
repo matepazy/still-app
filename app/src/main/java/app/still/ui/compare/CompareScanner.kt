@@ -70,6 +70,8 @@ import com.google.zxing.PlanarYUVLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.delay
 import app.still.ui.components.StillIcons
 import app.still.ui.theme.StillSpacing
@@ -133,6 +135,8 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     } }
     val executor = remember { Executors.newSingleThreadExecutor() }
     val delivered = remember { AtomicBoolean(false) }
+    val ignoredCode = remember { AtomicReference<String?>(null) }
+    val ignoredCodeLastSeen = remember { AtomicLong(0L) }
     var cameraError by remember { mutableStateOf<String?>(null) }
     var detectedCode by remember { mutableStateOf<String?>(null) }
     val validCode = remember(detectedCode) { detectedCode?.let { ComparePayloadCodec.decode(it).isSuccess } }
@@ -147,7 +151,14 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     LaunchedEffect(detectedCode) {
         detectedCode?.let { code ->
             delay(650)
-            onCode(code)
+            if (validCode == true) {
+                onCode(code)
+            } else {
+                ignoredCode.set(code)
+                ignoredCodeLastSeen.set(android.os.SystemClock.elapsedRealtime())
+                detectedCode = null
+                delivered.set(false)
+            }
         }
     }
     DisposableEffect(owner) {
@@ -167,7 +178,15 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
                             val reader = MultiFormatReader().apply { setHints(mapOf(DecodeHintType.POSSIBLE_FORMATS to listOf(com.google.zxing.BarcodeFormat.QR_CODE))) }
                             val result = runCatching { reader.decodeWithState(BinaryBitmap(HybridBinarizer(source))) }
                                 .recoverCatching { reader.decodeWithState(BinaryBitmap(HybridBinarizer(source.rotateCounterClockwise()))) }.getOrNull()
-                            if (result != null && delivered.compareAndSet(false, true)) {
+                            val now = android.os.SystemClock.elapsedRealtime()
+                            if (result != null && result.text == ignoredCode.get()) {
+                                ignoredCodeLastSeen.set(now)
+                            } else if (result == null && now - ignoredCodeLastSeen.get() > 1000L) {
+                                ignoredCode.set(null)
+                            } else if (result != null) {
+                                ignoredCode.set(null)
+                            }
+                            if (result != null && result.text != ignoredCode.get() && delivered.compareAndSet(false, true)) {
                                 ContextCompat.getMainExecutor(context).execute { detectedCode = result.text }
                             }
                         }

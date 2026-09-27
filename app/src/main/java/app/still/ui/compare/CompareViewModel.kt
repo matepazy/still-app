@@ -99,7 +99,7 @@ class CompareViewModel(
     fun onScanned(code: String) {
         val phase = _state.value.phase
         val decoded = ComparePayloadCodec.decode(code).getOrElse {
-            _state.value = _state.value.copy(phase = ComparePhase.Start, error = it.message ?: "Invalid code")
+            _state.value = _state.value.copy(error = it.message ?: "Invalid code")
             return
         }
         if (phase == ComparePhase.ScanReply) {
