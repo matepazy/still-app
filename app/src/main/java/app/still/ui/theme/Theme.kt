@@ -13,7 +13,9 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import app.still.data.settings.ThemePreference
+
+val LocalThemePreference = staticCompositionLocalOf { ThemePreference.System }
 
 internal val StillDarkColors = darkColorScheme(
     primary = Color(0xFF9FE3B2),
@@ -88,6 +92,35 @@ internal val StillLightColors = lightColorScheme(
 )
 
 internal fun simpleThemeColors(preference: ThemePreference): ColorScheme? = when (preference) {
+    ThemePreference.Fall -> StillLightColors.copy(
+        primary = Color(0xFF98471F),
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFF5D6B5),
+        onPrimaryContainer = Color(0xFF4B291B),
+        inversePrimary = Color(0xFFE9AD7B),
+        secondary = Color(0xFF6F6244),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFECE2C9),
+        onSecondaryContainer = Color(0xFF3D3424),
+        tertiary = Color(0xFF865342),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFF4DDD2),
+        onTertiaryContainer = Color(0xFF4C2D25),
+        surfaceTint = Color(0xFF98471F),
+        background = Color(0xFFFFF8EC),
+        onBackground = Color(0xFF30251C),
+        surface = Color(0xFFFFF8EC),
+        onSurface = Color(0xFF30251C),
+        surfaceVariant = Color(0xFFF5EADC),
+        surfaceContainerLowest = Color(0xFFFFFDF8),
+        surfaceContainerLow = Color(0xFFFCF2E5),
+        surfaceContainer = Color(0xFFF5EADC),
+        surfaceContainerHigh = Color(0xFFEEE0CE),
+        surfaceContainerHighest = Color(0xFFE6D4BD),
+        onSurfaceVariant = Color(0xFF69594B),
+        outline = Color(0xFF8D7965),
+        outlineVariant = Color(0xFFDCC9B4),
+    )
     ThemePreference.Black -> StillDarkColors.copy(
         primary = Color.White,
         onPrimary = Color.Black,
@@ -392,7 +425,7 @@ fun StillTheme(
         ThemePreference.Light -> false
         ThemePreference.Dark, ThemePreference.Black, ThemePreference.Midnight -> true
         ThemePreference.White, ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
-        ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach -> false
+        ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach, ThemePreference.Fall -> false
     }
     val context = LocalContext.current
     val colors = appColorScheme(context, themePreference)
@@ -407,5 +440,7 @@ fun StillTheme(
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !dark
         }
     }
-    MaterialTheme(colorScheme = colors, typography = StillTypography, content = content)
+    CompositionLocalProvider(LocalThemePreference provides themePreference) {
+        MaterialTheme(colorScheme = colors, typography = StillTypography, content = content)
+    }
 }

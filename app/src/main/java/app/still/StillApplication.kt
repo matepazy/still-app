@@ -7,6 +7,11 @@ import app.still.data.usage.UsageRepository
 import app.still.data.usage.UsageStatsDataSource
 import app.still.data.usage.UsageHistoryScheduler
 import app.still.widget.WidgetUpdateScheduler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class StillApplication : Application() {
     lateinit var container: AppContainer
@@ -17,6 +22,9 @@ class StillApplication : Application() {
         container = AppContainer(this)
         UsageHistoryScheduler.schedule(this)
         WidgetUpdateScheduler.schedule(this)
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            SeasonalLauncherIcon.sync(this@StillApplication, container.settingsRepository.settings.first().theme)
+        }
     }
 }
 

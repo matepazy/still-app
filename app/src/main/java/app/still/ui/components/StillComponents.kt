@@ -20,6 +20,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.still.R
+import app.still.data.settings.ThemePreference
+import app.still.ui.theme.LocalThemePreference
 
 @Composable
 fun StillMark(
@@ -57,7 +59,9 @@ fun StillWordmark(
     modifier: Modifier = Modifier,
     markSize: Dp = 28.dp,
 ) {
-    val wordmarkResource = if (MaterialTheme.colorScheme.background.luminance() > 0.5f) {
+    val wordmarkResource = if (LocalThemePreference.current == ThemePreference.Fall) {
+        R.drawable.ic_still_wordmark_fall
+    } else if (MaterialTheme.colorScheme.background.luminance() > 0.5f) {
         R.drawable.ic_still_wordmark
     } else {
         R.drawable.ic_still_wordmark_inverse

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.still.AppContainer
+import app.still.SeasonalLauncherIcon
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.AppCategory
 import app.still.data.settings.LastDestination
@@ -223,10 +224,12 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
     fun setTheme(value: ThemePreference) = viewModelScope.launch {
         container.settingsRepository.setTheme(value)
+        SeasonalLauncherIcon.sync(container.applicationContext, value)
         WidgetUpdateDispatcher.updateAll(container.applicationContext)
     }
     fun setThemeFromDrawer(value: ThemePreference) = viewModelScope.launch {
         container.settingsRepository.setThemeFromDrawer(value)
+        SeasonalLauncherIcon.sync(container.applicationContext, value)
         WidgetUpdateDispatcher.updateAll(container.applicationContext)
     }
     fun setSaveUsageHistory(value: Boolean) = viewModelScope.launch {

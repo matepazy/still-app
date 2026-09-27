@@ -24,6 +24,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import app.still.R
 import app.still.data.settings.ThemePreference
 import app.still.ui.components.StillIcons
 import app.still.ui.theme.StillDarkColors
@@ -155,12 +157,12 @@ fun ThemeSettingsScreen(
                 bottom = StillSpacing.medium,
             ),
         )
-        Text(
-            "No special themes yet, but stay tuned!",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = StillSpacing.large),
-        )
+        Box(Modifier.fillMaxWidth().padding(horizontal = StillSpacing.large).selectableGroup()) {
+            FallThemeCard(
+                selected = selectedTheme == ThemePreference.Fall,
+                onClick = { onThemeChange(ThemePreference.Fall) },
+            )
+        }
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
 
@@ -180,6 +182,77 @@ fun ThemeSettingsScreen(
 
 private fun List<ThemePreference>.promotedFirst(promotedTheme: ThemePreference?): List<ThemePreference> =
     promotedTheme?.takeIf { it in this }?.let { theme -> listOf(theme) + filterNot { it == theme } } ?: this
+
+@Composable
+private fun FallThemeCard(selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    Column(
+        Modifier.fillMaxWidth()
+            .border(if (selected) 2.dp else 1.dp, borderColor, shape)
+            .padding(if (selected) 2.dp else 3.dp)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(12.dp))
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+    ) {
+        FallThemePreview(Modifier.fillMaxWidth().height(104.dp))
+        Row(
+            Modifier.fillMaxWidth().padding(StillSpacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Fall", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            }
+            if (selected) {
+                Box(
+                    Modifier.padding(start = StillSpacing.medium).size(28.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(StillIcons.Check),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FallThemePreview(modifier: Modifier = Modifier) {
+    Box(modifier.background(Color(0xFFFCF2E5), RoundedCornerShape(10.dp))) {
+        Canvas(Modifier.fillMaxSize()) {
+            val leaves = listOf(
+                Triple(.72f, .30f, 14.dp.toPx()),
+                Triple(.88f, .67f, 18.dp.toPx()),
+                Triple(.60f, .78f, 10.dp.toPx()),
+            )
+            val colors = listOf(Color(0xFFB76532), Color(0xFFD9944E), Color(0xFF865342))
+            leaves.forEachIndexed { index, (x, y, radius) ->
+                val center = Offset(size.width * x, size.height * y)
+                val leaf = Path().apply {
+                    moveTo(center.x, center.y - radius)
+                    cubicTo(center.x + radius, center.y - radius * .4f,
+                        center.x + radius, center.y + radius * .5f, center.x, center.y + radius)
+                    cubicTo(center.x - radius, center.y + radius * .5f,
+                        center.x - radius, center.y - radius * .4f, center.x, center.y - radius)
+                    close()
+                }
+                drawPath(leaf, colors[index])
+                drawLine(Color(0xFFF7D79E), Offset(center.x, center.y - radius * .6f),
+                    Offset(center.x, center.y + radius * .75f), strokeWidth = 1.dp.toPx())
+            }
+        }
+        Image(
+            painter = painterResource(R.drawable.ic_still_wordmark_fall),
+            contentDescription = null,
+            modifier = Modifier.align(Alignment.CenterStart).padding(start = StillSpacing.large)
+                .width(100.dp).height(50.dp),
+        )
+    }
+}
 
 @Composable
 private fun ShowAllThemesCard(onClick: () -> Unit) {
@@ -271,6 +344,7 @@ private fun ThemeCard(
         ThemePreference.Lavender -> "Lavender"
         ThemePreference.Rose -> "Rose"
         ThemePreference.Peach -> "Peach"
+        ThemePreference.Fall -> "Fall"
     }
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val textColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
@@ -325,7 +399,8 @@ private fun ThemePreview(
         ThemePreference.Wallpaper -> wallpaperBackground
         ThemePreference.Black, ThemePreference.White -> simple!!.surface
         ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
-        ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach -> simple!!.primaryContainer
+        ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
+        ThemePreference.Fall -> simple!!.primaryContainer
     }
     val ink = when (option) {
         ThemePreference.System, ThemePreference.Light -> light.onSurface
@@ -333,11 +408,21 @@ private fun ThemePreview(
         ThemePreference.Wallpaper -> wallpaperInk
         ThemePreference.Black, ThemePreference.White -> simple!!.onSurface
         ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
-        ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach -> simple!!.onPrimaryContainer
+        ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
+        ThemePreference.Fall -> simple!!.onPrimaryContainer
     }
     Canvas(modifier) {
         val corner = CornerRadius(12.dp.toPx())
         drawRoundRect(background, cornerRadius = corner)
+        if (option == ThemePreference.Fall) {
+            val leaf = Path().apply {
+                moveTo(size.width * .76f, size.height * .12f)
+                cubicTo(size.width * .97f, size.height * .24f, size.width * .94f, size.height * .48f, size.width * .72f, size.height * .59f)
+                cubicTo(size.width * .57f, size.height * .4f, size.width * .61f, size.height * .23f, size.width * .76f, size.height * .12f)
+                close()
+            }
+            drawPath(leaf, Color(0xFFB76532).copy(alpha = .42f))
+        }
         if (option == ThemePreference.System) {
             val triangle = Path().apply {
                 moveTo(size.width, 0f)

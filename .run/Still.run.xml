@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Still" type="AndroidRunConfigurationType" factoryName="Android App">
+    <module name="Still.app" />
+    <option name="MODE" value="specific_activity" />
+    <option name="ACTIVITY_CLASS" value="app.still.MainActivity" />
+    <method v="2">
+      <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

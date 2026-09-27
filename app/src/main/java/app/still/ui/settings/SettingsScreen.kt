@@ -4,6 +4,7 @@ import android.graphics.Color as AndroidColor
 import android.text.format.Formatter
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,11 +51,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -70,6 +73,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import app.still.BuildConfig
+import app.still.R
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.DaylineWidgetLabel
 import app.still.data.usage.StoredDataSummary
@@ -1165,6 +1169,7 @@ private val ThemePreference.displayName: String
         ThemePreference.Lavender -> "Lavender"
         ThemePreference.Rose -> "Rose"
         ThemePreference.Peach -> "Peach"
+        ThemePreference.Fall -> "Fall"
     }
 
 private val WidgetLabel.displayName: String
@@ -1241,6 +1246,7 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
 
     WidgetPreviewLayout(
         background = background,
+        fall = settings.theme == ThemePreference.Fall,
         backgroundOpacityPercent = settings.widgetBackgroundOpacityPercent,
         cornerRadiusDp = settings.widgetCornerRadiusDp,
         label = label,
@@ -1276,6 +1282,7 @@ private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
 
     WidgetPreviewLayout(
         background = background,
+        fall = settings.theme == ThemePreference.Fall,
         backgroundOpacityPercent = settings.daylineWidgetBackgroundOpacityPercent,
         cornerRadiusDp = settings.daylineWidgetCornerRadiusDp,
         label = label,
@@ -1317,6 +1324,7 @@ private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
 @Composable
 private fun WidgetPreviewLayout(
     background: Color,
+    fall: Boolean,
     backgroundOpacityPercent: Int,
     cornerRadiusDp: Int,
     label: String?,
@@ -1325,7 +1333,7 @@ private fun WidgetPreviewLayout(
     description: String,
     content: @Composable () -> Unit,
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(104.dp)
@@ -1334,24 +1342,35 @@ private fun WidgetPreviewLayout(
                 else RoundedCornerShape(cornerRadiusDp.dp),
             )
             .background(background.copy(alpha = backgroundOpacityPercent / 100f))
-            .padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp)
             .semantics { contentDescription = description },
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-            label?.let {
-                Text(it, style = MaterialTheme.typography.labelMedium, color = secondary)
-            }
-            content()
+        if (fall) {
+            Image(
+                painter = painterResource(R.drawable.ic_widget_fall_leaves),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(secondary),
+                modifier = Modifier.align(Alignment.BottomEnd).size(72.dp).alpha(.18f),
+            )
         }
-        if (showRefresh) {
-            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(StillIcons.Refresh),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = secondary,
-                )
+        Row(
+            modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                label?.let {
+                    Text(it, style = MaterialTheme.typography.labelMedium, color = secondary)
+                }
+                content()
+            }
+            if (showRefresh) {
+                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(StillIcons.Refresh),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = secondary,
+                    )
+                }
             }
         }
     }

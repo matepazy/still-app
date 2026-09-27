@@ -13,6 +13,16 @@
         android:scaleType="fitXY"
         android:src="@drawable/widget_background" />
 
+    <ImageView
+        android:id="@+id/widget_fall_leaves"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="end|bottom"
+        android:alpha="0.18"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_widget_fall_leaves"
+        android:visibility="gone" />
+
     <LinearLayout style="@style/WidgetLayout">
 
         <LinearLayout style="@style/WidgetContentColumn">

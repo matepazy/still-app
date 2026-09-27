@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.UsageDashboard
+import app.still.data.settings.ThemePreference
 import app.still.ui.components.AppIcon
 import app.still.ui.components.StillIcons
 import app.still.ui.components.Dayline
@@ -36,6 +37,7 @@ import app.still.ui.components.clockTime
 import app.still.ui.components.compactDuration
 import app.still.ui.components.signedCompactDuration
 import app.still.ui.theme.StillSpacing
+import app.still.ui.theme.LocalThemePreference
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -67,14 +69,19 @@ fun TodayScreen(
             .padding(horizontal = StillSpacing.medium),
     ) {
         Spacer(Modifier.height(24.dp))
-        Text(
-            "Today · ${today.date.format(DateTimeFormatter.ofPattern("EEE, MMM d"))}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(StillSpacing.medium))
-        Text(today.total.compactDuration(), style = MaterialTheme.typography.displayLarge)
-        Text("Screen time today", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val date = today.date.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
+        if (LocalThemePreference.current == ThemePreference.Fall) {
+            FallTodayHeader(date, today.total.compactDuration())
+        } else {
+            Text(
+                "Today · $date",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(StillSpacing.medium))
+            Text(today.total.compactDuration(), style = MaterialTheme.typography.displayLarge)
+            Text("Screen time today", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Spacer(Modifier.height(StillSpacing.large))
         Comparison(dashboard)
 
