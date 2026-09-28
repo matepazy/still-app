@@ -45,11 +45,10 @@ internal fun FallTodayHeader(date: String, duration: String) {
         animatedProgress
     } else .12f
     val leaf = Path().apply {
-        moveTo(10f, 0f)
-        cubicTo(15f, 5f, 20f, 7f, 18f, 13f)
-        cubicTo(17f, 19f, 12f, 22f, 10f, 25f)
-        cubicTo(8f, 22f, 3f, 19f, 2f, 13f)
-        cubicTo(0f, 7f, 5f, 5f, 10f, 0f)
+        moveTo(10f, 1f)
+        cubicTo(18f, 5f, 21f, 11f, 17f, 17f)
+        cubicTo(14f, 22f, 9f, 24f, 5f, 23f)
+        cubicTo(3f, 16f, 3f, 10f, 10f, 1f)
         close()
     }
     Box(
@@ -63,20 +62,20 @@ internal fun FallTodayHeader(date: String, duration: String) {
     ) {
         Canvas(Modifier.matchParentSize()) {
             val colors = listOf(Color(0xFFF7C877), Color(0xFFE8A15C), Color(0xFFFFD899))
-            repeat(9) { index ->
-                val phase = (progress + index * .137f) % 1f
-                val x = size.width * (.08f + (index * .179f) % .84f) +
+            repeat(6) { index ->
+                val phase = (progress + index * .173f) % 1f
+                val x = size.width * (.12f + (index * .227f) % .80f) +
                     sin(phase * 6.28f + index) * 17.dp.toPx()
                 val y = -30.dp.toPx() + phase * (size.height + 60.dp.toPx())
-                val leafScale = (if (index % 3 == 0) 1.15f else .75f) * density
+                val leafScale = (if (index % 3 == 0) 1f else .7f) * density
                 withTransform({
                     translate(x, y)
                     rotate(phase * 125f + index * 39f, Offset(10f, 12f))
                     scale(leafScale, leafScale, Offset(10f, 12f))
                 }) {
-                    drawPath(leaf, colors[index % colors.size].copy(alpha = .5f))
+                    drawPath(leaf, colors[index % colors.size].copy(alpha = .38f))
                     drawLine(
-                        Color(0xFFFFE1AA).copy(alpha = .45f),
+                        Color(0xFFFFE1AA).copy(alpha = .32f),
                         Offset(10f, 4f), Offset(10f, 21f), strokeWidth = 1f,
                     )
                 }

@@ -15,10 +15,12 @@
 
     <ImageView
         android:id="@+id/widget_fall_leaves"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:layout_gravity="end|bottom"
-        android:alpha="0.18"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="end|top"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="10dp"
+        android:alpha="0.36"
         android:contentDescription="@null"
         android:src="@drawable/ic_widget_fall_leaves"
         android:visibility="gone" />

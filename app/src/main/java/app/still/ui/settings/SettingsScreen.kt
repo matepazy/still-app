@@ -1349,7 +1349,8 @@ private fun WidgetPreviewLayout(
                 painter = painterResource(R.drawable.ic_widget_fall_leaves),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(secondary),
-                modifier = Modifier.align(Alignment.BottomEnd).size(72.dp).alpha(.18f),
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 10.dp)
+                    .size(40.dp).alpha(.36f),
             )
         }
         Row(

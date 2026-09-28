@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -76,6 +77,7 @@ fun ThemeSettingsScreen(
     )
     val orderedSimpleThemes = simpleThemes.promotedFirst(promotedSimpleTheme)
     var showAllSimpleThemes by remember { mutableStateOf(false) }
+    var showFallInfo by remember { mutableStateOf(false) }
     val simpleThemesScrollState = rememberScrollState()
     var scrollToFrontRequest by remember { mutableIntStateOf(0) }
     LaunchedEffect(promotedSimpleTheme, scrollToFrontRequest) {
@@ -161,6 +163,7 @@ fun ThemeSettingsScreen(
             FallThemeCard(
                 selected = selectedTheme == ThemePreference.Fall,
                 onClick = { onThemeChange(ThemePreference.Fall) },
+                onInfoClick = { showFallInfo = true },
             )
         }
         Spacer(Modifier.height(StillSpacing.xLarge))
@@ -178,13 +181,16 @@ fun ThemeSettingsScreen(
             },
         )
     }
+    if (showFallInfo) {
+        FallThemeInfoSheet(onDismiss = { showFallInfo = false })
+    }
 }
 
 private fun List<ThemePreference>.promotedFirst(promotedTheme: ThemePreference?): List<ThemePreference> =
     promotedTheme?.takeIf { it in this }?.let { theme -> listOf(theme) + filterNot { it == theme } } ?: this
 
 @Composable
-private fun FallThemeCard(selected: Boolean, onClick: () -> Unit) {
+private fun FallThemeCard(selected: Boolean, onClick: () -> Unit, onInfoClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     Column(
@@ -201,6 +207,24 @@ private fun FallThemeCard(selected: Boolean, onClick: () -> Unit) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text("Fall", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text("September 1 – November 30", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            IconButton(
+                onClick = onInfoClick,
+                modifier = Modifier.size(48.dp),
+            ) {
+                Box(
+                    Modifier.size(36.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(StillIcons.Info),
+                        contentDescription = "About Fall theme",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
             if (selected) {
                 Box(
@@ -223,34 +247,41 @@ private fun FallThemeCard(selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun FallThemePreview(modifier: Modifier = Modifier) {
     Box(modifier.background(Color(0xFFFCF2E5), RoundedCornerShape(10.dp))) {
-        Canvas(Modifier.fillMaxSize()) {
-            val leaves = listOf(
-                Triple(.72f, .30f, 14.dp.toPx()),
-                Triple(.88f, .67f, 18.dp.toPx()),
-                Triple(.60f, .78f, 10.dp.toPx()),
-            )
-            val colors = listOf(Color(0xFFB76532), Color(0xFFD9944E), Color(0xFF865342))
-            leaves.forEachIndexed { index, (x, y, radius) ->
-                val center = Offset(size.width * x, size.height * y)
-                val leaf = Path().apply {
-                    moveTo(center.x, center.y - radius)
-                    cubicTo(center.x + radius, center.y - radius * .4f,
-                        center.x + radius, center.y + radius * .5f, center.x, center.y + radius)
-                    cubicTo(center.x - radius, center.y + radius * .5f,
-                        center.x - radius, center.y - radius * .4f, center.x, center.y - radius)
-                    close()
-                }
-                drawPath(leaf, colors[index])
-                drawLine(Color(0xFFF7D79E), Offset(center.x, center.y - radius * .6f),
-                    Offset(center.x, center.y + radius * .75f), strokeWidth = 1.dp.toPx())
-            }
-        }
+        Image(
+            painter = painterResource(R.drawable.ic_widget_fall_leaves),
+            contentDescription = null,
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF98471F)),
+            modifier = Modifier.align(Alignment.BottomEnd).size(104.dp),
+        )
         Image(
             painter = painterResource(R.drawable.ic_still_wordmark_fall),
             contentDescription = null,
             modifier = Modifier.align(Alignment.CenterStart).padding(start = StillSpacing.large)
                 .width(100.dp).height(50.dp),
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FallThemeInfoSheet(onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                .padding(horizontal = StillSpacing.large)
+                .padding(bottom = StillSpacing.xLarge),
+            verticalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+        ) {
+            FallThemePreview(Modifier.fillMaxWidth().height(112.dp))
+            Text("Fall", style = MaterialTheme.typography.headlineSmall)
+            Text("Available September 1 – November 30", style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Includes", style = MaterialTheme.typography.titleMedium)
+            Text("Warm autumn colors throughout the app", style = MaterialTheme.typography.bodyMedium)
+            Text("Falling leaves on Today", style = MaterialTheme.typography.bodyMedium)
+            Text("Fall wordmark and app icon", style = MaterialTheme.typography.bodyMedium)
+            Text("Autumn sprig on Screen time and Dayline widgets", style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 
