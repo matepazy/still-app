@@ -251,7 +251,9 @@ private fun FallThemePreview(modifier: Modifier = Modifier) {
             painter = painterResource(R.drawable.ic_widget_fall_leaves),
             contentDescription = null,
             colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF98471F)),
-            modifier = Modifier.align(Alignment.BottomEnd).size(104.dp),
+            modifier = Modifier.align(Alignment.BottomEnd)
+                .padding(end = 8.dp, bottom = 4.dp)
+                .size(92.dp),
         )
         Image(
             painter = painterResource(R.drawable.ic_still_wordmark_fall),

@@ -740,6 +740,7 @@ fun WidgetSettingsScreen(
     onWidgetFontSizeChange: (WidgetFontSize) -> Unit,
     onWidgetFontStyleChange: (WidgetFontStyle) -> Unit,
     onWidgetShowRefreshChange: (Boolean) -> Unit,
+    onShowThemeGraphicsChange: (Boolean) -> Unit,
     onWidgetCornerRadiusChange: (Int) -> Unit,
     onWidgetBackgroundOpacityChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -798,6 +799,15 @@ fun WidgetSettingsScreen(
                         onClick = { colorDialog = true },
                     )
                 }
+                Hairline()
+                SettingSwitch(
+                    title = "Show theme graphics",
+                    supporting = null,
+                    checked = settings.widgetShowThemeGraphics,
+                    enabled = true,
+                    onCheckedChange = onShowThemeGraphicsChange,
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                )
                 Hairline()
                 WidgetValueSlider(
                     title = "Corner radius",
@@ -867,6 +877,7 @@ fun WidgetSettingsScreen(
                     checked = settings.widgetShowRefresh,
                     enabled = true,
                     onCheckedChange = onWidgetShowRefreshChange,
+                    contentPadding = PaddingValues(vertical = 4.dp),
                 )
             }
         }
@@ -960,6 +971,7 @@ fun DaylineWidgetSettingsScreen(
     onWidgetThemeChange: (WidgetAppearance) -> Unit,
     onWidgetLabelChange: (DaylineWidgetLabel) -> Unit,
     onWidgetShowRefreshChange: (Boolean) -> Unit,
+    onShowThemeGraphicsChange: (Boolean) -> Unit,
     onWidgetCornerRadiusChange: (Int) -> Unit,
     onWidgetBackgroundOpacityChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -1019,6 +1031,15 @@ fun DaylineWidgetSettingsScreen(
                     )
                 }
                 Hairline()
+                SettingSwitch(
+                    title = "Show theme graphics",
+                    supporting = null,
+                    checked = settings.daylineWidgetShowThemeGraphics,
+                    enabled = true,
+                    onCheckedChange = onShowThemeGraphicsChange,
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                )
+                Hairline()
                 WidgetValueSlider(
                     title = "Corner radius",
                     value = previewCornerRadius,
@@ -1065,6 +1086,7 @@ fun DaylineWidgetSettingsScreen(
                     checked = settings.daylineWidgetShowRefresh,
                     enabled = true,
                     onCheckedChange = onWidgetShowRefreshChange,
+                    contentPadding = PaddingValues(vertical = 4.dp),
                 )
             }
         }
@@ -1246,7 +1268,7 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
 
     WidgetPreviewLayout(
         background = background,
-        fall = settings.theme == ThemePreference.Fall,
+        fall = settings.widgetShowThemeGraphics && settings.theme == ThemePreference.Fall,
         backgroundOpacityPercent = settings.widgetBackgroundOpacityPercent,
         cornerRadiusDp = settings.widgetCornerRadiusDp,
         label = label,
@@ -1282,7 +1304,7 @@ private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
 
     WidgetPreviewLayout(
         background = background,
-        fall = settings.theme == ThemePreference.Fall,
+        fall = settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Fall,
         backgroundOpacityPercent = settings.daylineWidgetBackgroundOpacityPercent,
         cornerRadiusDp = settings.daylineWidgetCornerRadiusDp,
         label = label,
@@ -1702,6 +1724,7 @@ private fun SettingSwitch(
     checked: Boolean,
     enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
 ) {
     Row(
         modifier = Modifier
@@ -1712,7 +1735,7 @@ private fun SettingSwitch(
                 role = Role.Switch,
                 onValueChange = onCheckedChange,
             )
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {

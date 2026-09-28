@@ -52,7 +52,7 @@ internal fun FallTodayHeader(date: String, duration: String) {
         close()
     }
     Box(
-        Modifier.fillMaxWidth().height(190.dp)
+        Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(
                 Brush.linearGradient(

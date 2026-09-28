@@ -244,6 +244,10 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         refresh()
         WidgetUpdateDispatcher.updateAll(container.applicationContext)
     }
+    fun setWidgetShowThemeGraphics(value: Boolean) = viewModelScope.launch {
+        container.settingsRepository.setWidgetShowThemeGraphics(value)
+        ScreenTimeWidgetProvider.updateAll(container.applicationContext)
+    }
     fun setDailyTargetMinutes(value: Long?) = viewModelScope.launch { container.settingsRepository.setDailyTargetMinutes(value) }
     fun setLastDestination(value: LastDestination) = viewModelScope.launch {
         container.settingsRepository.setLastDestination(value)
@@ -293,6 +297,10 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
     fun setDaylineWidgetColor(value: String?) = viewModelScope.launch {
         container.settingsRepository.setDaylineWidgetColor(value)
+        DaylineWidgetProvider.updateAll(container.applicationContext)
+    }
+    fun setDaylineWidgetShowThemeGraphics(value: Boolean) = viewModelScope.launch {
+        container.settingsRepository.setDaylineWidgetShowThemeGraphics(value)
         DaylineWidgetProvider.updateAll(container.applicationContext)
     }
     fun setDaylineWidgetTheme(value: WidgetAppearance) = viewModelScope.launch {

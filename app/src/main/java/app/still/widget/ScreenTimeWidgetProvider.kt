@@ -92,7 +92,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_screen_time).apply {
                 setImageViewResource(R.id.widget_background, settings.widgetCornerRadiusDp.widgetBackgroundDrawable)
                 setInt(R.id.widget_background, "setColorFilter", palette.background)
-                setViewVisibility(R.id.widget_fall_leaves, if (settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.widget_fall_leaves, if (settings.widgetShowThemeGraphics && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_fall_leaves, "setColorFilter", palette.secondary)
                 setInt(
                     R.id.widget_background,

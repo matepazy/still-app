@@ -102,7 +102,7 @@ class DaylineWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_dayline).apply {
                 setImageViewResource(R.id.widget_dayline_background, settings.daylineWidgetCornerRadiusDp.widgetBackgroundDrawable)
                 setInt(R.id.widget_dayline_background, "setColorFilter", palette.background)
-                setViewVisibility(R.id.widget_dayline_fall_leaves, if (settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.widget_dayline_fall_leaves, if (settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_dayline_fall_leaves, "setColorFilter", palette.secondary)
                 setInt(
                     R.id.widget_dayline_background,

@@ -47,6 +47,7 @@ data class UserSettings(
     val updateChannel: String = "release",
     val deferredUpdate: DeferredUpdate? = null,
     val saveUsageHistory: Boolean = true,
+    val widgetShowThemeGraphics: Boolean = true,
     val widgetAppearance: WidgetAppearance = WidgetAppearance.System,
     val widgetColor: String? = null,
     val widgetLabel: WidgetLabel = WidgetLabel.ScreenTime,
@@ -57,6 +58,7 @@ data class UserSettings(
     val widgetBackgroundOpacityPercent: Int = 100,
     val daylineWidgetAppearance: WidgetAppearance = WidgetAppearance.System,
     val daylineWidgetColor: String? = null,
+    val daylineWidgetShowThemeGraphics: Boolean = true,
     val daylineWidgetLabel: DaylineWidgetLabel = DaylineWidgetLabel.Dayline,
     val daylineWidgetShowRefresh: Boolean = true,
     val daylineWidgetCornerRadiusDp: Int = 24,
@@ -86,6 +88,7 @@ class SettingsRepository(private val context: Context) {
         val deferredUpdateUrl = stringPreferencesKey("deferred_update_url")
         val deferredUpdateReminder = longPreferencesKey("deferred_update_remind_after_ms")
         val saveUsageHistory = booleanPreferencesKey("save_usage_history")
+        val widgetShowThemeGraphics = booleanPreferencesKey("widget_show_theme_graphics")
         val widgetAppearance = stringPreferencesKey("widget_appearance")
         val widgetColor = stringPreferencesKey("widget_color")
         val widgetLabel = stringPreferencesKey("widget_label")
@@ -96,6 +99,7 @@ class SettingsRepository(private val context: Context) {
         val widgetBackgroundOpacity = intPreferencesKey("widget_background_opacity_percent")
         val daylineWidgetAppearance = stringPreferencesKey("dayline_widget_appearance")
         val daylineWidgetColor = stringPreferencesKey("dayline_widget_color")
+        val daylineWidgetShowThemeGraphics = booleanPreferencesKey("dayline_widget_show_theme_graphics")
         val daylineWidgetLabel = stringPreferencesKey("dayline_widget_label")
         val daylineWidgetShowRefresh = booleanPreferencesKey("dayline_widget_show_refresh")
         val daylineWidgetCornerRadius = intPreferencesKey("dayline_widget_corner_radius_dp")
@@ -126,6 +130,7 @@ class SettingsRepository(private val context: Context) {
             updateChannel = preferences[Keys.updateChannel] ?: "release",
             deferredUpdate = deferredUpdate,
             saveUsageHistory = preferences[Keys.saveUsageHistory] ?: true,
+            widgetShowThemeGraphics = preferences[Keys.widgetShowThemeGraphics] ?: true,
             widgetAppearance = preferences[Keys.widgetAppearance]
                 ?.let { if (it == "Light" || it == "Dark") WidgetAppearance.App else runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
                 ?: WidgetAppearance.System,
@@ -146,6 +151,7 @@ class SettingsRepository(private val context: Context) {
                 ?.let { if (it == "Light" || it == "Dark") WidgetAppearance.App else runCatching { WidgetAppearance.valueOf(it) }.getOrNull() }
                 ?: WidgetAppearance.System,
             daylineWidgetColor = normalizeWidgetColor(preferences[Keys.daylineWidgetColor]),
+            daylineWidgetShowThemeGraphics = preferences[Keys.daylineWidgetShowThemeGraphics] ?: true,
             daylineWidgetLabel = preferences[Keys.daylineWidgetLabel]
                 ?.let { runCatching { DaylineWidgetLabel.valueOf(it) }.getOrNull() }
                 ?: DaylineWidgetLabel.Dayline,
@@ -195,6 +201,9 @@ class SettingsRepository(private val context: Context) {
     suspend fun setSaveUsageHistory(value: Boolean) = context.settingsDataStore.edit {
         it[Keys.saveUsageHistory] = value
     }
+    suspend fun setWidgetShowThemeGraphics(value: Boolean) = context.settingsDataStore.edit {
+        it[Keys.widgetShowThemeGraphics] = value
+    }
     suspend fun setWidgetAppearance(value: WidgetAppearance) = context.settingsDataStore.edit {
         it[Keys.widgetAppearance] = value.name
     }
@@ -226,6 +235,9 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDaylineWidgetColor(value: String?) = context.settingsDataStore.edit {
         normalizeWidgetColor(value)?.let { color -> it[Keys.daylineWidgetColor] = color } ?: it.remove(Keys.daylineWidgetColor)
     }
+    suspend fun setDaylineWidgetShowThemeGraphics(value: Boolean) = context.settingsDataStore.edit {
+        it[Keys.daylineWidgetShowThemeGraphics] = value
+    }
     suspend fun setDaylineWidgetTheme(value: WidgetAppearance) = context.settingsDataStore.edit {
         it[Keys.daylineWidgetAppearance] = value.name
         it.remove(Keys.daylineWidgetColor)
@@ -253,6 +265,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun resetWidgetSettings() = context.settingsDataStore.edit {
+        it.remove(Keys.widgetShowThemeGraphics)
         it.remove(Keys.widgetAppearance)
         it.remove(Keys.widgetColor)
         it.remove(Keys.widgetLabel)
@@ -264,6 +277,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun resetDaylineWidgetSettings() = context.settingsDataStore.edit {
+        it.remove(Keys.daylineWidgetShowThemeGraphics)
         it.remove(Keys.daylineWidgetAppearance)
         it.remove(Keys.daylineWidgetColor)
         it.remove(Keys.daylineWidgetLabel)

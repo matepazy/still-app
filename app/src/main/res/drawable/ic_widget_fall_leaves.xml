@@ -2,21 +2,16 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="88dp" android:height="88dp"
     android:viewportWidth="88" android:viewportHeight="88">
-    <!-- A quiet autumn sprig, drawn as a single tintable corner ornament. -->
     <path android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2"
         android:strokeLineCap="round"
-        android:pathData="M18,85 C35,72 49,61 55,42 C60,28 64,17 77,5" />
+        android:pathData="M13,84 C25,74 37,65 46,54 C58,41 67,23 78,5" />
     <path android:fillColor="#FFFFFFFF"
-        android:pathData="M55,42 C42,38 35,29 38,18 C48,19 56,27 55,42 Z" />
+        android:pathData="M57,40 C46,39 38,33 35,23 C34,19 35,15 36,13 C48,15 55,25 57,40 Z" />
     <path android:fillColor="#FFFFFFFF"
-        android:pathData="M57,38 C69,37 77,30 80,20 C68,19 59,26 57,38 Z" />
+        android:pathData="M61,36 C63,24 71,18 82,17 C81,27 73,34 61,36 Z" />
     <path android:fillColor="#FFFFFFFF"
-        android:pathData="M39,62 C27,61 19,55 17,45 C29,44 38,51 39,62 Z" />
+        android:pathData="M40,62 C28,62 19,56 15,46 C27,44 36,51 40,62 Z" />
     <path android:fillColor="#FFFFFFFF"
-        android:pathData="M42,59 C55,59 64,52 67,43 C55,41 46,48 42,59 Z" />
-    <path android:fillColor="@android:color/transparent"
-        android:strokeColor="#FFFFFFFF" android:strokeWidth="1.3"
-        android:strokeLineCap="round"
-        android:pathData="M55,42 L42,23 M57,38 L75,24 M39,62 L21,49 M42,59 L61,46" />
+        android:pathData="M46,55 C53,45 63,42 72,43 C69,52 60,56 46,55 Z" />
 </vector>
