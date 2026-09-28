@@ -92,6 +92,35 @@ internal val StillLightColors = lightColorScheme(
 )
 
 internal fun simpleThemeColors(preference: ThemePreference): ColorScheme? = when (preference) {
+    ThemePreference.Halloween -> StillDarkColors.copy(
+        primary = Color(0xFFFFB765),
+        onPrimary = Color(0xFF38200F),
+        primaryContainer = Color(0xFF57331F),
+        onPrimaryContainer = Color(0xFFFFDBAC),
+        inversePrimary = Color(0xFF9B531F),
+        secondary = Color(0xFFD8BFEA),
+        onSecondary = Color(0xFF30243A),
+        secondaryContainer = Color(0xFF40304C),
+        onSecondaryContainer = Color(0xFFF0D9FF),
+        tertiary = Color(0xFFC5D4A3),
+        onTertiary = Color(0xFF29331A),
+        tertiaryContainer = Color(0xFF3C482B),
+        onTertiaryContainer = Color(0xFFE0EDBE),
+        surfaceTint = Color(0xFFFFB765),
+        background = Color(0xFF15111C),
+        onBackground = Color(0xFFF5EDE4),
+        surface = Color(0xFF15111C),
+        onSurface = Color(0xFFF5EDE4),
+        surfaceVariant = Color(0xFF292231),
+        surfaceContainerLowest = Color(0xFF100D15),
+        surfaceContainerLow = Color(0xFF1C1724),
+        surfaceContainer = Color(0xFF241D2B),
+        surfaceContainerHigh = Color(0xFF302638),
+        surfaceContainerHighest = Color(0xFF3B3043),
+        onSurfaceVariant = Color(0xFFCBBCCA),
+        outline = Color(0xFF998A9C),
+        outlineVariant = Color(0xFF4C4052),
+    )
     ThemePreference.Fall -> StillLightColors.copy(
         primary = Color(0xFF98471F),
         onPrimary = Color.White,
@@ -423,7 +452,7 @@ fun StillTheme(
     val dark = when (themePreference) {
         ThemePreference.System, ThemePreference.Wallpaper -> systemDark
         ThemePreference.Light -> false
-        ThemePreference.Dark, ThemePreference.Black, ThemePreference.Midnight -> true
+        ThemePreference.Dark, ThemePreference.Black, ThemePreference.Midnight, ThemePreference.Halloween -> true
         ThemePreference.White, ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
         ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach, ThemePreference.Fall -> false
     }

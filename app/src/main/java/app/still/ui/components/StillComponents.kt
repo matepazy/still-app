@@ -30,6 +30,7 @@ fun StillMark(
     container: Boolean = false,
 ) {
     val markResource = when {
+        LocalThemePreference.current == ThemePreference.Halloween -> R.drawable.ic_still_mark_halloween
         container -> R.drawable.ic_still_brand_mark
         MaterialTheme.colorScheme.background.luminance() > 0.5f -> R.drawable.ic_still_mark_light
         else -> R.drawable.ic_still_mark
@@ -59,7 +60,9 @@ fun StillWordmark(
     modifier: Modifier = Modifier,
     markSize: Dp = 28.dp,
 ) {
-    val wordmarkResource = if (LocalThemePreference.current == ThemePreference.Fall) {
+    val wordmarkResource = if (LocalThemePreference.current == ThemePreference.Halloween) {
+        R.drawable.ic_still_wordmark_halloween
+    } else if (LocalThemePreference.current == ThemePreference.Fall) {
         R.drawable.ic_still_wordmark_fall
     } else if (MaterialTheme.colorScheme.background.luminance() > 0.5f) {
         R.drawable.ic_still_wordmark

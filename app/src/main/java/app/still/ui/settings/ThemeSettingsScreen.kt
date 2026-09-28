@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import app.still.R
 import app.still.data.settings.ThemePreference
+import app.still.data.settings.SeasonalThemeAvailability
 import app.still.ui.components.StillIcons
 import app.still.ui.theme.StillDarkColors
 import app.still.ui.theme.StillLightColors
@@ -78,6 +79,7 @@ fun ThemeSettingsScreen(
     val orderedSimpleThemes = simpleThemes.promotedFirst(promotedSimpleTheme)
     var showAllSimpleThemes by remember { mutableStateOf(false) }
     var showFallInfo by remember { mutableStateOf(false) }
+    var showHalloweenInfo by remember { mutableStateOf(false) }
     val simpleThemesScrollState = rememberScrollState()
     var scrollToFrontRequest by remember { mutableIntStateOf(0) }
     LaunchedEffect(promotedSimpleTheme, scrollToFrontRequest) {
@@ -159,12 +161,24 @@ fun ThemeSettingsScreen(
                 bottom = StillSpacing.medium,
             ),
         )
-        Box(Modifier.fillMaxWidth().padding(horizontal = StillSpacing.large).selectableGroup()) {
-            FallThemeCard(
-                selected = selectedTheme == ThemePreference.Fall,
-                onClick = { onThemeChange(ThemePreference.Fall) },
-                onInfoClick = { showFallInfo = true },
-            )
+        val halloweenSelectable = SeasonalThemeAvailability.halloweenSelectable()
+        val specialThemes = listOf(ThemePreference.Halloween, ThemePreference.Fall)
+            .sortedWith(compareByDescending<ThemePreference> { it == selectedTheme }
+                .thenByDescending { it == ThemePreference.Fall || halloweenSelectable })
+        Column(Modifier.fillMaxWidth().padding(horizontal = StillSpacing.large).selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+            specialThemes.forEach { theme ->
+                SpecialThemeCard(
+                    theme = theme,
+                    selected = selectedTheme == theme,
+                    enabled = theme == ThemePreference.Fall || halloweenSelectable,
+                    onClick = { onThemeChange(theme) },
+                    onInfoClick = {
+                        if (theme == ThemePreference.Halloween) showHalloweenInfo = true
+                        else showFallInfo = true
+                    },
+                )
+            }
         }
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
@@ -182,7 +196,10 @@ fun ThemeSettingsScreen(
         )
     }
     if (showFallInfo) {
-        FallThemeInfoSheet(onDismiss = { showFallInfo = false })
+        SpecialThemeInfoSheet(ThemePreference.Fall, onDismiss = { showFallInfo = false })
+    }
+    if (showHalloweenInfo) {
+        SpecialThemeInfoSheet(ThemePreference.Halloween, onDismiss = { showHalloweenInfo = false })
     }
 }
 
@@ -190,7 +207,7 @@ private fun List<ThemePreference>.promotedFirst(promotedTheme: ThemePreference?)
     promotedTheme?.takeIf { it in this }?.let { theme -> listOf(theme) + filterNot { it == theme } } ?: this
 
 @Composable
-private fun FallThemeCard(selected: Boolean, onClick: () -> Unit, onInfoClick: () -> Unit) {
+private fun SpecialThemeCard(theme: ThemePreference, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit, onInfoClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     Column(
@@ -198,17 +215,31 @@ private fun FallThemeCard(selected: Boolean, onClick: () -> Unit, onInfoClick: (
             .border(if (selected) 2.dp else 1.dp, borderColor, shape)
             .padding(if (selected) 2.dp else 3.dp)
             .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(12.dp))
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick),
     ) {
-        FallThemePreview(Modifier.fillMaxWidth().height(104.dp))
+        SpecialThemePreview(theme, Modifier.fillMaxWidth().height(104.dp))
         Row(
             Modifier.fillMaxWidth().padding(StillSpacing.medium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text("Fall", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text("September 1 – November 30", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (theme == ThemePreference.Halloween) "Halloween" else "Fall",
+                    style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                if (theme == ThemePreference.Halloween && !enabled) {
+                    Text(
+                        "Coming on Oct 15",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFFFE2B8),
+                        modifier = Modifier.padding(top = StillSpacing.xSmall)
+                            .background(Color(0xFF513751), RoundedCornerShape(8.dp))
+                            .padding(horizontal = StillSpacing.small, vertical = StillSpacing.xSmall),
+                    )
+                }
+                if (theme != ThemePreference.Halloween || enabled) {
+                    Text(if (theme == ThemePreference.Halloween) "October 15 – November 15" else "September 1 – November 30",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             IconButton(
                 onClick = onInfoClick,
@@ -220,7 +251,7 @@ private fun FallThemeCard(selected: Boolean, onClick: () -> Unit, onInfoClick: (
                 ) {
                     Icon(
                         painter = painterResource(StillIcons.Info),
-                        contentDescription = "About Fall theme",
+                        contentDescription = "About ${if (theme == ThemePreference.Halloween) "Halloween" else "Fall"} theme",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
                     )
@@ -245,7 +276,29 @@ private fun FallThemeCard(selected: Boolean, onClick: () -> Unit, onInfoClick: (
 }
 
 @Composable
-private fun FallThemePreview(modifier: Modifier = Modifier) {
+private fun SpecialThemePreview(theme: ThemePreference, modifier: Modifier = Modifier) {
+    if (theme == ThemePreference.Halloween) {
+        Box(modifier.background(Color(0xFF251A31), RoundedCornerShape(10.dp))) {
+            Image(
+                painter = painterResource(R.drawable.ic_halloween_jack_o_lantern),
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 2.dp).size(86.dp),
+            )
+            Image(
+                painter = painterResource(R.drawable.ic_widget_halloween_bats),
+                contentDescription = null,
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFFD8BFEA)),
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 99.dp, top = 6.dp).size(38.dp),
+            )
+            Image(
+                painter = painterResource(R.drawable.ic_still_wordmark_halloween),
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = StillSpacing.large)
+                    .width(100.dp).height(50.dp),
+            )
+        }
+        return
+    }
     Box(modifier.background(Color(0xFFFCF2E5), RoundedCornerShape(10.dp))) {
         Image(
             painter = painterResource(R.drawable.ic_widget_fall_leaves),
@@ -266,23 +319,53 @@ private fun FallThemePreview(modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FallThemeInfoSheet(onDismiss: () -> Unit) {
+private fun SpecialThemeInfoSheet(theme: ThemePreference, onDismiss: () -> Unit) {
+    val isHalloween = theme == ThemePreference.Halloween
+    val features = if (isHalloween) listOf(
+        "Midnight plum, candlelight orange, and moonlit lavender throughout the app",
+        "Moonlit Today scene with a gentle glow",
+        "Halloween wordmark, mark, and launcher icon",
+        "Moon and bat artwork on Screen time and Dayline widgets",
+    ) else listOf(
+        "Warm autumn colors throughout the app",
+        "Falling leaves on Today",
+        "Fall wordmark and app icon",
+        "Autumn sprig on Screen time and Dayline widgets",
+    )
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = StillSpacing.large)
                 .padding(bottom = StillSpacing.xLarge),
-            verticalArrangement = Arrangement.spacedBy(StillSpacing.medium),
         ) {
-            FallThemePreview(Modifier.fillMaxWidth().height(112.dp))
-            Text("Fall", style = MaterialTheme.typography.headlineSmall)
-            Text("Available September 1 – November 30", style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            SpecialThemePreview(theme, Modifier.fillMaxWidth().height(112.dp))
+            Spacer(Modifier.height(StillSpacing.large))
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.xSmall)) {
+                Text(if (isHalloween) "Halloween" else "Fall",
+                    style = MaterialTheme.typography.headlineSmall)
+                Text(if (isHalloween) {
+                    if (SeasonalThemeAvailability.halloweenSelectable()) "Available October 15 – November 15"
+                    else "Coming on Oct 15"
+                } else "Available September 1 – November 30",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(StillSpacing.xLarge))
             Text("Includes", style = MaterialTheme.typography.titleMedium)
-            Text("Warm autumn colors throughout the app", style = MaterialTheme.typography.bodyMedium)
-            Text("Falling leaves on Today", style = MaterialTheme.typography.bodyMedium)
-            Text("Fall wordmark and app icon", style = MaterialTheme.typography.bodyMedium)
-            Text("Autumn sprig on Screen time and Dayline widgets", style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(StillSpacing.medium))
+            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                features.forEach { feature ->
+                    Row(verticalAlignment = Alignment.Top) {
+                        Box(
+                            Modifier.padding(top = StillSpacing.small).size(6.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        )
+                        Spacer(Modifier.width(StillSpacing.medium))
+                        Text(feature, style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            }
         }
     }
 }
@@ -378,6 +461,7 @@ private fun ThemeCard(
         ThemePreference.Rose -> "Rose"
         ThemePreference.Peach -> "Peach"
         ThemePreference.Fall -> "Fall"
+        ThemePreference.Halloween -> "Halloween"
     }
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val textColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
@@ -433,7 +517,7 @@ private fun ThemePreview(
         ThemePreference.Black, ThemePreference.White -> simple!!.surface
         ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
         ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
-        ThemePreference.Fall -> simple!!.primaryContainer
+        ThemePreference.Fall, ThemePreference.Halloween -> simple!!.primaryContainer
     }
     val ink = when (option) {
         ThemePreference.System, ThemePreference.Light -> light.onSurface
@@ -442,7 +526,7 @@ private fun ThemePreview(
         ThemePreference.Black, ThemePreference.White -> simple!!.onSurface
         ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
         ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
-        ThemePreference.Fall -> simple!!.onPrimaryContainer
+        ThemePreference.Fall, ThemePreference.Halloween -> simple!!.onPrimaryContainer
     }
     Canvas(modifier) {
         val corner = CornerRadius(12.dp.toPx())

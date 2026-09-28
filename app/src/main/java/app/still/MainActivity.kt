@@ -13,7 +13,6 @@ import app.still.data.settings.LastDestination
 import app.still.ui.MainViewModel
 import app.still.ui.NavigationRequest
 import app.still.ui.StillApp
-import app.still.widget.WidgetUpdateDispatcher
 
 class MainActivity : ComponentActivity() {
     private var navigationRequest by mutableStateOf<NavigationRequest?>(null)
@@ -25,7 +24,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        navigationRequest = intent.widgetNavigationRequest()
+        if (savedInstanceState == null) navigationRequest = intent.consumeWidgetNavigationRequest()
         enableEdgeToEdge()
         setContent {
             StillApp(viewModel, navigationRequest) { handledId ->
@@ -36,17 +35,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        intent.consumeWidgetNavigationRequest()?.let { navigationRequest = it }
         setIntent(intent)
-        intent.widgetNavigationRequest()?.let { navigationRequest = it }
     }
 
     override fun onResume() {
         super.onResume()
         viewModel.onResume()
-        WidgetUpdateDispatcher.updateAll(applicationContext)
     }
 
-    private fun Intent.widgetNavigationRequest(): NavigationRequest? {
+    private fun Intent.consumeWidgetNavigationRequest(): NavigationRequest? {
         val destination = when {
             getBooleanExtra(EXTRA_OPEN_SCREEN_TIME_WIDGET_SETTINGS, false) -> LastDestination.ScreenTimeWidgetSettings
             getBooleanExtra(EXTRA_OPEN_DAYLINE_WIDGET_SETTINGS, false) -> LastDestination.DaylineWidgetSettings
@@ -54,6 +52,10 @@ class MainActivity : ComponentActivity() {
             getBooleanExtra(EXTRA_OPEN_TODAY, false) -> LastDestination.Today
             else -> return null
         }
+        removeExtra(EXTRA_OPEN_SCREEN_TIME_WIDGET_SETTINGS)
+        removeExtra(EXTRA_OPEN_DAYLINE_WIDGET_SETTINGS)
+        removeExtra(EXTRA_OPEN_WIDGET_SETTINGS)
+        removeExtra(EXTRA_OPEN_TODAY)
         return NavigationRequest(destination, ++navigationRequestId)
     }
 

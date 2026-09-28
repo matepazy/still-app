@@ -9,11 +9,13 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import java.time.LocalDate
 
 private val Context.settingsDataStore by preferencesDataStore("still_settings")
 
-enum class ThemePreference { System, Light, Dark, Wallpaper, Black, White, LightBlue, Sage, Sand, Midnight, Lavender, Rose, Peach, Fall }
+enum class ThemePreference { System, Light, Dark, Wallpaper, Black, White, LightBlue, Sage, Sand, Midnight, Lavender, Rose, Peach, Fall, Halloween }
 
 enum class WidgetAppearance { System, App }
 
@@ -75,6 +77,12 @@ data class DeferredUpdate(
 )
 
 class SettingsRepository(private val context: Context) {
+    private val seasonDate = MutableStateFlow(LocalDate.now())
+
+    fun refreshSeasonalDate() {
+        seasonDate.value = LocalDate.now()
+    }
+
     private object Keys {
         val onboarding = booleanPreferencesKey("onboarding_complete")
         val theme = stringPreferencesKey("theme")
@@ -108,7 +116,10 @@ class SettingsRepository(private val context: Context) {
         val appCategoryOverrides = stringSetPreferencesKey("app_category_overrides")
     }
 
-    val settings: Flow<UserSettings> = context.settingsDataStore.data.map { preferences ->
+    val settings: Flow<UserSettings> = combine(context.settingsDataStore.data, seasonDate) { preferences, date ->
+        val savedTheme = if (preferences[Keys.dynamic] == true) ThemePreference.Wallpaper else
+            preferences[Keys.theme]?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() }
+                ?: ThemePreference.System
         val deferredUpdate = preferences[Keys.deferredUpdateVersion]?.let { version ->
             val url = preferences[Keys.deferredUpdateUrl] ?: return@let null
             DeferredUpdate(
@@ -120,9 +131,7 @@ class SettingsRepository(private val context: Context) {
         }
         UserSettings(
             onboardingComplete = preferences[Keys.onboarding] ?: false,
-            theme = if (preferences[Keys.dynamic] == true) ThemePreference.Wallpaper else
-                preferences[Keys.theme]?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() }
-                    ?: ThemePreference.System,
+            theme = SeasonalThemeAvailability.activeTheme(savedTheme, date),
             promotedSimpleTheme = preferences[Keys.promotedSimpleTheme]
                 ?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() },
             dailyTargetMinutes = preferences[Keys.target],

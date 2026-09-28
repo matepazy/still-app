@@ -70,7 +70,9 @@ fun TodayScreen(
     ) {
         Spacer(Modifier.height(24.dp))
         val date = today.date.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
-        if (LocalThemePreference.current == ThemePreference.Fall) {
+        if (LocalThemePreference.current == ThemePreference.Halloween) {
+            HalloweenTodayHeader(date, today.total.compactDuration())
+        } else if (LocalThemePreference.current == ThemePreference.Fall) {
             FallTodayHeader(date, today.total.compactDuration())
         } else {
             Text(

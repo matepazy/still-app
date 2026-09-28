@@ -9,10 +9,13 @@ import app.still.data.settings.ThemePreference
 object SeasonalLauncherIcon {
     fun sync(context: Context, theme: ThemePreference) {
         val manager = context.packageManager
-        val default = ComponentName(context.packageName, "${context.packageName}.DefaultLauncher")
-        val fall = ComponentName(context.packageName, "${context.packageName}.FallLauncher")
-        val active = if (theme == ThemePreference.Fall) fall else default
-        val inactive = if (theme == ThemePreference.Fall) default else fall
+        val componentPackage = MainActivity::class.java.packageName
+        val components = mapOf(
+            ThemePreference.System to ComponentName(context.packageName, "$componentPackage.DefaultLauncher"),
+            ThemePreference.Fall to ComponentName(context.packageName, "$componentPackage.FallLauncher"),
+            ThemePreference.Halloween to ComponentName(context.packageName, "$componentPackage.HalloweenLauncher"),
+        )
+        val active = components[theme] ?: components.getValue(ThemePreference.System)
         if (manager.getComponentEnabledSetting(active) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
             manager.setComponentEnabledSetting(
                 active,
@@ -20,12 +23,14 @@ object SeasonalLauncherIcon {
                 PackageManager.DONT_KILL_APP,
             )
         }
-        if (manager.getComponentEnabledSetting(inactive) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
-            manager.setComponentEnabledSetting(
-                inactive,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP,
-            )
+        components.values.filterNot { it == active }.forEach { inactive ->
+            if (manager.getComponentEnabledSetting(inactive) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                manager.setComponentEnabledSetting(
+                    inactive,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP,
+                )
+            }
         }
     }
 }

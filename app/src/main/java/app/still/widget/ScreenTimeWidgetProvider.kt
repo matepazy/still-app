@@ -63,6 +63,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
             try {
                 val application = context.applicationContext as StillApplication
                 val container = application.container
+                container.settingsRepository.refreshSeasonalDate()
                 val settings = container.settingsRepository.settings.first()
                 render(context, appWidgetManager, appWidgetIds, WidgetContent.Loading, settings)
                 val content = if (!container.permissionManager.hasUsageAccess()) {
@@ -94,6 +95,8 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
                 setInt(R.id.widget_background, "setColorFilter", palette.background)
                 setViewVisibility(R.id.widget_fall_leaves, if (settings.widgetShowThemeGraphics && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_fall_leaves, "setColorFilter", palette.secondary)
+                setViewVisibility(R.id.widget_halloween_moon, if (settings.widgetShowThemeGraphics && settings.theme == ThemePreference.Halloween) View.VISIBLE else View.GONE)
+                setInt(R.id.widget_halloween_moon, "setColorFilter", palette.secondary)
                 setInt(
                     R.id.widget_background,
                     "setImageAlpha",

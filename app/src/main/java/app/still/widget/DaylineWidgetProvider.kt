@@ -71,6 +71,7 @@ class DaylineWidgetProvider : AppWidgetProvider() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val container = (context.applicationContext as StillApplication).container
+                container.settingsRepository.refreshSeasonalDate()
                 val settings = container.settingsRepository.settings.first()
                 render(context, manager, ids, DaylineWidgetContent.Loading, settings)
                 val content = if (!container.permissionManager.hasUsageAccess()) {
@@ -104,6 +105,8 @@ class DaylineWidgetProvider : AppWidgetProvider() {
                 setInt(R.id.widget_dayline_background, "setColorFilter", palette.background)
                 setViewVisibility(R.id.widget_dayline_fall_leaves, if (settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_dayline_fall_leaves, "setColorFilter", palette.secondary)
+                setViewVisibility(R.id.widget_dayline_halloween_bats, if (settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Halloween) View.VISIBLE else View.GONE)
+                setInt(R.id.widget_dayline_halloween_bats, "setColorFilter", palette.secondary)
                 setInt(
                     R.id.widget_dayline_background,
                     "setImageAlpha",

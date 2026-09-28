@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.still.AppContainer
 import app.still.SeasonalLauncherIcon
 import app.still.data.settings.ThemePreference
+import app.still.data.settings.SeasonalThemeAvailability
 import app.still.data.settings.AppCategory
 import app.still.data.settings.LastDestination
 import app.still.data.settings.UserSettings
@@ -118,12 +119,14 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 val now = ZonedDateTime.now()
                 val nextDay = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
                 delay(Duration.between(now, nextDay).toMillis().coerceAtLeast(1_000) + 1_000)
+                refreshSeasonalTheme()
                 refresh()
             }
         }
     }
 
     fun onResume() {
+        refreshSeasonalTheme()
         val hasPermission = container.permissionManager.hasUsageAccess()
         if (!hasPermission) usageState.value = UsageUiState.PermissionRequired
         else refresh()
@@ -177,6 +180,14 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         _archiveRestoreState.value = ArchiveRestoreState.Idle
     }
 
+    private fun refreshSeasonalTheme() {
+        container.settingsRepository.refreshSeasonalDate()
+        viewModelScope.launch {
+            SeasonalLauncherIcon.sync(container.applicationContext, container.settingsRepository.settings.first().theme)
+            WidgetUpdateDispatcher.updateAll(container.applicationContext)
+        }
+    }
+
     fun upgradeArchive() = viewModelScope.launch {
         if (_archiveUpgradeState.value == ArchiveUpgradeState.Upgrading) return@launch
         _archiveUpgradeState.value = ArchiveUpgradeState.Upgrading
@@ -224,12 +235,12 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
     fun setTheme(value: ThemePreference) = viewModelScope.launch {
         container.settingsRepository.setTheme(value)
-        SeasonalLauncherIcon.sync(container.applicationContext, value)
+        SeasonalLauncherIcon.sync(container.applicationContext, SeasonalThemeAvailability.activeTheme(value))
         WidgetUpdateDispatcher.updateAll(container.applicationContext)
     }
     fun setThemeFromDrawer(value: ThemePreference) = viewModelScope.launch {
         container.settingsRepository.setThemeFromDrawer(value)
-        SeasonalLauncherIcon.sync(container.applicationContext, value)
+        SeasonalLauncherIcon.sync(container.applicationContext, SeasonalThemeAvailability.activeTheme(value))
         WidgetUpdateDispatcher.updateAll(container.applicationContext)
     }
     fun setSaveUsageHistory(value: Boolean) = viewModelScope.launch {

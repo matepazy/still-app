@@ -11,6 +11,9 @@ val signingProperties = Properties().apply {
         signingPropertiesFile.inputStream().use(::load)
     }
 }
+val halloweenPreview = providers.gradleProperty("halloweenPreview")
+    .map(String::toBoolean)
+    .getOrElse(false)
 
 android {
     namespace = "app.still"
@@ -23,6 +26,7 @@ android {
         versionCode = 12
         versionName = "1.5.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "HALLOWEEN_PREVIEW", "false")
     }
 
     signingConfigs {
@@ -38,6 +42,12 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            if (halloweenPreview) {
+                applicationIdSuffix = ".halloweenpreview"
+                buildConfigField("boolean", "HALLOWEEN_PREVIEW", "true")
+            }
+        }
         getByName("release") {
             if (signingPropertiesFile.isFile) {
                 signingConfig = signingConfigs.getByName("release")

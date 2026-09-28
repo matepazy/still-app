@@ -210,14 +210,18 @@ private fun MainNavigation(
     var reportSubmitted by rememberSaveable { mutableStateOf(false) }
     val initialDestination = remember { navigationRequest?.destination ?: settings.lastDestination }
     val initialRequestId = remember { navigationRequest?.id }
+    var initialNavigationHandled by rememberSaveable { mutableStateOf(false) }
     var navigationReady by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        viewModel.setLastDestination(initialDestination)
+        if (!initialNavigationHandled) {
+            if (initialDestination != LastDestination.Today) navController.navigateTo(initialDestination)
+            initialNavigationHandled = true
+        }
         initialRequestId?.let(onNavigationRequestHandled)
         navigationReady = true
     }
-    LaunchedEffect(navigationRequest) {
+    LaunchedEffect(navigationReady, navigationRequest) {
         if (navigationReady && navigationRequest != null && navigationRequest.id != initialRequestId) {
             navController.navigateTo(navigationRequest.destination)
             onNavigationRequestHandled(navigationRequest.id)
@@ -252,7 +256,7 @@ private fun MainNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = initialDestination.route,
+        startDestination = TodayRoute,
         modifier = Modifier.fillMaxSize(),
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
@@ -484,7 +488,7 @@ private fun MainNavigation(
                 topBar = {
                     SettingsTopBar(
                         title = "Screen time",
-                        onBack = { navController.popBackStack() },
+                        onBack = navController::backFromWidgetSettings,
                         onReset = viewModel::resetWidgetSettings,
                     )
                 },
@@ -510,7 +514,7 @@ private fun MainNavigation(
                 topBar = {
                     SettingsTopBar(
                         title = "Dayline",
-                        onBack = { navController.popBackStack() },
+                        onBack = navController::backFromWidgetSettings,
                         onReset = viewModel::resetDaylineWidgetSettings,
                     )
                 },
@@ -559,6 +563,15 @@ private fun NavHostController.navigateTo(destination: LastDestination) {
             navigate(WidgetSettingsRoute) { launchSingleTop = true }
             navigate(DaylineWidgetSettingsRoute) { launchSingleTop = true }
         }
+    }
+}
+
+private fun NavHostController.backFromWidgetSettings() {
+    if (popBackStack()) return
+    val strandedDestination = currentDestination?.id ?: return
+    navigate(TodayRoute) {
+        popUpTo(strandedDestination) { inclusive = true }
+        launchSingleTop = true
     }
 }
 

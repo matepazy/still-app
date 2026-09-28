@@ -1192,6 +1192,7 @@ private val ThemePreference.displayName: String
         ThemePreference.Rose -> "Rose"
         ThemePreference.Peach -> "Peach"
         ThemePreference.Fall -> "Fall"
+        ThemePreference.Halloween -> "Halloween"
     }
 
 private val WidgetLabel.displayName: String
@@ -1268,7 +1269,11 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
 
     WidgetPreviewLayout(
         background = background,
-        fall = settings.widgetShowThemeGraphics && settings.theme == ThemePreference.Fall,
+        themeGraphicRes = if (settings.widgetShowThemeGraphics) when (settings.theme) {
+            ThemePreference.Fall -> R.drawable.ic_widget_fall_leaves
+            ThemePreference.Halloween -> R.drawable.ic_widget_halloween_moon
+            else -> null
+        } else null,
         backgroundOpacityPercent = settings.widgetBackgroundOpacityPercent,
         cornerRadiusDp = settings.widgetCornerRadiusDp,
         label = label,
@@ -1304,7 +1309,11 @@ private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
 
     WidgetPreviewLayout(
         background = background,
-        fall = settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Fall,
+        themeGraphicRes = if (settings.daylineWidgetShowThemeGraphics) when (settings.theme) {
+            ThemePreference.Fall -> R.drawable.ic_widget_fall_leaves
+            ThemePreference.Halloween -> R.drawable.ic_widget_halloween_bats
+            else -> null
+        } else null,
         backgroundOpacityPercent = settings.daylineWidgetBackgroundOpacityPercent,
         cornerRadiusDp = settings.daylineWidgetCornerRadiusDp,
         label = label,
@@ -1346,7 +1355,7 @@ private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
 @Composable
 private fun WidgetPreviewLayout(
     background: Color,
-    fall: Boolean,
+    themeGraphicRes: Int?,
     backgroundOpacityPercent: Int,
     cornerRadiusDp: Int,
     label: String?,
@@ -1366,9 +1375,9 @@ private fun WidgetPreviewLayout(
             .background(background.copy(alpha = backgroundOpacityPercent / 100f))
             .semantics { contentDescription = description },
     ) {
-        if (fall) {
+        if (themeGraphicRes != null) {
             Image(
-                painter = painterResource(R.drawable.ic_widget_fall_leaves),
+                painter = painterResource(themeGraphicRes),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(secondary),
                 modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 10.dp)

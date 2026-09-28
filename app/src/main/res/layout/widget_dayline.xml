@@ -25,6 +25,18 @@
         android:src="@drawable/ic_widget_fall_leaves"
         android:visibility="gone" />
 
+    <ImageView
+        android:id="@+id/widget_dayline_halloween_bats"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_gravity="end|top"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="9dp"
+        android:alpha="0.52"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_widget_halloween_bats"
+        android:visibility="gone" />
+
     <LinearLayout style="@style/WidgetLayout">
 
         <LinearLayout style="@style/WidgetContentColumn">
