@@ -4,9 +4,13 @@ import android.content.Intent
 import android.content.pm.LauncherApps
 import android.net.Uri
 import android.os.Process
+import androidx.activity.BackEventCompat
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -108,6 +113,8 @@ import java.time.LocalDate
 
 private const val AppDetailRoute = "app/{packageName}"
 private val PredictiveBackShape = RoundedCornerShape(28.dp)
+private val PredictiveBackEasing = CubicBezierEasing(0f, 0f, 0f, 1f)
+private const val PredictiveBackDurationMillis = 300
 
 @Composable
 fun StillApp(
@@ -257,6 +264,7 @@ private fun MainNavigation(
     )
     LaunchedEffect(settings.appCategoryOverrides) { statisticsViewModel.updateCategories(settings.appCategoryOverrides) }
 
+    val predictiveBackMarginPx = with(LocalDensity.current) { 8.dp.roundToPx() }
     NavHost(
         navController = navController,
         startDestination = TodayRoute,
@@ -266,11 +274,19 @@ private fun MainNavigation(
         popEnterTransition = { EnterTransition.None },
         popExitTransition = { ExitTransition.None },
         predictivePopEnterTransition = { _ -> EnterTransition.None },
-        predictivePopExitTransition = { _ ->
+        predictivePopExitTransition = { swipeEdge ->
+            // A seekable tween makes shrinkage apparent early in the gesture. The default
+            // spring barely moves at low progress. Match Android's 90% scale and 8dp margin.
             scaleOut(
+                animationSpec = tween(PredictiveBackDurationMillis, easing = PredictiveBackEasing),
                 targetScale = 0.9f,
                 transformOrigin = TransformOrigin.Center,
-            )
+            ) + slideOutHorizontally(
+                animationSpec = tween(PredictiveBackDurationMillis, easing = PredictiveBackEasing),
+            ) { width ->
+                val shift = (width / 20 - predictiveBackMarginPx).coerceAtLeast(0)
+                if (swipeEdge == BackEventCompat.EDGE_LEFT) shift else -shift
+            }
         },
     ) {
         composable(TodayRoute) {
