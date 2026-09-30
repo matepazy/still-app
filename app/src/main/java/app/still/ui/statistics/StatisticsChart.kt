@@ -2,10 +2,15 @@ package app.still.ui.statistics
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,15 +19,21 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsSummary
 import app.still.ui.components.compactDuration
 import java.time.Duration
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
+import kotlin.math.ceil
 
 @Composable
 fun StatisticsChart(summary: StatisticsSummary, period: StatisticsPeriod) {
@@ -38,24 +49,77 @@ fun StatisticsChart(summary: StatisticsSummary, period: StatisticsPeriod) {
     var selected by remember(summary, period) { mutableIntStateOf(-1) }
     val primary = MaterialTheme.colorScheme.primary
     val muted = MaterialTheme.colorScheme.surfaceContainerHigh
+    val axis = MaterialTheme.colorScheme.onSurfaceVariant
+    val maximum = points.mapNotNull { it.second?.toMillis() }.maxOrNull()?.coerceAtLeast(1L) ?: 1L
+    val axisStep = when {
+        maximum <= 30 * 60_000L -> 15 * 60_000L
+        maximum <= 60 * 60_000L -> 30 * 60_000L
+        else -> 60 * 60_000L
+    }
+    val axisMaximum = (ceil(maximum.toDouble() / axisStep).toLong() * axisStep).coerceAtLeast(axisStep)
+    val labelStride = when {
+        points.size <= 7 -> 1
+        points.size <= 24 -> 4
+        else -> ceil(points.size / 5.0).toInt()
+    }
     Column {
+        Text(if (summary.range.days == 1L) "By hour" else "Screen time trend", style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.width(44.dp).height(138.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                listOf(axisMaximum, axisMaximum / 2, 0L).forEach { value ->
+                    Text(Duration.ofMillis(value).compactDuration(), style = MaterialTheme.typography.labelSmall,
+                        color = axis, maxLines = 1)
+                }
+            }
+            Canvas(Modifier.weight(1f).height(138.dp)
+                .pointerInput(points) { detectTapGestures { position ->
+                    if (points.isNotEmpty()) selected = (position.x / size.width * points.size).toInt().coerceIn(0, points.lastIndex)
+                } }) {
+                if (points.isEmpty()) return@Canvas
+                val inset = 8.dp.toPx()
+                val plotHeight = size.height - 2 * inset
+                val baseline = size.height - inset
+                listOf(0f, 0.5f, 1f).forEach { fraction ->
+                    val y = inset + plotHeight * fraction
+                    drawLine(axis.copy(alpha = 0.25f), Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+                }
+                val step = size.width / points.size
+                val width = (step * 0.66f).coerceAtLeast(1f)
+                points.forEachIndexed { index, (_, value) ->
+                    val fraction = value?.toMillis()?.toFloat()?.div(axisMaximum)?.coerceIn(0f, 1f) ?: 0f
+                    val barHeight = (plotHeight * fraction).coerceAtLeast(2.dp.toPx())
+                    val left = index * step + (step - width) / 2
+                    drawRect(if (value == null) muted else primary,
+                        Offset(left, baseline - barHeight), Size(width, barHeight))
+                    if (index == selected && value != null) {
+                        drawRect(axis, Offset(left, baseline - barHeight), Size(width, barHeight), style = Stroke(1.dp.toPx()))
+                    }
+                }
+            }
+        }
+        if (points.isNotEmpty()) {
+            BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 44.dp, top = 4.dp)) {
+                val stepWidth = maxWidth / points.size
+                val labelWidth = 42.dp
+                points.forEachIndexed { index, point ->
+                    if (index % labelStride == 0 ||
+                        (index == points.lastIndex && stepWidth * (index % labelStride) >= labelWidth)) {
+                        val label = when {
+                            summary.range.days == 1L -> index.toString().padStart(2, '0')
+                            points.size <= 7 -> summary.points[index].start.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                            else -> point.first.substringBefore(" – ")
+                        }
+                        val left = (stepWidth * (index + 0.5f) - labelWidth / 2).coerceIn(0.dp, maxWidth - labelWidth)
+                        Text(label, Modifier.offset(x = left).width(labelWidth), style = MaterialTheme.typography.labelSmall,
+                            color = axis, textAlign = TextAlign.Center, maxLines = 1, softWrap = false)
+                    }
+                }
+            }
+        }
         if (selected in points.indices) {
             val point = points[selected]
-            Text("${point.first} · ${point.second?.compactDuration() ?: "—"}", style = MaterialTheme.typography.labelMedium)
-        } else Text(if (summary.range.days == 1L) "By hour" else "Screen time trend", style = MaterialTheme.typography.titleMedium)
-        val maximum = points.mapNotNull { it.second?.toMillis() }.maxOrNull()?.coerceAtLeast(1L) ?: 1L
-        Canvas(Modifier.fillMaxWidth().height(150.dp).padding(top = 12.dp)
-            .pointerInput(points) { detectTapGestures { position ->
-                if (points.isNotEmpty()) selected = (position.x / size.width * points.size).toInt().coerceIn(0, points.lastIndex)
-            } }) {
-            if (points.isEmpty()) return@Canvas
-            val step = size.width / points.size
-            val width = (step * 0.66f).coerceAtLeast(1f)
-            points.forEachIndexed { index, (_, value) ->
-                val fraction = value?.toMillis()?.toFloat()?.div(maximum)?.coerceIn(0f, 1f) ?: 0f
-                val height = (size.height * fraction).coerceAtLeast(if (value != null) 2f else 0f)
-                drawRect(if (value == null) muted else primary, Offset(index * step + (step - width) / 2, size.height - height), Size(width, height))
-            }
+            Text("${point.first} · ${point.second?.compactDuration() ?: "No data"}",
+                Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelMedium)
         }
         if (points.isEmpty()) Text("Hourly detail is unavailable for this day.", style = MaterialTheme.typography.bodySmall)
     }

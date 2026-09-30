@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,6 +51,7 @@ import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
+import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -347,17 +350,45 @@ internal fun UsageBar(label: String, value: String?, fraction: Float, color: Col
 @Composable
 private fun TypicalDay(hours: List<Long>) {
     val max = hours.maxOrNull()?.coerceAtLeast(1L) ?: 1L
-    Row(Modifier.fillMaxWidth().height(70.dp).padding(top = StillSpacing.small),
-        horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
-        hours.take(24).forEach { value ->
-            Box(Modifier.weight(1f).height((64f * (value.toFloat() / max).coerceIn(0.04f, 1f)).dp)
-                .background(if (value == 0L) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)))
+    val axisMaximum = (ceil(max / (20 * 60_000.0)).toLong().coerceAtLeast(1L) * 20 * 60_000L)
+    val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val barColor = MaterialTheme.colorScheme.primary
+    val emptyColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    Column(Modifier.fillMaxWidth().padding(top = StillSpacing.small)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.width(40.dp).height(80.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                listOf(axisMaximum, axisMaximum / 2, 0L).forEach { value ->
+                    val minutes = value / 60_000L
+                    Text(if (minutes >= 60) "${minutes / 60}h" else "${minutes}m",
+                        style = MaterialTheme.typography.labelSmall, color = axisColor)
+                }
+            }
+            Canvas(Modifier.weight(1f).height(80.dp)) {
+                val inset = 8.dp.toPx()
+                val plotHeight = size.height - 2 * inset
+                val baseline = size.height - inset
+                listOf(0f, 0.5f, 1f).forEach { fraction ->
+                    val y = inset + plotHeight * fraction
+                    drawLine(axisColor.copy(alpha = 0.25f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                }
+                val step = size.width / 24
+                hours.take(24).forEachIndexed { index, value ->
+                    val barHeight = (plotHeight * (value.toFloat() / axisMaximum).coerceIn(0f, 1f))
+                        .coerceAtLeast(2.dp.toPx())
+                    val barWidth = (step - 2.dp.toPx()).coerceAtLeast(1f)
+                    drawRoundRect(if (value == 0L) emptyColor else barColor,
+                        topLeft = Offset(index * step + (step - barWidth) / 2, baseline - barHeight),
+                        size = Size(barWidth, barHeight), cornerRadius = CornerRadius(2.dp.toPx()))
+                }
+            }
         }
-    }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        listOf("12am", "6am", "12pm", "6pm", "12am").forEach {
-            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 40.dp, top = 4.dp)) {
+            val labelWidth = 40.dp
+            listOf("12am", "6am", "12pm", "6pm", "12am").forEachIndexed { index, label ->
+                val left = (maxWidth * (index / 4f) - labelWidth / 2).coerceIn(0.dp, maxWidth - labelWidth)
+                Text(label, Modifier.offset(x = left).width(labelWidth), style = MaterialTheme.typography.labelSmall,
+                    color = axisColor, textAlign = TextAlign.Center, maxLines = 1)
+            }
         }
     }
 }
