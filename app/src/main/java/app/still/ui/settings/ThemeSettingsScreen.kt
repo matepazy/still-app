@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -209,15 +210,23 @@ private fun List<ThemePreference>.promotedFirst(promotedTheme: ThemePreference?)
 @Composable
 private fun SpecialThemeCard(theme: ThemePreference, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit, onInfoClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
+    val inset = if (selected) 2.dp else 3.dp
+    val innerRadius = 16.dp - inset
+    val innerShape = RoundedCornerShape(innerRadius)
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     Column(
         Modifier.fillMaxWidth()
             .border(if (selected) 2.dp else 1.dp, borderColor, shape)
-            .padding(if (selected) 2.dp else 3.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(inset)
+            .clip(innerShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick),
     ) {
-        SpecialThemePreview(theme, Modifier.fillMaxWidth().height(104.dp))
+        SpecialThemePreview(
+            theme,
+            Modifier.fillMaxWidth().height(104.dp),
+            shape = RoundedCornerShape(topStart = innerRadius, topEnd = innerRadius),
+        )
         Row(
             Modifier.fillMaxWidth().padding(StillSpacing.medium),
             verticalAlignment = Alignment.CenterVertically,
@@ -276,9 +285,13 @@ private fun SpecialThemeCard(theme: ThemePreference, selected: Boolean, enabled:
 }
 
 @Composable
-private fun SpecialThemePreview(theme: ThemePreference, modifier: Modifier = Modifier) {
+private fun SpecialThemePreview(
+    theme: ThemePreference,
+    modifier: Modifier = Modifier,
+    shape: RoundedCornerShape = RoundedCornerShape(12.dp),
+) {
     if (theme == ThemePreference.Halloween) {
-        Box(modifier.background(Color(0xFF251A31), RoundedCornerShape(10.dp))) {
+        Box(modifier.clip(shape).background(Color(0xFF251A31))) {
             Image(
                 painter = painterResource(R.drawable.ic_halloween_jack_o_lantern),
                 contentDescription = null,
@@ -299,7 +312,7 @@ private fun SpecialThemePreview(theme: ThemePreference, modifier: Modifier = Mod
         }
         return
     }
-    Box(modifier.background(Color(0xFFFCF2E5), RoundedCornerShape(10.dp))) {
+    Box(modifier.clip(shape).background(Color(0xFFFCF2E5))) {
         Image(
             painter = painterResource(R.drawable.ic_widget_fall_leaves),
             contentDescription = null,
