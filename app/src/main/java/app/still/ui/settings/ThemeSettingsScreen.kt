@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -49,10 +51,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Velocity
 import app.still.R
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.SeasonalThemeAvailability
@@ -420,9 +425,20 @@ private fun SimpleThemesSheet(
     onDismiss: () -> Unit,
     onSelect: (ThemePreference) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    val contentScrollConnection = remember {
+        object : NestedScrollConnection {
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+                Velocity(0f, available.y.coerceAtMost(0f))
+        }
+    }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        contentWindowInsets = { WindowInsets.safeDrawing },
+    ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+            // Absorb leftover upward flings, but let downward gestures dismiss the sheet.
+            Modifier.fillMaxWidth().nestedScroll(contentScrollConnection)
+                .verticalScroll(rememberScrollState(), overscrollEffect = null)
                 .padding(horizontal = StillSpacing.large)
                 .padding(bottom = StillSpacing.xLarge),
         ) {
