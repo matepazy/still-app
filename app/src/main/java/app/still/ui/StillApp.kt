@@ -18,10 +18,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -676,25 +679,26 @@ private const val APP_BASELINE_DAYS = 14
 @Composable
 private fun LoadingScreen() {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = StillSpacing.large)
+        Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = StillSpacing.large)
             .clearAndSetSemantics { contentDescription = "Loading screen time" },
     ) {
-        Spacer(Modifier.height(StillSpacing.large))
-        LoadingSkeleton(Modifier.width(116.dp).height(30.dp))
-        Spacer(Modifier.height(StillSpacing.section))
-        LoadingSkeleton(Modifier.width(150.dp).height(20.dp))
-        Spacer(Modifier.height(StillSpacing.medium))
-        LoadingSkeleton(Modifier.width(184.dp).height(52.dp))
-        Spacer(Modifier.height(StillSpacing.large))
-        LoadingSkeleton(Modifier.fillMaxWidth().height(188.dp))
-        Spacer(Modifier.height(StillSpacing.section))
-        LoadingSkeleton(Modifier.width(132.dp).height(26.dp))
-        Spacer(Modifier.height(StillSpacing.medium))
-        repeat(3) {
-            LoadingSkeleton(Modifier.fillMaxWidth().height(52.dp))
-            Spacer(Modifier.height(StillSpacing.small))
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            Spacer(Modifier.height(StillSpacing.large))
+            LoadingSkeleton(Modifier.width(116.dp).height(30.dp))
+            Spacer(Modifier.height(StillSpacing.section))
+            LoadingSkeleton(Modifier.width(150.dp).height(20.dp))
+            Spacer(Modifier.height(StillSpacing.medium))
+            LoadingSkeleton(Modifier.width(184.dp).height(52.dp))
+            Spacer(Modifier.height(StillSpacing.large))
+            LoadingSkeleton(Modifier.fillMaxWidth().height(188.dp))
+            Spacer(Modifier.height(StillSpacing.section))
+            LoadingSkeleton(Modifier.width(132.dp).height(26.dp))
+            Spacer(Modifier.height(StillSpacing.medium))
+            repeat(3) {
+                LoadingSkeleton(Modifier.fillMaxWidth().height(52.dp))
+                Spacer(Modifier.height(StillSpacing.small))
+            }
         }
-        Spacer(Modifier.weight(1f))
         Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.large), horizontalArrangement = Arrangement.SpaceEvenly) {
             repeat(4) { LoadingSkeleton(Modifier.width(54.dp).height(32.dp)) }
         }
