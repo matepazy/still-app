@@ -92,6 +92,93 @@ internal val StillLightColors = lightColorScheme(
 )
 
 internal fun simpleThemeColors(preference: ThemePreference): ColorScheme? = when (preference) {
+    ThemePreference.Mint -> StillLightColors.copy(
+        primary = Color(0xFF006A68),
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFA4F3E7),
+        onPrimaryContainer = Color(0xFF004B46),
+        inversePrimary = Color(0xFF67D9CE),
+        secondary = Color(0xFF376B68),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFC0EEE7),
+        onSecondaryContainer = Color(0xFF174A46),
+        tertiary = Color(0xFF3D657C),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFCBE9FA),
+        onTertiaryContainer = Color(0xFF21495F),
+        surfaceTint = Color(0xFF006A68),
+        background = Color(0xFFE8FCF7),
+        onBackground = Color(0xFF102F2D),
+        surface = Color(0xFFE8FCF7),
+        onSurface = Color(0xFF102F2D),
+        surfaceVariant = Color(0xFFCFF4EB),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = Color(0xFFDDF9F1),
+        surfaceContainer = Color(0xFFCFF4EB),
+        surfaceContainerHigh = Color(0xFFBDEDE1),
+        surfaceContainerHighest = Color(0xFFABE5D7),
+        onSurfaceVariant = Color(0xFF3F6560),
+        outline = Color(0xFF648C85),
+        outlineVariant = Color(0xFFA4D8CD),
+    )
+    ThemePreference.Amber -> StillLightColors.copy(
+        primary = Color(0xFF775900),
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFFFDB70),
+        onPrimaryContainer = Color(0xFF473500),
+        inversePrimary = Color(0xFFEAC348),
+        secondary = Color(0xFF6D622B),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFF3E6A5),
+        onSecondaryContainer = Color(0xFF433B12),
+        tertiary = Color(0xFF606C32),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFE2EBAD),
+        onTertiaryContainer = Color(0xFF374313),
+        surfaceTint = Color(0xFF775900),
+        background = Color(0xFFFFF8D9),
+        onBackground = Color(0xFF2F2A12),
+        surface = Color(0xFFFFF8D9),
+        onSurface = Color(0xFF2F2A12),
+        surfaceVariant = Color(0xFFFAEDBA),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = Color(0xFFFFF3C9),
+        surfaceContainer = Color(0xFFFAEDBA),
+        surfaceContainerHigh = Color(0xFFF4E3A5),
+        surfaceContainerHighest = Color(0xFFECD88E),
+        onSurfaceVariant = Color(0xFF655D34),
+        outline = Color(0xFF8A8050),
+        outlineVariant = Color(0xFFDBCD90),
+    )
+    ThemePreference.Plum -> StillDarkColors.copy(
+        primary = Color(0xFFE4ACF4),
+        onPrimary = Color(0xFF450D59),
+        primaryContainer = Color(0xFF692A80),
+        onPrimaryContainer = Color(0xFFFAD7FF),
+        inversePrimary = Color(0xFF8A399F),
+        secondary = Color(0xFFD9B9E1),
+        onSecondary = Color(0xFF3F2048),
+        secondaryContainer = Color(0xFF593661),
+        onSecondaryContainer = Color(0xFFF4D9FA),
+        tertiary = Color(0xFFE6B9B6),
+        onTertiary = Color(0xFF452827),
+        tertiaryContainer = Color(0xFF603E3C),
+        onTertiaryContainer = Color(0xFFFFDAD6),
+        surfaceTint = Color(0xFFE4ACF4),
+        background = Color(0xFF24102F),
+        onBackground = Color(0xFFF7E6FB),
+        surface = Color(0xFF24102F),
+        onSurface = Color(0xFFF7E6FB),
+        surfaceVariant = Color(0xFF3B1F48),
+        surfaceContainerLowest = Color(0xFF1A0923),
+        surfaceContainerLow = Color(0xFF2E173A),
+        surfaceContainer = Color(0xFF3B1F48),
+        surfaceContainerHigh = Color(0xFF492956),
+        surfaceContainerHighest = Color(0xFF583565),
+        onSurfaceVariant = Color(0xFFD8BBDD),
+        outline = Color(0xFFAC88B5),
+        outlineVariant = Color(0xFF694772),
+    )
     ThemePreference.Halloween -> StillDarkColors.copy(
         primary = Color(0xFFFFB765),
         onPrimary = Color(0xFF38200F),
@@ -452,9 +539,10 @@ fun StillTheme(
     val dark = when (themePreference) {
         ThemePreference.System, ThemePreference.Wallpaper -> systemDark
         ThemePreference.Light -> false
-        ThemePreference.Dark, ThemePreference.Black, ThemePreference.Midnight, ThemePreference.Halloween -> true
+        ThemePreference.Dark, ThemePreference.Black, ThemePreference.Midnight, ThemePreference.Plum, ThemePreference.Halloween -> true
         ThemePreference.White, ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
-        ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach, ThemePreference.Fall -> false
+        ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
+        ThemePreference.Mint, ThemePreference.Amber, ThemePreference.Fall -> false
     }
     val context = LocalContext.current
     val colors = appColorScheme(context, themePreference)

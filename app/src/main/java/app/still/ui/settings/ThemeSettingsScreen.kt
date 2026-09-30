@@ -76,6 +76,7 @@ fun ThemeSettingsScreen(
         ThemePreference.Black, ThemePreference.White, ThemePreference.LightBlue,
         ThemePreference.Sage, ThemePreference.Sand, ThemePreference.Midnight,
         ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
+        ThemePreference.Mint, ThemePreference.Amber, ThemePreference.Plum,
     )
     val orderedSimpleThemes = simpleThemes.promotedFirst(promotedSimpleTheme)
     var showAllSimpleThemes by remember { mutableStateOf(false) }
@@ -473,6 +474,9 @@ private fun ThemeCard(
         ThemePreference.Lavender -> "Lavender"
         ThemePreference.Rose -> "Rose"
         ThemePreference.Peach -> "Peach"
+        ThemePreference.Mint -> "Mint"
+        ThemePreference.Amber -> "Amber"
+        ThemePreference.Plum -> "Plum"
         ThemePreference.Fall -> "Fall"
         ThemePreference.Halloween -> "Halloween"
     }
@@ -530,6 +534,7 @@ private fun ThemePreview(
         ThemePreference.Black, ThemePreference.White -> simple!!.surface
         ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
         ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
+        ThemePreference.Mint, ThemePreference.Amber, ThemePreference.Plum,
         ThemePreference.Fall, ThemePreference.Halloween -> simple!!.primaryContainer
     }
     val ink = when (option) {
@@ -539,6 +544,7 @@ private fun ThemePreview(
         ThemePreference.Black, ThemePreference.White -> simple!!.onSurface
         ThemePreference.LightBlue, ThemePreference.Sage, ThemePreference.Sand,
         ThemePreference.Midnight, ThemePreference.Lavender, ThemePreference.Rose, ThemePreference.Peach,
+        ThemePreference.Mint, ThemePreference.Amber, ThemePreference.Plum,
         ThemePreference.Fall, ThemePreference.Halloween -> simple!!.onPrimaryContainer
     }
     Canvas(modifier) {

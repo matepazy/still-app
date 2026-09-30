@@ -1191,6 +1191,9 @@ private val ThemePreference.displayName: String
         ThemePreference.Lavender -> "Lavender"
         ThemePreference.Rose -> "Rose"
         ThemePreference.Peach -> "Peach"
+        ThemePreference.Mint -> "Mint"
+        ThemePreference.Amber -> "Amber"
+        ThemePreference.Plum -> "Plum"
         ThemePreference.Fall -> "Fall"
         ThemePreference.Halloween -> "Halloween"
     }

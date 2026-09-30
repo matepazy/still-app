@@ -15,7 +15,7 @@ import java.time.LocalDate
 
 private val Context.settingsDataStore by preferencesDataStore("still_settings")
 
-enum class ThemePreference { System, Light, Dark, Wallpaper, Black, White, LightBlue, Sage, Sand, Midnight, Lavender, Rose, Peach, Fall, Halloween }
+enum class ThemePreference { System, Light, Dark, Wallpaper, Black, White, LightBlue, Sage, Sand, Midnight, Lavender, Rose, Peach, Mint, Amber, Plum, Fall, Halloween }
 
 enum class WidgetAppearance { System, App }
 
