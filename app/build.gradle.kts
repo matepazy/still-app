@@ -23,7 +23,7 @@ android {
         applicationId = "app.still"
         minSdk = 28
         targetSdk = 37
-        versionCode = 13
+        versionCode = 14
         versionName = "1.5.4"
         testInstrumentationRunner = providers.gradleProperty("stillTestRunner")
             .getOrElse("androidx.test.runner.AndroidJUnitRunner")
