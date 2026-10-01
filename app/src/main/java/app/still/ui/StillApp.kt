@@ -45,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -108,6 +109,8 @@ import app.still.ui.compare.CompareTopBar
 import app.still.ui.compare.CompareViewModel
 import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsRange
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.LocalDate
 
@@ -356,16 +359,20 @@ private fun MainNavigation(
                     if (!compareViewModel.back() && !navController.popBackStack()) navController.navigate(StatisticsRoute)
                 } },
             ) { padding ->
-                val localApps = remember(availableDays) {
-                    val installed = runCatching {
-                        context.getSystemService(LauncherApps::class.java)
-                            ?.getActivityList(null, Process.myUserHandle()).orEmpty()
-                            .map { AppInfo(it.applicationInfo.packageName, it.label.toString()) }
-                    }.getOrDefault(emptyList())
-                    (installed + availableDays.flatMap { it.apps.orEmpty() }.map { it.app })
-                        .groupBy { it.label }.mapNotNull { (label, matches) ->
-                            matches.distinctBy { it.packageName }.singleOrNull()?.let { label to it }
-                        }.toMap()
+                val appContext = context.applicationContext
+                val localApps by produceState<Map<String, AppInfo>>(emptyMap(), appContext, availableDays) {
+                    // Launcher queries and label loading must not block the first Compare frame.
+                    value = withContext(Dispatchers.IO) {
+                        val installed = runCatching {
+                            appContext.getSystemService(LauncherApps::class.java)
+                                ?.getActivityList(null, Process.myUserHandle()).orEmpty()
+                                .map { AppInfo(it.applicationInfo.packageName, it.label.toString()) }
+                        }.getOrDefault(emptyList())
+                        (installed + availableDays.flatMap { it.apps.orEmpty() }.map { it.app })
+                            .groupBy { it.label }.mapNotNull { (label, matches) ->
+                                matches.distinctBy { it.packageName }.singleOrNull()?.let { label to it }
+                            }.toMap()
+                    }
                 }
                 CompareScreen(compareViewModel, availableDays.map { it.date }, localApps, Modifier.padding(padding))
             }
