@@ -26,7 +26,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -89,6 +88,7 @@ import app.still.data.settings.WidgetLabel
 import app.still.data.settings.WIDGET_PILL_RADIUS
 import app.still.data.settings.parseWidgetColor
 import app.still.widget.WidgetPalette
+import app.still.ui.components.ActionDrawer
 import app.still.ui.components.compactDuration
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.StillWordmark
@@ -306,7 +306,7 @@ fun SettingsScreen(
     }
 
     if (reportSubmitted) {
-        AlertDialog(
+        ActionDrawer(
             onDismissRequest = onDismissReportSubmitted,
             title = { Text("Issue submitted") },
             text = { Text("Thanks for reporting this issue. We'll try to fix it in our latest patch.") },
@@ -314,7 +314,7 @@ fun SettingsScreen(
         )
     }
     if (updateChannelDialog) {
-        ChoiceDialog(
+        ChoiceSheet(
             title = "Update channel",
             options = listOf(
                 "Stable" to { onUpdateChannelChange("release") },
@@ -325,7 +325,7 @@ fun SettingsScreen(
         )
     }
     if (stopSavingDialog) {
-        AlertDialog(
+        ActionDrawer(
             onDismissRequest = { stopSavingDialog = false },
             title = { Text("Keep usage history on?") },
             text = {
@@ -348,7 +348,7 @@ fun SettingsScreen(
         )
     }
     if (restoreArchiveDialog) {
-        AlertDialog(
+        ActionDrawer(
             onDismissRequest = { restoreArchiveDialog = false },
             title = { Text("Restore the previous archive?") },
             text = {
@@ -371,7 +371,7 @@ fun SettingsScreen(
         )
     }
     if (upgradeArchiveDialog) {
-        AlertDialog(
+        ActionDrawer(
             onDismissRequest = { upgradeArchiveDialog = false },
             title = { Text("Upgrade usage history?") },
             text = { Text("Still will convert your previous archive to the compact format and keep a local safety backup when there is saved history. You can restore it from Settings › Data.") },
@@ -385,13 +385,13 @@ fun SettingsScreen(
         )
     }
     when (archiveRestoreState) {
-        ArchiveRestoreState.Restored -> AlertDialog(
+        ArchiveRestoreState.Restored -> ActionDrawer(
             onDismissRequest = onDismissArchiveRestoreResult,
             title = { Text("Backup restored") },
             text = { Text("Still is using the previous archive format again. Your saved history is intact.") },
             confirmButton = { TextButton(onClick = onDismissArchiveRestoreResult) { Text("Done") } },
         )
-        is ArchiveRestoreState.Error -> AlertDialog(
+        is ArchiveRestoreState.Error -> ActionDrawer(
             onDismissRequest = onDismissArchiveRestoreResult,
             title = { Text("Backup wasn’t restored") },
             text = { Text(archiveRestoreState.message) },
@@ -400,7 +400,7 @@ fun SettingsScreen(
         ArchiveRestoreState.Idle, ArchiveRestoreState.Restoring -> Unit
     }
     when (archiveUpgradeState) {
-        ArchiveUpgradeState.Upgraded -> AlertDialog(
+        ArchiveUpgradeState.Upgraded -> ActionDrawer(
             onDismissRequest = onDismissArchiveUpgradeResult,
             title = { Text("Usage history upgraded") },
             text = { Text(if (storedDataSummary?.backupAvailable == true) {
@@ -410,7 +410,7 @@ fun SettingsScreen(
             }) },
             confirmButton = { TextButton(onClick = onDismissArchiveUpgradeResult) { Text("Done") } },
         )
-        is ArchiveUpgradeState.Error -> AlertDialog(
+        is ArchiveUpgradeState.Error -> ActionDrawer(
             onDismissRequest = onDismissArchiveUpgradeResult,
             title = { Text("Archive wasn’t upgraded") },
             text = { Text(archiveUpgradeState.message) },
@@ -421,7 +421,7 @@ fun SettingsScreen(
 }
 
 @Composable
-fun ArchiveMigrationDialog(
+fun ArchiveMigrationSheet(
     notice: ArchiveMigrationNotice,
     onDismiss: () -> Unit,
 ) {
@@ -438,23 +438,23 @@ fun ArchiveMigrationDialog(
             "The compact archive and its $backupSize safety backup currently use " +
                 "${Formatter.formatShortFileSize(context, -notice.netBytesSaved)} more in total."
     }
-    AlertDialog(
+    ActionDrawer(
         onDismissRequest = onDismiss,
         icon = { StoredDataIcon(StillIcons.Storage) },
         title = { Text("Usage history upgraded") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                MigrationDialogRow(
+                MigrationSheetRow(
                     icon = StillIcons.Apps,
                     title = "Compact history",
                     body = "Still rebuilt your saved history so the app can recreate details when needed.",
                 )
-                MigrationDialogRow(
+                MigrationSheetRow(
                     icon = StillIcons.Storage,
                     title = "Storage",
                     body = resultText,
                 )
-                MigrationDialogRow(
+                MigrationSheetRow(
                     icon = StillIcons.History,
                     title = "Safety backup",
                     body = "Restore it from Settings › Data if anything looks wrong, or delete it later from Data stored on this device.",
@@ -466,7 +466,7 @@ fun ArchiveMigrationDialog(
 }
 
 @Composable
-private fun MigrationDialogRow(@DrawableRes icon: Int, title: String, body: String) {
+private fun MigrationSheetRow(@DrawableRes icon: Int, title: String, body: String) {
     Row(
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
@@ -614,7 +614,7 @@ fun StoredDataScreen(
     }
 
     if (deleteBackupDialog) {
-        AlertDialog(
+        ActionDrawer(
             onDismissRequest = { deleteBackupDialog = false },
             icon = { StoredDataIcon(StillIcons.Delete) },
             title = { Text("Delete the safety backup?") },
@@ -638,14 +638,14 @@ fun StoredDataScreen(
         )
     }
     when (archiveBackupDeleteState) {
-        ArchiveBackupDeleteState.Deleted -> AlertDialog(
+        ArchiveBackupDeleteState.Deleted -> ActionDrawer(
             onDismissRequest = onDismissArchiveBackupDeleteResult,
             icon = { StoredDataIcon(StillIcons.Storage) },
             title = { Text("Backup deleted") },
             text = { Text("The compact archive is unchanged. The previous-format backup and its restore option have been removed.") },
             confirmButton = { TextButton(onClick = onDismissArchiveBackupDeleteResult) { Text("Done") } },
         )
-        is ArchiveBackupDeleteState.Error -> AlertDialog(
+        is ArchiveBackupDeleteState.Error -> ActionDrawer(
             onDismissRequest = onDismissArchiveBackupDeleteResult,
             icon = { StoredDataIcon(StillIcons.Error) },
             title = { Text("Backup wasn’t deleted") },
@@ -892,7 +892,7 @@ fun WidgetSettingsScreen(
     }
 
     if (colorDialog) {
-        WidgetColorDialog(
+        WidgetColorSheet(
             current = settings.widgetColor,
             onApply = onWidgetColorChange,
             onDismiss = { colorDialog = false },
@@ -1101,7 +1101,7 @@ fun DaylineWidgetSettingsScreen(
     }
 
     if (colorDialog) {
-        WidgetColorDialog(
+        WidgetColorSheet(
             current = settings.daylineWidgetColor,
             onApply = onWidgetColorChange,
             onDismiss = { colorDialog = false },
@@ -1419,7 +1419,7 @@ private fun WidgetPreviewLayout(
 }
 
 @Composable
-private fun WidgetColorDialog(
+private fun WidgetColorSheet(
     current: String?,
     onApply: (String?) -> Unit,
     onDismiss: () -> Unit,
@@ -1439,12 +1439,12 @@ private fun WidgetColorDialog(
         brightness = hsv[2]
     }
 
-    AlertDialog(
+    ActionDrawer(
         onDismissRequest = onDismiss,
+        expandToFitContent = true,
         title = { Text("Widget color") },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(StillSpacing.medium),
             ) {
                 Text(
@@ -1672,8 +1672,8 @@ private fun WidgetCustomColorRow(color: String?, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ChoiceDialog(title: String, options: List<Pair<String, () -> Unit>>, selected: String, onDismiss: () -> Unit) {
-    AlertDialog(
+private fun ChoiceSheet(title: String, options: List<Pair<String, () -> Unit>>, selected: String, onDismiss: () -> Unit) {
+    ActionDrawer(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {

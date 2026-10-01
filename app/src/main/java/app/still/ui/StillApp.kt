@@ -88,14 +88,14 @@ import app.still.ui.settings.IssueReportBrowser
 import app.still.ui.settings.ThemeSettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.settings.StoredDataScreen
-import app.still.ui.settings.ArchiveMigrationDialog
+import app.still.ui.settings.ArchiveMigrationSheet
 import app.still.ui.settings.WidgetSettingsScreen
 import app.still.ui.settings.WidgetSelectorScreen
 import app.still.ui.settings.DaylineWidgetSettingsScreen
 import app.still.ui.theme.StillSpacing
 import app.still.ui.theme.StillTheme
 import app.still.ui.update.UpdateDetailsSheet
-import app.still.ui.update.VersionOptInDialog
+import app.still.ui.update.VersionOptInSheet
 import app.still.update.UpdateState
 import app.still.ui.timeline.TimelineScreen
 import app.still.ui.timeline.TimelineTopBar
@@ -184,12 +184,12 @@ fun StillApp(
 
         archiveMigrationNotice?.let { notice ->
             if (settings.onboardingComplete) {
-                ArchiveMigrationDialog(notice, viewModel::acknowledgeArchiveMigration)
+                ArchiveMigrationSheet(notice, viewModel::acknowledgeArchiveMigration)
             }
         }
 
         if (archiveMigrationNotice == null && settings.onboardingComplete && settings.versionCheckEnabled == null) {
-            VersionOptInDialog(onDecision = viewModel::setVersionCheckEnabled)
+            VersionOptInSheet(onDecision = viewModel::setVersionCheckEnabled)
         }
 
         activeUpdate?.let { update ->

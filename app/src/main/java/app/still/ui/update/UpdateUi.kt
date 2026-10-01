@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,15 +35,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.still.ui.MainViewModel
+import app.still.ui.components.ActionDrawer
 import app.still.ui.components.TonalPanel
 import app.still.ui.theme.StillSpacing
 import app.still.update.UpdateState
 import app.still.ui.components.StillIcons
 
 @Composable
-fun VersionOptInDialog(onDecision: (Boolean) -> Unit) {
-    AlertDialog(
+fun VersionOptInSheet(onDecision: (Boolean) -> Unit) {
+    ActionDrawer(
         onDismissRequest = {},
+        dismissible = false,
         icon = { Icon(painterResource(StillIcons.Download), contentDescription = null) },
         title = { Text("Automatic updates") },
         text = {
@@ -157,7 +158,7 @@ fun UpdateDetailsSheet(
     }
 
     if (showPermissionExplanation) {
-        AlertDialog(
+        ActionDrawer(
             onDismissRequest = { showPermissionExplanation = false },
             title = { Text("Installation permission required") },
             text = { Text("To update Still, allow it to install unknown apps in Android settings. You can return here and tap Install afterward.") },

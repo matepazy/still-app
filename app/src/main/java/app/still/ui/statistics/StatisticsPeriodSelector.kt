@@ -15,7 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsRange
-import app.still.ui.components.CompactDateRangePickerDialog
+import app.still.ui.components.CompactDateRangePickerSheet
 import java.time.LocalDate
 
 @Composable
@@ -47,7 +47,7 @@ fun StatisticsPeriodSelector(
         }
     }
     if (showPicker) {
-        CompactDateRangePickerDialog(
+        CompactDateRangePickerSheet(
             selectedRange = selectedRange,
             availableDates = availableDates,
             onDismiss = { showPicker = false },

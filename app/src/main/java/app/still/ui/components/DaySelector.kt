@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,8 +33,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import app.still.ui.theme.StillSpacing
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -75,7 +72,7 @@ fun DaySelector(
     }
 
     if (pickerVisible) {
-        CompactDatePickerDialog(
+        CompactDatePickerSheet(
             selectedDate = selectedDate,
             availableDates = dates,
             locale = locale,
@@ -89,7 +86,7 @@ fun DaySelector(
 }
 
 @Composable
-private fun CompactDatePickerDialog(
+private fun CompactDatePickerSheet(
     selectedDate: LocalDate,
     availableDates: List<LocalDate>,
     locale: Locale,
@@ -111,66 +108,51 @@ private fun CompactDatePickerDialog(
     val firstDayOfWeek = remember(locale) { WeekFields.of(locale).firstDayOfWeek }
     val weekDays = remember(firstDayOfWeek) { List(7) { firstDayOfWeek.plus(it.toLong()) } }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(
+    StillDrawer(onDismissRequest = onDismiss, expandToFitContent = true) {
+        Text("Choose a date", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            pendingDate.format(fullDateFormatter),
+            modifier = Modifier.padding(top = StillSpacing.xSmall),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        MonthNavigation(
+            month = months[pagerState.currentPage],
+            formatter = monthFormatter,
+            canGoBack = pagerState.currentPage > 0,
+            canGoForward = pagerState.currentPage < months.lastIndex,
+            onBack = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
+            onForward = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
+            modifier = Modifier.padding(top = StillSpacing.large),
+        )
+
+        WeekdayHeader(weekDays, locale, Modifier.padding(top = StillSpacing.small))
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.padding(top = StillSpacing.xSmall).height(264.dp),
+        ) { page ->
+            MonthGrid(
+                month = months[page],
+                firstDayOfWeek = firstDayOfWeek,
+                availableEpochDays = availableEpochDays,
+                selectedDate = pendingDate,
+                onDateSelected = { pendingDate = it },
+            )
+        }
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = StillSpacing.large)
-                .widthIn(max = 380.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
+                .padding(top = StillSpacing.medium),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.padding(StillSpacing.large)) {
-                Text("Choose a date", style = MaterialTheme.typography.headlineSmall)
-                Text(
-                    pendingDate.format(fullDateFormatter),
-                    modifier = Modifier.padding(top = StillSpacing.xSmall),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                MonthNavigation(
-                    month = months[pagerState.currentPage],
-                    formatter = monthFormatter,
-                    canGoBack = pagerState.currentPage > 0,
-                    canGoForward = pagerState.currentPage < months.lastIndex,
-                    onBack = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
-                    onForward = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
-                    modifier = Modifier.padding(top = StillSpacing.large),
-                )
-
-                WeekdayHeader(weekDays, locale, Modifier.padding(top = StillSpacing.small))
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.padding(top = StillSpacing.xSmall).height(264.dp),
-                ) { page ->
-                    MonthGrid(
-                        month = months[page],
-                        firstDayOfWeek = firstDayOfWeek,
-                        availableEpochDays = availableEpochDays,
-                        selectedDate = pendingDate,
-                        onDateSelected = { pendingDate = it },
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = StillSpacing.medium),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    Button(
-                        onClick = { onConfirm(pendingDate) },
-                        modifier = Modifier.padding(start = StillSpacing.small),
-                    ) { Text("Done") }
-                }
-            }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+            Button(
+                onClick = { onConfirm(pendingDate) },
+                modifier = Modifier.padding(start = StillSpacing.small),
+            ) { Text("Done") }
         }
     }
 }
