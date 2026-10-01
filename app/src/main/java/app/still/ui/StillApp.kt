@@ -42,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
@@ -123,10 +124,12 @@ private const val PredictiveBackDurationMillis = 300
 fun StillApp(
     viewModel: MainViewModel,
     navigationRequest: NavigationRequest? = null,
+    onContentReady: () -> Unit = {},
     onNavigationRequestHandled: (Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val settings = state.settings
+    // Do not compose a fallback theme while DataStore restores the user's selection.
+    val settings = state.settings ?: return
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val storedDataSummary by viewModel.storedDataSummary.collectAsStateWithLifecycle()
     val archiveMigrationNotice by viewModel.archiveMigrationNotice.collectAsStateWithLifecycle()
@@ -139,12 +142,11 @@ fun StillApp(
         if (updateState is UpdateState.UpdateAvailable) activeUpdate = updateState as UpdateState.UpdateAvailable
     }
     StillTheme(
-        themePreference = if (settings?.onboardingComplete == false) ThemePreference.Dark else settings?.theme ?: ThemePreference.System,
+        themePreference = if (!settings.onboardingComplete) ThemePreference.Dark else settings.theme,
     ) {
+        SideEffect(onContentReady)
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            if (settings == null) {
-                LoadingScreen()
-            } else if (!settings.onboardingComplete) {
+            if (!settings.onboardingComplete) {
                 OnboardingScreen(
                     usageState = state.usage,
                     hasUsageAccess = viewModel::hasUsageAccess,
@@ -181,17 +183,17 @@ fun StillApp(
         }
 
         archiveMigrationNotice?.let { notice ->
-            if (settings?.onboardingComplete == true) {
+            if (settings.onboardingComplete) {
                 ArchiveMigrationDialog(notice, viewModel::acknowledgeArchiveMigration)
             }
         }
 
-        if (archiveMigrationNotice == null && settings?.onboardingComplete == true && settings.versionCheckEnabled == null) {
+        if (archiveMigrationNotice == null && settings.onboardingComplete && settings.versionCheckEnabled == null) {
             VersionOptInDialog(onDecision = viewModel::setVersionCheckEnabled)
         }
 
         activeUpdate?.let { update ->
-            if (settings?.onboardingComplete == true) {
+            if (settings.onboardingComplete) {
                 UpdateDetailsSheet(
                     update = update,
                     viewModel = viewModel,

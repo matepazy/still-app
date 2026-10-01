@@ -2,6 +2,7 @@ package app.still
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.ViewTreeObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,8 +27,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) navigationRequest = intent.consumeWidgetNavigationRequest()
         enableEdgeToEdge()
+        // Keep the native launch surface until Compose has applied the saved theme.
+        // Waiting for settings alone can release a frame before recomposition finishes.
+        var contentReady = false
+        window.decorView.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                if (!contentReady) return false
+                window.decorView.viewTreeObserver.removeOnPreDrawListener(this)
+                return true
+            }
+        })
         setContent {
-            StillApp(viewModel, navigationRequest) { handledId ->
+            StillApp(viewModel, navigationRequest, onContentReady = { contentReady = true }) { handledId ->
                 if (navigationRequest?.id == handledId) navigationRequest = null
             }
         }
