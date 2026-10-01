@@ -25,7 +25,8 @@ android {
         targetSdk = 37
         versionCode = 13
         versionName = "1.5.4"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = providers.gradleProperty("stillTestRunner")
+            .getOrElse("androidx.test.runner.AndroidJUnitRunner")
         buildConfigField("boolean", "HALLOWEEN_PREVIEW", "false")
     }
 

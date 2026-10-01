@@ -148,6 +148,11 @@ fun SettingsScreen(
     onVersionCheckChange: (Boolean) -> Unit = {},
     onUpdateChannelChange: (String) -> Unit = {},
     onCheckForUpdates: () -> Unit = {},
+    dataTransferState: app.still.ui.DataTransferState = app.still.ui.DataTransferState.Idle,
+    onPrepareExport: (CharArray) -> Unit = {},
+    onExportDestination: (android.net.Uri?) -> Unit = {},
+    onImportData: (android.net.Uri, CharArray) -> Unit = { _, _ -> },
+    onDismissDataTransfer: () -> Unit = {},
 ) {
     var updateChannelDialog by remember { mutableStateOf(false) }
     var stopSavingDialog by remember { mutableStateOf(false) }
@@ -198,6 +203,8 @@ fun SettingsScreen(
                     supporting = "See exactly what Still keeps locally",
                     onClick = onStoredDataClick,
                 )
+                Hairline()
+                DataTransferControls(dataTransferState, onPrepareExport, onExportDestination, onImportData, onDismissDataTransfer)
                 if (storedDataSummary?.storageFormat == ArchiveStorageFormat.Legacy) {
                     Hairline()
                     SettingRow(
@@ -261,7 +268,7 @@ fun SettingsScreen(
         TonalPanel(Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    "Your usage history stays on this device. Still only reads Android’s local usage statistics to calculate screen time.",
+                    "Still reads Android's local usage statistics and keeps history on this device. You can choose to export an encrypted copy.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1697,7 +1704,7 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
-private fun SettingRow(
+internal fun SettingRow(
     title: String,
     supporting: String? = null,
     @DrawableRes trailingIcon: Int = StillIcons.ChevronRight,
@@ -1833,7 +1840,7 @@ private fun UpdateCheckRow(updateState: UpdateState, onCheckForUpdates: () -> Un
 }
 
 @Composable
-private fun Hairline() {
+internal fun Hairline() {
     androidx.compose.material3.HorizontalDivider(
         modifier = Modifier.padding(horizontal = 16.dp),
         color = MaterialTheme.colorScheme.outlineVariant,

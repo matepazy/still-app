@@ -54,6 +54,13 @@ sealed interface ArchiveRestoreState {
     data class Error(val message: String) : ArchiveRestoreState
 }
 
+sealed interface DataTransferState {
+    data object Idle : DataTransferState
+    data object ChoosingDestination : DataTransferState
+    data class Working(val importing: Boolean) : DataTransferState
+    data class Finished(val title: String, val message: String) : DataTransferState
+}
+
 sealed interface ArchiveUpgradeState {
     data object Idle : ArchiveUpgradeState
     data object Upgrading : ArchiveUpgradeState
@@ -74,6 +81,90 @@ data class MainUiState(
 )
 
 class MainViewModel(private val container: AppContainer) : ViewModel() {
+    private val _dataTransferState = MutableStateFlow<DataTransferState>(DataTransferState.Idle)
+    val dataTransferState: StateFlow<DataTransferState> = _dataTransferState
+    private var exportPin: CharArray? = null
+
+    fun prepareDataExport(pin: CharArray) {
+        exportPin?.fill('\u0000')
+        exportPin = pin
+        _dataTransferState.value = DataTransferState.ChoosingDestination
+    }
+
+    fun exportData(uri: android.net.Uri?) {
+        val pin = exportPin ?: return
+        exportPin = null
+        if (uri == null) {
+            pin.fill('\u0000')
+            _dataTransferState.value = DataTransferState.Idle
+            return
+        }
+        transferData(uri, pin, importing = false)
+    }
+
+    fun importData(uri: android.net.Uri, pin: CharArray) = transferData(uri, pin, importing = true)
+
+    private fun transferData(uri: android.net.Uri, pin: CharArray, importing: Boolean) {
+        if (_dataTransferState.value is DataTransferState.Working) { pin.fill('\u0000'); return }
+        _dataTransferState.value = DataTransferState.Working(importing)
+        viewModelScope.launch {
+            val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val context = container.applicationContext
+                var snapshot: File? = null
+                var encrypted: File? = null
+                try {
+                    snapshot = File.createTempFile("data-transfer-", ".tmp", context.noBackupFilesDir)
+                    if (importing) {
+                        val input = checkNotNull(context.contentResolver.openInputStream(uri)) { "Cannot open this file" }
+                        input.use { source -> snapshot.outputStream().buffered().use { output ->
+                            app.still.data.usage.EncryptedDataExport.decrypt(source, output, pin)
+                        } }
+                        // GCM authentication has succeeded before any saved history is touched.
+                        container.usageRepository.importDatabase(snapshot)
+                    } else {
+                        container.usageRepository.exportDatabase(snapshot)
+                        encrypted = File.createTempFile("encrypted-export-", ".tmp", context.noBackupFilesDir)
+                        snapshot.inputStream().buffered().use { input -> encrypted.outputStream().buffered().use { output ->
+                            app.still.data.usage.EncryptedDataExport.encrypt(input, output, pin)
+                        } }
+                        checkNotNull(context.contentResolver.openOutputStream(uri, "wt")) { "Cannot write this file" }.use { output ->
+                            encrypted.inputStream().use { it.copyTo(output) }
+                        }
+                    }
+                    Result.success(Unit)
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (failure: Exception) {
+                    Result.failure<Unit>(failure)
+                } finally {
+                    pin.fill('\u0000')
+                    snapshot?.delete()
+                    encrypted?.delete()
+                }
+            }
+            _dataTransferState.value = result.fold(
+                onSuccess = { DataTransferState.Finished(if (importing) "Data imported" else "Data exported",
+                    if (importing) "Your saved usage history has been replaced. Your app settings are unchanged."
+                    else "Your full usage database and safety backup were saved in an encrypted file. Keep your PIN to import it.") },
+                onFailure = { DataTransferState.Finished(if (importing) "Import failed" else "Export failed",
+                    if (importing) "The PIN may be incorrect, or the file is damaged or unsupported. Your existing history was kept."
+                    else "The export could not be saved. Check the destination and available storage, then try again.") },
+            )
+            if (result.isSuccess && importing) {
+                refreshStoredDataSummary()
+                refresh()
+                WidgetUpdateDispatcher.updateAll(container.applicationContext)
+            }
+        }
+    }
+
+    fun dismissDataTransferResult() { _dataTransferState.value = DataTransferState.Idle }
+
+    override fun onCleared() {
+        exportPin?.fill('\u0000')
+        exportPin = null
+        super.onCleared()
+    }
     private val usageState = MutableStateFlow<UsageUiState>(UsageUiState.Loading)
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState

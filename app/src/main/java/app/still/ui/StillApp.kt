@@ -437,6 +437,11 @@ private fun MainNavigation(
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
                     onCheckForUpdates = viewModel::triggerVersionCheck,
+                    dataTransferState = viewModel.dataTransferState.collectAsStateWithLifecycle().value,
+                    onPrepareExport = viewModel::prepareDataExport,
+                    onExportDestination = viewModel::exportData,
+                    onImportData = viewModel::importData,
+                    onDismissDataTransfer = viewModel::dismissDataTransferResult,
                     modifier = Modifier.padding(padding),
                 )
             }

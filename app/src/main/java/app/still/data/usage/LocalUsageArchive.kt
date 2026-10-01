@@ -54,7 +54,15 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         appContext.getDatabasePath("$DATABASE_NAME-wal"),
         appContext.getDatabasePath("$DATABASE_NAME-shm"),
     )
-    private val legacyBackupFile = File(appContext.noBackupFilesDir, LEGACY_BACKUP_NAME)
+    private var backupName = LEGACY_BACKUP_NAME
+    private val legacyBackupFile: File get() = File(appContext.noBackupFilesDir, backupName)
+
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        backupName = db.query("metadata", arrayOf("value"), "key = ?", arrayOf("imported_backup_file"), null, null, null)
+            .use { if (it.moveToFirst()) it.getString(0) else null }
+            ?.takeIf { it.matches(Regex("import-backup-[a-zA-Z0-9-]+\\.tmp")) } ?: LEGACY_BACKUP_NAME
+    }
 
     override fun onConfigure(db: SQLiteDatabase) {
         db.setForeignKeyConstraintsEnabled(true)
@@ -97,6 +105,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
 
     fun clearHistory() {
         val db = writableDatabase
+        val backup = legacyBackupFile
         db.beginTransaction()
         try {
             db.delete("days", null, null)
@@ -107,7 +116,74 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         } finally {
             db.endTransaction()
         }
-        if (legacyBackupFile.exists()) legacyBackupFile.delete()
+        if (backup.exists()) backup.delete()
+        backupName = LEGACY_BACKUP_NAME
+    }
+
+    /** A read transaction includes committed WAL contents without copying a live database file. */
+    fun exportSnapshot(destination: File) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            java.io.DataOutputStream(destination.outputStream().buffered()).use { output ->
+                DatabaseSnapshot.write(db, isCompact(db), output)
+                val size = legacyBackupFile.takeIf(File::isFile)?.length() ?: 0L
+                output.writeLong(size)
+                if (size > 0) legacyBackupFile.inputStream().use { it.copyTo(output) }
+            }
+            db.setTransactionSuccessful()
+        } finally { db.endTransaction() }
+    }
+
+    /** Authentication is completed by the caller before this transaction starts. */
+    fun importSnapshot(source: File) {
+        val db = writableDatabase
+        val incomingBackup = File.createTempFile("import-backup-", ".tmp", appContext.noBackupFilesDir)
+        val previousBackup = legacyBackupFile
+        var committed = false
+        try {
+            java.io.DataInputStream(source.inputStream().buffered()).use { input ->
+                val compact = DatabaseSnapshot.readHeader(input)
+                db.beginTransaction()
+                try {
+                    listOf("app_days", "app_switches", "hourly_usage", "apps", "days", "metadata", "archive_control")
+                        .forEach { db.execSQL("DROP TABLE IF EXISTS $it") }
+                    if (compact) createCompactSchema(db) else createLegacySchema(db)
+                    createMetadataTable(db)
+                    createControlTable(db)
+                    DatabaseSnapshot.readTables(db, compact, input)
+                    require(readControl(db)?.format == if (compact) FORMAT_COMPACT else FORMAT_LEGACY) {
+                        "Invalid archive format"
+                    }
+                    val backupSize = input.readLong()
+                    require(backupSize in 0..EncryptedDataExport.MAX_BYTES && backupSize <= input.available()) {
+                        "Invalid safety backup size"
+                    }
+                    incomingBackup.outputStream().use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        var remaining = backupSize
+                        while (remaining > 0) {
+                            val count = input.read(buffer, 0, minOf(remaining, buffer.size.toLong()).toInt())
+                            require(count > 0) { "Incomplete safety backup" }
+                            output.write(buffer, 0, count)
+                            remaining -= count
+                        }
+                    }
+                    require(input.read() == -1) { "Unexpected export contents" }
+                    if (backupSize > 0) LegacyArchiveBackup.latestRangeEndMillis(incomingBackup)
+                    // Verify the restored records can be read before committing the replacement.
+                    dates().forEach { day(it); eventRecords(it) }
+                    // Publish the new backup reference in the same SQLite commit as its history.
+                    // A crash before commit leaves the previous backup available.
+                    putMetadata("imported_backup_file", incomingBackup.name)
+                    db.setTransactionSuccessful()
+                } finally { db.endTransaction() }
+                committed = true
+                backupName = incomingBackup.name
+            }
+        } finally {
+            if (committed) previousBackup.delete() else incomingBackup.delete()
+        }
     }
 
     fun storedDataSummary(): StoredDataSummary {
@@ -186,7 +262,8 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
     }
 
     fun restoreLegacyBackup() {
-        require(legacyBackupFile.isFile) { "No archive backup is available" }
+        val backup = legacyBackupFile
+        require(backup.isFile) { "No archive backup is available" }
         val db = writableDatabase
         require(isCompact(db)) { "The legacy archive is already active" }
         val control = checkNotNull(readControl(db))
@@ -208,7 +285,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
             db.execSQL("DROP TABLE days")
             db.delete("metadata", null, null)
             createLegacySchema(db)
-            LegacyArchiveBackup.restore(db, legacyBackupFile)
+            LegacyArchiveBackup.restore(db, backup)
             restorePostMigrationHistory(db)
             db.execSQL("INSERT OR REPLACE INTO metadata SELECT * FROM restore_metadata")
             db.execSQL("DROP TABLE restore_metadata")

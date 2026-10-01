@@ -171,6 +171,14 @@ class UsageRepository(
         runCatching { syncMutex.withLock { archive.restoreLegacyBackup() } }
     }
 
+    suspend fun exportDatabase(destination: java.io.File) = withContext(Dispatchers.IO) {
+        syncMutex.withLock { archive.exportSnapshot(destination) }
+    }
+
+    suspend fun importDatabase(source: java.io.File) = withContext(Dispatchers.IO) {
+        syncMutex.withLock { archive.importSnapshot(source) }
+    }
+
     suspend fun upgradeLegacyArchive(): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching { syncMutex.withLock { archive.upgradeLegacyArchive() } }
     }
