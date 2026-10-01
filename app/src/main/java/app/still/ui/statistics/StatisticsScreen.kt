@@ -223,8 +223,9 @@ private fun LazyListScope.statisticsContent(summary: app.still.domain.model.Stat
     }
     if (!singleDay && (summary.mostActiveWeekday != null || summary.dailyVariability != null)) {
         item {
-            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.large), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                Icon(painterResource(StillIcons.Calendar), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.large), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(StillIcons.Activity), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(buildString {
                     summary.mostActiveWeekday?.let { append("Most active: ").append(it.name.lowercase().replaceFirstChar { c -> c.uppercase() }) }
                     summary.dailyVariability?.let { if (isNotEmpty()) append(" · "); append(it.compactDuration()).append(" day to day variation") }
@@ -237,12 +238,12 @@ private fun LazyListScope.statisticsContent(summary: app.still.domain.model.Stat
             SectionTitle("Most used apps")
             val max = summary.topApps.maxOf { it.total.toMillis() }.coerceAtLeast(1L)
             summary.topApps.take(5).forEach { app ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium), verticalAlignment = Alignment.CenterVertically) {
                     AppIcon(app.packageName, app.label, size = 32.dp)
                     Spacer(Modifier.width(StillSpacing.medium))
                     Box(Modifier.weight(1f)) {
                         UsageBar(app.label, app.total.compactDuration() + (app.change?.let { " · ${signed(it)}" } ?: ""),
-                            app.total.toMillis().toFloat() / max)
+                            app.total.toMillis().toFloat() / max, bottomSpacing = 0.dp)
                     }
                 }
             }
@@ -252,14 +253,14 @@ private fun LazyListScope.statisticsContent(summary: app.still.domain.model.Stat
         item {
             SectionTitle("By category")
             summary.categories.filter { it.share > 0.0 }.forEach { category ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium), verticalAlignment = Alignment.CenterVertically) {
                     Icon(painterResource(categoryIcon(category.category)), contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(StillSpacing.medium))
                     Box(Modifier.weight(1f)) {
                         UsageBar(category.category.displayName,
                             "${(category.share * 100).toInt()}% · ${category.total.compactDuration()}" +
-                                (category.change?.let { " · ${signed(it)}" } ?: ""), category.share.toFloat())
+                                (category.change?.let { " · ${signed(it)}" } ?: ""), category.share.toFloat(), bottomSpacing = 0.dp)
                     }
                 }
             }
@@ -332,8 +333,9 @@ private fun RhythmValue(label: String, value: String, modifier: Modifier = Modif
 }
 
 @Composable
-internal fun UsageBar(label: String, value: String?, fraction: Float, color: Color = MaterialTheme.colorScheme.primary) {
-    Column(Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium)) {
+internal fun UsageBar(label: String, value: String?, fraction: Float, color: Color = MaterialTheme.colorScheme.primary,
+    bottomSpacing: androidx.compose.ui.unit.Dp = StillSpacing.medium) {
+    Column(Modifier.fillMaxWidth().padding(bottom = bottomSpacing)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.width(StillSpacing.small))

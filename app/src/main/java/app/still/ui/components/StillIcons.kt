@@ -32,6 +32,7 @@ object StillIcons {
     @DrawableRes val ArrowUp = R.drawable.ic_ui_arrow_up
     @DrawableRes val History = R.drawable.ic_ui_history
     @DrawableRes val Calendar = R.drawable.ic_ui_calendar
+    @DrawableRes val Activity = R.drawable.ic_ui_activity
     @DrawableRes val Download = R.drawable.ic_ui_download
     @DrawableRes val Update = R.drawable.ic_ui_update
     @DrawableRes val Error = R.drawable.ic_ui_error
