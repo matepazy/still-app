@@ -130,6 +130,23 @@ private const val BackHandoffStartMillis = 120
 private const val BackHandoffDurationMillis = PredictiveBackDurationMillis - BackHandoffStartMillis
 private const val BackPreviewAlpha = 0.75f
 
+private const val ForwardNavigationDurationMillis = 240
+private val ForwardNavigationEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+private val TopLevelRoutes = setOf(TodayRoute, TimelineRoute, AppsRoute, StatisticsRoute)
+
+private fun forwardDestinationEnter(offsetPx: Int): EnterTransition =
+    fadeIn(tween(ForwardNavigationDurationMillis, easing = ForwardNavigationEasing)) +
+        slideInHorizontally(
+            animationSpec = tween(ForwardNavigationDurationMillis, easing = ForwardNavigationEasing),
+        ) { offsetPx }
+
+private fun forwardDestinationExit(): ExitTransition =
+    fadeOut(tween(ForwardNavigationDurationMillis, easing = ForwardNavigationEasing)) +
+        scaleOut(
+            animationSpec = tween(ForwardNavigationDurationMillis, easing = ForwardNavigationEasing),
+            targetScale = 0.98f,
+        )
+
 private class BackAnimationState {
     var value: Int = BackEventCompat.EDGE_LEFT
     var tabNavigation: Boolean = false
@@ -333,6 +350,7 @@ private fun MainNavigation(
     LaunchedEffect(settings.appCategoryOverrides) { statisticsViewModel.updateCategories(settings.appCategoryOverrides) }
 
     val predictiveBackMarginPx = with(LocalDensity.current) { 8.dp.roundToPx() }
+    val forwardNavigationOffsetPx = with(LocalDensity.current) { 32.dp.roundToPx() }
     // Retain the gesture edge for the completion transition without triggering recomposition
     // from inside Navigation's transition callbacks.
     val backAnimationState = remember { BackAnimationState() }
@@ -342,9 +360,15 @@ private fun MainNavigation(
         modifier = Modifier.fillMaxSize(),
         enterTransition = {
             backAnimationState.tabNavigation = false
-            EnterTransition.None
+            if (initialState.destination.route in TopLevelRoutes &&
+                targetState.destination.route in TopLevelRoutes
+            ) EnterTransition.None else forwardDestinationEnter(forwardNavigationOffsetPx)
         },
-        exitTransition = { ExitTransition.None },
+        exitTransition = {
+            if (initialState.destination.route in TopLevelRoutes &&
+                targetState.destination.route in TopLevelRoutes
+            ) ExitTransition.None else forwardDestinationExit()
+        },
         popEnterTransition = {
             if (backAnimationState.tabNavigation) EnterTransition.None
             else backDestinationEnter(backAnimationState.value, predictiveBackMarginPx)
