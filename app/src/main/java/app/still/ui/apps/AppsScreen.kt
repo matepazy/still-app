@@ -25,7 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import app.still.ui.components.AdaptivePair
+import app.still.ui.components.AdaptiveValueRow
 import app.still.domain.model.AppUsage
 import app.still.domain.model.DailyUsage
 import app.still.ui.components.AppIcon
@@ -69,14 +69,21 @@ fun AppsScreen(
         verticalArrangement = Arrangement.spacedBy(StillSpacing.small),
     ) {
         item {
-            AdaptivePair(Modifier.padding(bottom = StillSpacing.small)) { itemModifier ->
-                Column(itemModifier) {
-                    DaySelector(day.date, availableDates, onDateSelected)
-                    Text("Ordered by usage time", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Text(day.total.compactDuration(), modifier = itemModifier, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            AdaptiveValueRow(
+                Modifier.padding(bottom = StillSpacing.small),
+                minLeadingWidth = 96.dp,
+                leading = {
+                    Column {
+                        DaySelector(day.date, availableDates, onDateSelected)
+                        Text("Ordered by usage time", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                trailing = {
+                    Text(day.total.compactDuration(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                },
+            )
         }
+
         items(day.apps, key = { it.app.packageName }) { usage ->
             AppUsageRow(usage, day.total.toMillis(), day.detailsAvailable, onAppClick)
         }
@@ -98,17 +105,21 @@ private fun AppUsageRow(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 AppIcon(usage.app.packageName, usage.app.label, size = 38.dp)
                 Spacer(Modifier.width(StillSpacing.medium))
-                AdaptivePair(Modifier.weight(1f), minItemWidth = 110.dp) { itemModifier ->
-                    Text(usage.app.label, modifier = itemModifier, style = MaterialTheme.typography.titleSmall)
-                    Column(itemModifier) {
-                        Text(usage.duration.compactDuration(), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            if (detailsAvailable) "${usage.opens} ${if (usage.opens == 1) "open" else "opens"}" else "Daily total",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                AdaptiveValueRow(
+                    Modifier.weight(1f),
+                    minLeadingWidth = 72.dp,
+                    leading = { Text(usage.app.label, style = MaterialTheme.typography.titleSmall) },
+                    trailing = {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(usage.duration.compactDuration(), style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                if (detailsAvailable) "${usage.opens} ${if (usage.opens == 1) "open" else "opens"}" else "Daily total",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                )
             }
             Spacer(Modifier.height(StillSpacing.small))
             UsageProgress(if (totalMillis <= 0) 0f else (usage.duration.toMillis().toFloat() / totalMillis).coerceIn(0f, 1f))

@@ -33,6 +33,7 @@ import app.still.ui.apps.AppsScreen
 import app.still.ui.apps.AppsTopBar
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.settings.ThemeSettingsScreen
+import app.still.ui.settings.WidgetSettingsScreen
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.theme.StillTheme
@@ -65,6 +66,12 @@ private fun DesignScreen(screen: String) {
         }
         "themes" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             ThemeSettingsScreen(ThemePreference.Dark, null, {}, {}, Modifier.padding(padding))
+        }
+        "widget" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
+            WidgetSettingsScreen(
+                UserSettings(theme = ThemePreference.Dark), PreviewFixtures.today,
+                {}, {}, {}, {}, {}, {}, {}, {}, {}, Modifier.padding(padding),
+            )
         }
         "settings" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             SettingsScreen(

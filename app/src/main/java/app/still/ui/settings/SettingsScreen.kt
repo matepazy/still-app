@@ -1,5 +1,10 @@
 package app.still.ui.settings
 
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.BoxWithConstraints
 import android.graphics.Color as AndroidColor
 import android.text.format.Formatter
 import androidx.annotation.DrawableRes
@@ -71,7 +76,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
-import app.still.ui.components.AdaptivePair
+import app.still.ui.components.AdaptiveValueRow
 import app.still.BuildConfig
 import app.still.R
 import app.still.data.settings.ThemePreference
@@ -1125,10 +1130,11 @@ private fun WidgetValueSlider(
     onValueChangeFinished: () -> Unit,
 ) {
     Column {
-        AdaptivePair { itemModifier ->
-            Text(title, modifier = itemModifier, style = MaterialTheme.typography.titleMedium)
-            Text(valueLabel(value), modifier = itemModifier, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        AdaptiveValueRow(
+            minLeadingWidth = 96.dp,
+            leading = { Text(title, style = MaterialTheme.typography.titleMedium) },
+            trailing = { Text(valueLabel(value), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        )
         Slider(
             value = value,
             onValueChange = onValueChange,
@@ -1160,23 +1166,34 @@ private data class DirectChoiceOption(
 private fun DirectChoice(title: String, options: List<DirectChoiceOption>) {
     Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
         Text(title, style = MaterialTheme.typography.titleMedium)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, option ->
-                SegmentedButton(
-                    selected = option.selected,
-                    onClick = option.onClick,
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        activeBorderColor = MaterialTheme.colorScheme.outline,
-                        inactiveContainerColor = Color.Transparent,
-                        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                        inactiveBorderColor = MaterialTheme.colorScheme.outline,
-                    ),
-                    icon = {},
-                    label = { Text(option.label) },
-                )
+        val density = LocalDensity.current
+        val textMeasurer = rememberTextMeasurer()
+        val labelStyle = MaterialTheme.typography.labelLarge
+        val itemWidth = with(density) {
+            options.maxOf { textMeasurer.measure(it.label, labelStyle).size.width }.toDp() + 32.dp
+        }.coerceAtLeast(56.dp)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val rowWidth = maxOf(maxWidth, itemWidth * options.size)
+            Box(Modifier.horizontalScroll(rememberScrollState())) {
+                SingleChoiceSegmentedButtonRow(Modifier.width(rowWidth)) {
+                    options.forEachIndexed { index, option ->
+                        SegmentedButton(
+                            selected = option.selected,
+                            onClick = option.onClick,
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                activeBorderColor = MaterialTheme.colorScheme.outline,
+                                inactiveContainerColor = Color.Transparent,
+                                inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                                inactiveBorderColor = MaterialTheme.colorScheme.outline,
+                            ),
+                            icon = {},
+                            label = { Text(option.label, maxLines = 1) },
+                        )
+                    }
+                }
             }
         }
     }

@@ -1,15 +1,18 @@
 package app.still.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -33,6 +36,35 @@ fun AdaptivePair(
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
                 content(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Label/value rows keep their trailing edge, unlike equal-width metric cards. */
+@Composable
+fun AdaptiveValueRow(
+    modifier: Modifier = Modifier,
+    minLeadingWidth: Dp = 148.dp,
+    leading: @Composable () -> Unit,
+    trailing: @Composable () -> Unit,
+) {
+    val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val trailingWidth = maxWidth * .45f
+        if (maxWidth < minLeadingWidth * fontScale * 2 + 8.dp) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                leading()
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { trailing() }
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.weight(1f)) { leading() }
+                Box(Modifier.widthIn(max = trailingWidth), contentAlignment = Alignment.CenterEnd) { trailing() }
             }
         }
     }

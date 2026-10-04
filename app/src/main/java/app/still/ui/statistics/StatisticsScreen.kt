@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.still.ui.components.DurationHeadline
+import app.still.ui.components.AdaptiveValueRow
 import app.still.ui.components.AdaptivePair
 import app.still.domain.model.StatisticsRange
 import app.still.domain.model.StatisticsPeriod
@@ -337,11 +338,11 @@ private fun RhythmValue(label: String, value: String, modifier: Modifier = Modif
 internal fun UsageBar(label: String, value: String?, fraction: Float, color: Color = MaterialTheme.colorScheme.primary,
     bottomSpacing: androidx.compose.ui.unit.Dp = StillSpacing.medium) {
     Column(Modifier.fillMaxWidth().padding(bottom = bottomSpacing)) {
-        AdaptivePair(minItemWidth = 112.dp) { itemModifier ->
-            Text(label, itemModifier, style = MaterialTheme.typography.bodyMedium)
-            Text(value ?: "—", itemModifier,
-                style = MaterialTheme.typography.bodySmall)
-        }
+        AdaptiveValueRow(
+            minLeadingWidth = 112.dp,
+            leading = { Text(label, style = MaterialTheme.typography.bodyMedium) },
+            trailing = { Text(value ?: "—", textAlign = TextAlign.End, style = MaterialTheme.typography.bodySmall) },
+        )
         Spacer(Modifier.height(6.dp))
         Box(Modifier.fillMaxWidth().height(7.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(4.dp))) {
             if (fraction > 0f) Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(7.dp).background(color, RoundedCornerShape(4.dp)))

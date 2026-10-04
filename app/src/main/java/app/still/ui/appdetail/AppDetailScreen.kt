@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.AdaptiveValueRow
 import app.still.ui.components.AdaptivePair
 import app.still.ui.components.StillBottomSheet
 import app.still.domain.model.AppDetail
@@ -120,11 +121,13 @@ fun AppDetailScreen(
                 if (detail.sessions.isEmpty()) {
                     Text("No sessions on this day", modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else detail.sessions.forEach { session ->
-                    AdaptivePair(Modifier.padding(vertical = 9.dp), minItemWidth = 120.dp) { itemModifier ->
-                        Text("${session.start.clockTime()} – ${session.end.clockTime()}", modifier = itemModifier, style = MaterialTheme.typography.bodyMedium)
-                        val appDuration = session.apps.firstOrNull { it.app.packageName == detail.usage.app.packageName }?.duration
-                        Text(appDuration?.compactDuration() ?: "—", modifier = itemModifier, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    val appDuration = session.apps.firstOrNull { it.app.packageName == detail.usage.app.packageName }?.duration
+                    AdaptiveValueRow(
+                        Modifier.padding(vertical = 9.dp),
+                        minLeadingWidth = 120.dp,
+                        leading = { Text("${session.start.clockTime()} – ${session.end.clockTime()}", style = MaterialTheme.typography.bodyMedium) },
+                        trailing = { Text(appDuration?.compactDuration() ?: "—", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    )
                 }
             }
         }
