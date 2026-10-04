@@ -1,10 +1,9 @@
 package app.still.ui.statistics
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,11 +11,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,35 +24,36 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.still.ui.components.DurationHeadline
-import app.still.ui.components.AdaptiveValueRow
-import app.still.ui.components.AdaptivePair
-import app.still.domain.model.StatisticsRange
-import app.still.domain.model.StatisticsPeriod
 import app.still.data.settings.AppCategory
-import app.still.ui.components.StillIcons
-import app.still.ui.components.DaySelector
+import app.still.domain.model.StatisticsPeriod
+import app.still.domain.model.StatisticsRange
+import app.still.ui.components.AdaptivePair
+import app.still.ui.components.AdaptiveValueRow
 import app.still.ui.components.AppIcon
-import app.still.ui.components.TonalPanel
+import app.still.ui.components.ChartTickLabels
+import app.still.ui.components.DaySelector
+import app.still.ui.components.DurationHeadline
 import app.still.ui.components.LoadingSkeleton
+import app.still.ui.components.StillIcons
+import app.still.ui.components.TonalPanel
+import app.still.ui.components.chartLabelWidth
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
-import java.time.format.DateTimeFormatter
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,7 +130,7 @@ private fun StatisticsLoadingContent(period: StatisticsPeriod) {
     }
 }
 
-private fun LazyListScope.statisticsContent(summary: app.still.domain.model.StatisticsSummary, period: app.still.domain.model.StatisticsPeriod) {
+internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.StatisticsSummary, period: app.still.domain.model.StatisticsPeriod) {
     val singleDay = summary.range.days == 1L
     val day = summary.days.firstOrNull()
     item {
@@ -357,9 +357,14 @@ private fun TypicalDay(hours: List<Long>) {
     val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
     val barColor = MaterialTheme.colorScheme.primary
     val emptyColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val axisLabels = listOf(axisMaximum, axisMaximum / 2, 0L).map {
+        val minutes = it / 60_000L
+        if (minutes >= 60) "${minutes / 60}h" else "${minutes}m"
+    }
+    val axisWidth = chartLabelWidth(axisLabels)
     Column(Modifier.fillMaxWidth().padding(top = StillSpacing.small)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.width(40.dp).height(80.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Column(Modifier.width(axisWidth).height(80.dp), verticalArrangement = Arrangement.SpaceBetween) {
                 listOf(axisMaximum, axisMaximum / 2, 0L).forEach { value ->
                     val minutes = value / 60_000L
                     Text(if (minutes >= 60) "${minutes / 60}h" else "${minutes}m",
@@ -385,14 +390,10 @@ private fun TypicalDay(hours: List<Long>) {
                 }
             }
         }
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 40.dp, top = 4.dp)) {
-            val labelWidth = 40.dp
-            listOf("12am", "6am", "12pm", "6pm", "12am").forEachIndexed { index, label ->
-                val left = (maxWidth * (index / 4f) - labelWidth / 2).coerceIn(0.dp, maxWidth - labelWidth)
-                Text(label, Modifier.offset(x = left).width(labelWidth), style = MaterialTheme.typography.labelSmall,
-                    color = axisColor, textAlign = TextAlign.Center, maxLines = 1)
-            }
-        }
+        ChartTickLabels(
+            listOf("12am", "6am", "12pm", "6pm", "12am").mapIndexed { index, label -> index / 4f to label },
+            Modifier.padding(start = axisWidth, top = 4.dp),
+        )
     }
 }
 

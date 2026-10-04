@@ -86,7 +86,7 @@ fun CompactDateRangePickerSheet(
         WeekdayHeader(weekDays, locale, Modifier.padding(top = StillSpacing.small))
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.padding(top = StillSpacing.xSmall).height(264.dp),
+            modifier = Modifier.padding(top = StillSpacing.xSmall).height(calendarRowHeight() * 6),
         ) { page ->
             MonthGrid(
                 month = months[page],

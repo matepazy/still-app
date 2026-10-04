@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -14,6 +15,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,11 +33,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.still.ui.theme.StillSpacing
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -69,6 +75,7 @@ fun DaySelector(
         Text(
             if (showTodayLabel && selectedDate == latestDate) "Today" else selectedDate.format(formatter),
             style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.weight(1f, fill = false),
         )
         Spacer(Modifier.width(StillSpacing.small))
         Icon(
@@ -137,7 +144,7 @@ private fun CompactDatePickerSheet(
         WeekdayHeader(weekDays, locale, Modifier.padding(top = StillSpacing.small))
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.padding(top = StillSpacing.xSmall).height(264.dp),
+            modifier = Modifier.padding(top = StillSpacing.xSmall).height(calendarRowHeight() * 6),
         ) { page ->
             MonthGrid(
                 month = months[page],
@@ -208,7 +215,7 @@ internal fun WeekdayHeader(
 ) {
     Row(modifier.fillMaxWidth()) {
         days.forEach { day ->
-            Box(Modifier.weight(1f).height(36.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.weight(1f).heightIn(min = 36.dp), contentAlignment = Alignment.Center) {
                 Text(
                     day.getDisplayName(TextStyle.NARROW_STANDALONE, locale),
                     style = MaterialTheme.typography.labelMedium,
@@ -239,7 +246,7 @@ internal fun MonthGrid(
                     val dayNumber = week * 7 + weekday - leadingEmptyCells + 1
                     val date = dayNumber.takeIf { it in 1..month.lengthOfMonth() }?.let(month::atDay)
                     Box(
-                        modifier = Modifier.weight(1f).height(44.dp),
+                        modifier = Modifier.weight(1f).height(calendarRowHeight()),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (date != null) {
@@ -280,13 +287,26 @@ private fun DayCell(
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(40.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp).height(calendarRowHeight() - 4.dp),
         shape = CircleShape,
         color = containerColor,
         contentColor = contentColor,
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyMedium)
+            BasicText(
+                date.dayOfMonth.toString(),
+                style = MaterialTheme.typography.bodyMedium.copy(color = contentColor),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 13.sp),
+            )
         }
     }
+}
+
+/** Keep six calendar weeks tall enough for the system-scaled date text. */
+@Composable
+internal fun calendarRowHeight(): androidx.compose.ui.unit.Dp {
+    val density = LocalDensity.current
+    val height = rememberTextMeasurer().measure("28", MaterialTheme.typography.bodyMedium).size.height
+    return with(density) { height.toDp() + 12.dp }.coerceAtLeast(44.dp)
 }

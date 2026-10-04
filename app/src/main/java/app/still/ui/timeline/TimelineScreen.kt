@@ -1,14 +1,12 @@
 package app.still.ui.timeline
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,15 +29,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.UsageSession
+import app.still.ui.components.AdaptiveValueRow
 import app.still.ui.components.AppIcon
-import app.still.ui.components.StillIcons
 import app.still.ui.components.DaySelector
+import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.clockTime
 import app.still.ui.components.compactDuration
@@ -61,7 +63,7 @@ fun TimelineScreen(
     modifier: Modifier = Modifier,
 ) {
     if (day.sessions.isEmpty()) {
-        Column(modifier.fillMaxSize().padding(StillSpacing.large), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(StillSpacing.large), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             DaySelector(day.date, availableDates, onDateSelected)
             Spacer(Modifier.height(StillSpacing.large))
             Text(
@@ -101,24 +103,26 @@ private fun SessionRow(session: UsageSession, isLast: Boolean) {
     var expanded by remember { mutableStateOf(false) }
     val rail = MaterialTheme.colorScheme.outlineVariant
     val dot = MaterialTheme.colorScheme.primary
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Canvas(Modifier.width(22.dp).fillMaxHeight()) {
-            val x = size.width / 2
+    Box(Modifier.fillMaxWidth().drawBehind {
+            val x = 11.dp.toPx()
             if (!isLast) drawLine(rail, Offset(x, 9.dp.toPx()), Offset(x, size.height + 9.dp.toPx()), 2.dp.toPx(), StrokeCap.Round)
             drawCircle(dot, radius = 4.dp.toPx(), center = Offset(x, 9.dp.toPx()))
-        }
+        }) {
         TonalPanel(
-            modifier = Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium).clickable { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth().padding(start = 22.dp, bottom = StillSpacing.medium).clickable { expanded = !expanded },
             contentPadding = PaddingValues(12.dp),
         ) {
             Column {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                    Text("${session.start.clockTime()} – ${session.end.clockTime()}", style = MaterialTheme.typography.titleSmall)
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(session.activeDuration.compactDuration(), style = MaterialTheme.typography.titleSmall)
-                        Text(if (expanded) "less" else "details", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
+                AdaptiveValueRow(
+                    minLeadingWidth = 120.dp,
+                    leading = { Text("${session.start.clockTime()} – ${session.end.clockTime()}", style = MaterialTheme.typography.titleSmall) },
+                    trailing = {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(session.activeDuration.compactDuration(), style = MaterialTheme.typography.titleSmall)
+                            Text(if (expanded) "less" else "details", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    },
+                )
                 Spacer(Modifier.height(StillSpacing.small))
                 session.apps.take(if (expanded) Int.MAX_VALUE else 3).forEach { usage ->
                     Row(
@@ -127,8 +131,12 @@ private fun SessionRow(session: UsageSession, isLast: Boolean) {
                         horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
                     ) {
                         AppIcon(usage.app.packageName, usage.app.label, size = 26.dp)
-                        Text(usage.app.label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                        Text(usage.duration.compactDuration(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        AdaptiveValueRow(
+                            modifier = Modifier.weight(1f),
+                            minLeadingWidth = 72.dp,
+                            leading = { Text(usage.app.label, style = MaterialTheme.typography.bodyMedium) },
+                            trailing = { Text(usage.duration.compactDuration(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        )
                     }
                 }
             }

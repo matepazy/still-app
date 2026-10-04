@@ -2,18 +2,23 @@ package app.still.ui.statistics
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,15 +32,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsSummary
+import app.still.ui.components.chartLabelWidth
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.LocalDate
@@ -46,6 +53,7 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.time.temporal.WeekFields
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
     val locale = LocalLocale.current.platformLocale
@@ -81,16 +89,10 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
             selectedDate?.let { date -> "${date.format(dateFormatter)} · ${values[date]?.compactDuration() ?: "No data"}" }
                 ?: "Daily screen time",
             style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(StillSpacing.medium))
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val gap = 2.dp
-            val weekdayWidth = 34.dp
-            val cell = ((maxWidth - weekdayWidth - gap * (weekCount + 1)) / weekCount)
-                .coerceAtMost(if (period == StatisticsPeriod.Month) 28.dp else 13.dp)
-            val gridWidth = weekdayWidth + gap + (cell + gap) * weekCount
             val months = remember(summary.range) {
                 val first = YearMonth.from(summary.range.start)
                 val last = YearMonth.from(summary.range.endInclusive)
@@ -98,7 +100,17 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                     first.plusMonths(offset.toLong())
                 }
             }
-            val labelWidth = 34.dp
+            val weekdayWidth = chartLabelWidth((0..6).map { firstWeekday.plus(it.toLong()).getDisplayName(TextStyle.SHORT, locale) })
+            val labelWidth = chartLabelWidth(months.map { it.month.getDisplayName(TextStyle.SHORT, locale) })
+            val minimumWidth = maxOf(weekdayWidth + gap + (8.dp + gap) * weekCount,
+                weekdayWidth + gap + labelWidth * months.size)
+            val availableWidth = maxOf(maxWidth, minimumWidth)
+            val cell = ((availableWidth - weekdayWidth - gap * (weekCount + 1)) / weekCount)
+                .coerceIn(8.dp, if (period == StatisticsPeriod.Month) 28.dp else 13.dp)
+            val gridWidth = maxOf(weekdayWidth + gap + (cell + gap) * weekCount, minimumWidth)
+            val density = LocalDensity.current
+            val labelHeight = rememberTextMeasurer().measure("Wed", MaterialTheme.typography.labelSmall).size.height
+            val rowHeight = maxOf(cell, with(density) { labelHeight.toDp() })
             val firstCenter = weekdayWidth + gap + labelWidth / 2
             val lastCenter = gridWidth - labelWidth / 2
             val monthCenters = months.map { month ->
@@ -114,14 +126,14 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
             for (index in monthCenters.indices.reversed()) {
                 monthCenters[index] = minOf(monthCenters[index], lastCenter - labelWidth * (monthCenters.lastIndex - index))
             }
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
                 Column(Modifier.width(gridWidth)) {
-                    Box(Modifier.fillMaxWidth().height(20.dp)) {
+                    Box(Modifier.fillMaxWidth().heightIn(min = with(density) { labelHeight.toDp() })) {
                         months.forEachIndexed { index, month ->
                             Text(
                                 month.month.getDisplayName(TextStyle.SHORT, locale),
                                 modifier = Modifier.offset(x = monthCenters[index] - labelWidth / 2).width(labelWidth),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -134,14 +146,11 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                         Column(Modifier.width(weekdayWidth), verticalArrangement = Arrangement.spacedBy(gap)) {
                             repeat(7) { weekday ->
                                 val day = firstWeekday.plus(weekday.toLong())
-                                Box(Modifier.size(weekdayWidth, cell), contentAlignment = Alignment.CenterEnd) {
+                                Box(Modifier.size(weekdayWidth, rowHeight), contentAlignment = Alignment.CenterEnd) {
                                     if (period == StatisticsPeriod.Month || day.value == 1 || day.value == 3 || day.value == 5) Text(
                                         day.getDisplayName(TextStyle.SHORT, locale),
                                         modifier = Modifier.padding(end = StillSpacing.xSmall),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = if (period == StatisticsPeriod.Month) 11.sp else 9.sp,
-                                            lineHeight = if (period == StatisticsPeriod.Month) 12.sp else 10.sp,
-                                        ),
+                                        style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
@@ -156,11 +165,11 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                                 repeat(7) { weekday ->
                                     val date = gridStart.plusDays(week * 7L + weekday)
                                     if (date.isBefore(summary.range.start) || date.isAfter(summary.range.endInclusive)) {
-                                        Spacer(Modifier.size(cell))
+                                        Spacer(Modifier.size(cell, rowHeight))
                                     } else {
                                         val description = "${date.format(dateFormatter)}, ${values[date]?.compactDuration() ?: "no data"}"
                                         Box(
-                                            Modifier.size(cell)
+                                            Modifier.size(cell, rowHeight)
                                                 .clip(RoundedCornerShape(3.dp))
                                                 .background(colorFor(date))
                                                 .clickable { selectedDate = date }
@@ -175,22 +184,25 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                 }
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().height(28.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.Bottom,
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(top = StillSpacing.small),
+            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium, Alignment.End),
+            verticalArrangement = Arrangement.spacedBy(StillSpacing.small),
         ) {
-            Text("No data", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.width(5.dp))
-            Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(noData))
-            Spacer(Modifier.width(StillSpacing.medium))
-            Text("Less", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            levels.forEach { color ->
-                Spacer(Modifier.width(3.dp))
-                Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(color))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("No data", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(5.dp))
+                Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(noData))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Less", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                levels.forEach { color ->
+                    Spacer(Modifier.width(3.dp))
+                    Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(color))
             }
             Spacer(Modifier.width(5.dp))
             Text("More", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

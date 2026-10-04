@@ -22,8 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,14 +43,15 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import app.still.ui.components.AdaptiveValueRow
-import app.still.ui.components.AdaptivePair
-import app.still.ui.components.StillBottomSheet
-import app.still.domain.model.AppDetail
 import app.still.data.settings.AppCategory
+import app.still.domain.model.AppDetail
+import app.still.ui.components.AdaptivePair
+import app.still.ui.components.AdaptiveValueRow
 import app.still.ui.components.AppIcon
+import app.still.ui.components.StillBottomSheet
 import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
+import app.still.ui.components.chartLabelWidth
 import app.still.ui.components.clockTime
 import app.still.ui.components.compactDuration
 import app.still.ui.components.signedCompactDuration
@@ -234,12 +235,13 @@ private fun SevenDayChart(detail: AppDetail, onDateSelected: (LocalDate) -> Unit
     val unavailable = MaterialTheme.colorScheme.surfaceContainerHighest
     val max = detail.dailyUsage.mapNotNull { it.duration?.toMillis() }.maxOrNull()?.coerceAtLeast(Duration.ofMinutes(1).toMillis()) ?: 1L
     val scaleValues = listOf(max, max / 2, 0L)
+    val axisWidth = chartLabelWidth(scaleValues.map(::axisDuration))
     Column(Modifier.fillMaxWidth()) {
         Text("Usage history", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(StillSpacing.small))
         Row(Modifier.fillMaxWidth().height(116.dp)) {
             Column(
-                Modifier.width(48.dp).fillMaxSize().padding(end = 8.dp),
+                Modifier.width(axisWidth).fillMaxSize().padding(end = 8.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.End,
             ) {
@@ -294,7 +296,7 @@ private fun SevenDayChart(detail: AppDetail, onDateSelected: (LocalDate) -> Unit
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = StillSpacing.xSmall)) {
-            Spacer(Modifier.width(48.dp))
+            Spacer(Modifier.width(axisWidth))
             detail.dailyUsage.forEach { day ->
                 Text(
                     "${day.date.dayOfWeek.getDisplayName(TextStyle.NARROW, locale)}\n${day.date.dayOfMonth}",

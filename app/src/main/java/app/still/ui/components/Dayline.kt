@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -26,14 +28,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.still.domain.model.DaylineKind
@@ -46,6 +50,7 @@ import java.time.format.DateTimeFormatter
 
 private val DaylineTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Dayline(
     start: Instant,
@@ -65,6 +70,11 @@ fun Dayline(
     val nowProgress = (Duration.between(start, end).toMillis() / fullDayMillis).coerceIn(0f, 1f)
     val nowLabel = "Now ${DaylineTimeFormatter.format(end.atZone(ZoneId.systemDefault()))}"
 
+    val density = LocalDensity.current
+    val markerSize = rememberTextMeasurer().measure(nowLabel,
+        MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), softWrap = false).size
+    val markerWidth = with(density) { markerSize.width.toDp() }
+    val bandOffset = with(density) { markerSize.height.toDp() + 6.dp }.coerceAtLeast(26.dp)
     Column(
         modifier
             .clickable(onClick = onClick)
@@ -73,9 +83,9 @@ fun Dayline(
                 role = Role.Button
             },
     ) {
-        BoxWithConstraints(Modifier.fillMaxWidth().height(82.dp)) {
+        BoxWithConstraints(Modifier.fillMaxWidth().height(bandOffset + 56.dp)) {
             Canvas(Modifier.fillMaxSize()) {
-                val bandTop = 26.dp.toPx()
+                val bandTop = bandOffset.toPx()
                 val bandHeight = 42.dp.toPx()
                 val nowX = size.width * nowProgress
                 val outline = Path().apply {
@@ -104,10 +114,10 @@ fun Dayline(
                         drawLine(guide, Offset(x, bandTop), Offset(x, bandTop + bandHeight), 1.dp.toPx())
                     }
                 }
-                drawLine(now, Offset(nowX, 18.dp.toPx()), Offset(nowX, 75.dp.toPx()), 2.dp.toPx(), StrokeCap.Round)
+                drawLine(now, Offset(nowX, bandTop - 8.dp.toPx()), Offset(nowX, bandTop + 49.dp.toPx()), 2.dp.toPx(), StrokeCap.Round)
                 drawCircle(now, radius = 3.dp.toPx(), center = Offset(nowX, bandTop + bandHeight / 2))
             }
-            val markerLabelWidth = 72.dp
+            val markerLabelWidth = markerWidth.coerceAtMost(maxWidth)
             val markerOffset = (maxWidth * nowProgress - markerLabelWidth / 2).coerceIn(0.dp, maxWidth - markerLabelWidth)
             Text(
                 nowLabel,
@@ -116,30 +126,15 @@ fun Dayline(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
+                maxLines = 1,
             )
         }
-        BoxWithConstraints(Modifier.fillMaxWidth().height(18.dp)) {
-            val labelWidth = 40.dp
-            listOf("00:00", "06:00", "12:00", "18:00", "24:00").forEachIndexed { index, label ->
-                val progress = index / 4f
-                val labelOffset = (maxWidth * progress - labelWidth / 2).coerceIn(0.dp, maxWidth - labelWidth)
-                Text(
-                    label,
-                    modifier = Modifier.offset(x = labelOffset).width(labelWidth),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = when (index) {
-                        0 -> TextAlign.Start
-                        4 -> TextAlign.End
-                        else -> TextAlign.Center
-                    },
-                )
-            }
-        }
-        Row(
-            Modifier.padding(top = StillSpacing.small),
+        ChartTickLabels(listOf("00:00", "06:00", "12:00", "18:00", "24:00")
+            .mapIndexed { index, label -> index / 4f to label })
+        FlowRow(
+            Modifier.fillMaxWidth().padding(top = StillSpacing.small),
             horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(StillSpacing.small),
         ) {
             DaylineLegendItem("Screen use", active)
             DaylineLegendItem("Not in use", inactive)

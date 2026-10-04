@@ -1,10 +1,5 @@
 package app.still.ui.settings
 
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.BoxWithConstraints
 import android.graphics.Color as AndroidColor
 import android.text.format.Formatter
 import androidx.annotation.DrawableRes
@@ -13,7 +8,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -25,11 +19,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,27 +34,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -68,47 +62,48 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
-import app.still.ui.components.AdaptiveValueRow
+import androidx.compose.ui.unit.sp
 import app.still.BuildConfig
 import app.still.R
-import app.still.data.settings.ThemePreference
 import app.still.data.settings.DaylineWidgetLabel
-import app.still.data.usage.StoredDataSummary
-import app.still.data.usage.ArchiveMigrationNotice
-import app.still.data.usage.ArchiveStorageFormat
-import app.still.domain.model.DailyUsage
-import app.still.domain.model.DaylineKind
+import app.still.data.settings.ThemePreference
 import app.still.data.settings.UserSettings
+import app.still.data.settings.WIDGET_PILL_RADIUS
 import app.still.data.settings.WidgetAppearance
 import app.still.data.settings.WidgetFontSize
 import app.still.data.settings.WidgetFontStyle
 import app.still.data.settings.WidgetLabel
-import app.still.data.settings.WIDGET_PILL_RADIUS
 import app.still.data.settings.parseWidgetColor
-import app.still.widget.WidgetPalette
-import app.still.ui.components.ActionDrawer
-import app.still.ui.components.compactDuration
-import app.still.ui.components.TonalPanel
-import app.still.ui.components.StillWordmark
-import app.still.ui.theme.StillSpacing
-import app.still.ui.components.StillIcons
-import app.still.update.UpdateState
+import app.still.data.usage.ArchiveMigrationNotice
+import app.still.data.usage.ArchiveStorageFormat
+import app.still.data.usage.StoredDataSummary
+import app.still.domain.model.DailyUsage
+import app.still.domain.model.DaylineKind
+import app.still.ui.ArchiveBackupDeleteState
 import app.still.ui.ArchiveRestoreState
 import app.still.ui.ArchiveUpgradeState
-import app.still.ui.ArchiveBackupDeleteState
+import app.still.ui.components.ActionDrawer
+import app.still.ui.components.AdaptiveChoiceRow
+import app.still.ui.components.AdaptiveValueRow
+import app.still.ui.components.StillIcons
+import app.still.ui.components.StillWordmark
+import app.still.ui.components.TonalPanel
+import app.still.ui.components.compactDuration
+import app.still.ui.theme.StillSpacing
+import app.still.update.UpdateState
+import app.still.widget.WidgetPalette
+import java.text.NumberFormat
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -667,21 +662,12 @@ fun StoredDataScreen(
 
 @Composable
 private fun StoredDataFact(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = StillSpacing.large, vertical = StillSpacing.medium),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Text(value, style = MaterialTheme.typography.titleMedium)
-    }
+    AdaptiveValueRow(
+        modifier = Modifier.padding(horizontal = StillSpacing.large, vertical = StillSpacing.medium),
+        minLeadingWidth = 96.dp,
+        leading = { Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        trailing = { Text(value, style = MaterialTheme.typography.titleMedium) },
+    )
 }
 
 @Composable
@@ -1166,36 +1152,11 @@ private data class DirectChoiceOption(
 private fun DirectChoice(title: String, options: List<DirectChoiceOption>) {
     Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
         Text(title, style = MaterialTheme.typography.titleMedium)
-        val density = LocalDensity.current
-        val textMeasurer = rememberTextMeasurer()
-        val labelStyle = MaterialTheme.typography.labelLarge
-        val itemWidth = with(density) {
-            options.maxOf { textMeasurer.measure(it.label, labelStyle).size.width }.toDp() + 32.dp
-        }.coerceAtLeast(56.dp)
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val rowWidth = maxOf(maxWidth, itemWidth * options.size)
-            Box(Modifier.horizontalScroll(rememberScrollState())) {
-                SingleChoiceSegmentedButtonRow(Modifier.width(rowWidth)) {
-                    options.forEachIndexed { index, option ->
-                        SegmentedButton(
-                            selected = option.selected,
-                            onClick = option.onClick,
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                            colors = SegmentedButtonDefaults.colors(
-                                activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                activeBorderColor = MaterialTheme.colorScheme.outline,
-                                inactiveContainerColor = Color.Transparent,
-                                inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                                inactiveBorderColor = MaterialTheme.colorScheme.outline,
-                            ),
-                            icon = {},
-                            label = { Text(option.label, maxLines = 1) },
-                        )
-                    }
-                }
-            }
-        }
+        AdaptiveChoiceRow(
+            labels = options.map { it.label },
+            selectedIndex = options.indexOfFirst { it.selected },
+            onSelect = { options[it].onClick() },
+        )
     }
 }
 
@@ -1313,7 +1274,7 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
         showRefresh = settings.widgetShowRefresh,
         description = description,
     ) {
-        Box(Modifier.fillMaxWidth().height(36.dp), contentAlignment = Alignment.CenterStart) {
+        Box(Modifier.fillMaxWidth().heightIn(min = 36.dp), contentAlignment = Alignment.CenterStart) {
             Text(
                 text = duration.compactDuration(),
                 color = primary,
@@ -1399,7 +1360,7 @@ private fun WidgetPreviewLayout(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(104.dp)
+            .heightIn(min = 104.dp)
             .clip(
                 if (cornerRadiusDp == WIDGET_PILL_RADIUS) RoundedCornerShape(percent = 50)
                 else RoundedCornerShape(cornerRadiusDp.dp),
@@ -1417,7 +1378,8 @@ private fun WidgetPreviewLayout(
             )
         }
         Row(
-            modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp),
+            modifier = Modifier.align(Alignment.CenterStart).fillMaxWidth()
+                .padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {

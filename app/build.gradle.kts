@@ -23,8 +23,8 @@ android {
         applicationId = "app.still"
         minSdk = 28
         targetSdk = 37
-        versionCode = 14
-        versionName = "1.5.4"
+        versionCode = 15
+        versionName = "1.6.0-beta1"
         testInstrumentationRunner = providers.gradleProperty("stillTestRunner")
             .getOrElse("androidx.test.runner.AndroidJUnitRunner")
         buildConfigField("boolean", "HALLOWEEN_PREVIEW", "false")
