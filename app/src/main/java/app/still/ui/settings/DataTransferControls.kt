@@ -38,6 +38,9 @@ internal fun DataTransferControls(
     onExportDestination: (Uri?) -> Unit,
     onImport: (Uri, CharArray) -> Unit,
     onDismissResult: () -> Unit,
+    onSelectImport: (Uri) -> Unit,
+    rollbackUntilMillis: Long?,
+    onRollback: () -> Unit,
 ) {
     var dialog by rememberSaveable { mutableStateOf<String?>(null) }
     var importUri by rememberSaveable { mutableStateOf<String?>(null) }
@@ -48,18 +51,42 @@ internal fun DataTransferControls(
     var mismatch by remember(dialog) { mutableStateOf(false) }
     var reveal by remember(dialog) { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
-    val exportPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream"), onExportDestination)
+    val exportPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(app.still.data.usage.EncryptedDataExport.MIME_TYPE), onExportDestination)
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) { importUri = uri.toString(); dialog = "import" }
+        if (uri != null) onSelectImport(uri)
+    }
+    LaunchedEffect(state) {
+        if (state is DataTransferState.ImportReady) {
+            importUri = state.uri.toString()
+            dialog = "import"
+            onDismissResult()
+        }
     }
     val busy = state is DataTransferState.Working || state == DataTransferState.ChoosingDestination
     SettingRow("Export data", if (state is DataTransferState.Working && !state.importing) "Encrypting your history…" else "Save an encrypted copy of your history",
         enabled = !busy, onClick = { dialog = "export" })
     Hairline()
     SettingRow("Import data", if (state is DataTransferState.Working && state.importing) "Restoring your history…" else "Restore from a Still export",
-        enabled = !busy, onClick = { importPicker.launch(arrayOf("*/*")) })
+        enabled = !busy, onClick = { importPicker.launch(app.still.data.usage.EncryptedDataExport.IMPORT_MIME_TYPES) })
+    if (rollbackUntilMillis != null) {
+        Hairline()
+        val expiry = java.time.Instant.ofEpochMilli(rollbackUntilMillis).atZone(java.time.ZoneId.systemDefault())
+            .format(java.time.format.DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT))
+        SettingRow("Restore previous database", "Undo the latest import • Available until $expiry",
+            enabled = !busy, onClick = { dialog = "rollback" })
+    }
     fun close() { pin = ""; firstPin = ""; dialog = null; importUri = null }
-    if (dialog != null) {
+    if (dialog == "rollback") {
+        StillBottomSheet(onDismissRequest = ::close, expandToFitContent = false, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.large)
+                .padding(bottom = StillSpacing.large), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
+                TransferHeading(StillIcons.History, "Restore previous database?",
+                    "Restore your history and safety backup from before the latest import. This replaces your current history, including anything saved since importing. App settings stay the same.")
+                Button(onClick = { close(); onRollback() }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Restore previous database") }
+                TextButton(onClick = ::close, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Cancel") }
+            }
+        }
+    } else if (dialog != null) {
         val exporting = dialog == "export"
         fun submit() {
             if (pin.length != 6) return
@@ -89,7 +116,7 @@ internal fun DataTransferControls(
                 if (!exporting) TonalPanel(color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("This replaces your saved history", style = MaterialTheme.typography.titleSmall)
-                        Text("Your current history and safety backup will be replaced. App settings stay the same.",
+                        Text("Your current history and safety backup will be replaced. You can restore the previous database for seven days from Settings › Data. A new import replaces that rollback copy. App settings stay the same.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -136,8 +163,8 @@ internal fun DataTransferControls(
         var dismissed by remember(state) { mutableStateOf(false) }
         if (!dismissed) StillBottomSheet(onDismissRequest = { dismissed = true }, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState(), overscrollEffect = null).padding(horizontal = StillSpacing.large).padding(bottom = StillSpacing.xLarge), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
-                TransferHeading(StillIcons.Storage, if (state.importing) "Restoring your history" else "Encrypting your history",
-                    if (state.importing) "Checking your file before replacing any saved data." else "Preparing the complete database and safety backup.")
+                TransferHeading(StillIcons.Storage, if (state.rollingBack) "Restoring previous database" else if (state.importing) "Restoring your history" else "Encrypting your history",
+                    if (state.rollingBack) "Restoring the local copy saved before your import." else if (state.importing) "Checking your file before replacing any saved data." else "Preparing the complete database and safety backup.")
                 LinearProgressIndicator(Modifier.fillMaxWidth())
             }
         }
@@ -153,7 +180,8 @@ internal fun DataTransferControls(
                     Button(onClick = {
                         onDismissResult()
                         if (failed) {
-                            if (state.title.startsWith("Import")) importPicker.launch(arrayOf("*/*")) else dialog = "export"
+                            if (state.title.startsWith("Import")) importPicker.launch(app.still.data.usage.EncryptedDataExport.IMPORT_MIME_TYPES)
+                            else if (state.title.startsWith("Rollback")) onRollback() else dialog = "export"
                         }
                     }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if (failed) "Try again" else "Done") }
                     if (failed) TextButton(onClick = onDismissResult, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Close") }

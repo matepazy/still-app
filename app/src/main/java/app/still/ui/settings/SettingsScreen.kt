@@ -153,6 +153,8 @@ fun SettingsScreen(
     onExportDestination: (android.net.Uri?) -> Unit = {},
     onImportData: (android.net.Uri, CharArray) -> Unit = { _, _ -> },
     onDismissDataTransfer: () -> Unit = {},
+    onSelectDataImport: (android.net.Uri) -> Unit = {},
+    onRollbackDataImport: () -> Unit = {},
 ) {
     var updateChannelDialog by remember { mutableStateOf(false) }
     var stopSavingDialog by remember { mutableStateOf(false) }
@@ -204,7 +206,8 @@ fun SettingsScreen(
                     onClick = onStoredDataClick,
                 )
                 Hairline()
-                DataTransferControls(dataTransferState, onPrepareExport, onExportDestination, onImportData, onDismissDataTransfer)
+                DataTransferControls(dataTransferState, onPrepareExport, onExportDestination, onImportData, onDismissDataTransfer,
+                    onSelectDataImport, storedDataSummary?.importRollbackUntilMillis, onRollbackDataImport)
                 if (storedDataSummary?.storageFormat == ArchiveStorageFormat.Legacy) {
                     Hairline()
                     SettingRow(

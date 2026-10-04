@@ -42,4 +42,15 @@ class EncryptedDataExportTest {
             assertThrows(IllegalArgumentException::class.java) { export(pin) }
         }
     }
+
+    @Test fun selectionRequiresStillExtensionAndHeader() {
+        val valid = export()
+        EncryptedDataExport.validateFile("history.stilldb", ByteArrayInputStream(valid))
+        EncryptedDataExport.validateFile("history.STILLDB", ByteArrayInputStream(valid))
+        listOf(null, "history.db", "history.stilldb.txt").forEach { name ->
+            assertThrows(Exception::class.java) { EncryptedDataExport.validateFile(name, ByteArrayInputStream(valid)) }
+        }
+        assertThrows(Exception::class.java) { EncryptedDataExport.validateFile("fake.stilldb", ByteArrayInputStream(original)) }
+        assertThrows(Exception::class.java) { EncryptedDataExport.validateFile("short.stilldb", ByteArrayInputStream(valid.copyOf(40))) }
+    }
 }

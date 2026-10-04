@@ -69,8 +69,8 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
                 val content = if (!container.permissionManager.hasUsageAccess()) {
                     WidgetContent.PermissionRequired
                 } else {
-                    container.usageRepository.dashboard(settings.saveUsageHistory).fold(
-                        onSuccess = { WidgetContent.Ready(it.today.total) },
+                    container.usageRepository.todayUsage().fold(
+                        onSuccess = { WidgetContent.Ready(it.total) },
                         onFailure = { WidgetContent.Unavailable },
                     )
                 }

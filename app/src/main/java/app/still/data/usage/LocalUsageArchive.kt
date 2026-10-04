@@ -14,6 +14,8 @@ import java.io.File
 import java.time.Duration
 import java.time.LocalDate
 
+data class ArchivedUsageDay(val day: DailyUsage, val events: List<UsageEventRecord>?)
+
 enum class ArchiveStorageFormat { Compact, Legacy }
 
 data class StoredDataSummary(
@@ -26,6 +28,7 @@ data class StoredDataSummary(
     val backupSizeBytes: Long,
     val backupAvailable: Boolean,
     val storageFormat: ArchiveStorageFormat,
+    val importRollbackUntilMillis: Long? = null,
 )
 
 data class ArchiveMigrationNotice(
@@ -118,6 +121,7 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         }
         if (backup.exists()) backup.delete()
         backupName = LEGACY_BACKUP_NAME
+        appContext.noBackupFilesDir.listFiles()?.filter { it.name.startsWith("import-rollback-") }?.forEach { it.delete() }
     }
 
     /** A read transaction includes committed WAL contents without copying a live database file. */
@@ -136,9 +140,22 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
     }
 
     /** Authentication is completed by the caller before this transaction starts. */
-    fun importSnapshot(source: File) {
+    fun importSnapshot(source: File, keepRollback: Boolean = true) {
         val db = writableDatabase
-        val incomingBackup = File.createTempFile("import-backup-", ".tmp", appContext.noBackupFilesDir)
+        val previousRollback = rollbackFile()
+        val rollback = if (keepRollback) File.createTempFile("import-rollback-", ".tmp", appContext.noBackupFilesDir) else null
+        try {
+            if (rollback != null) exportSnapshot(rollback)
+        } catch (failure: Exception) {
+            rollback?.delete()
+            throw failure
+        }
+        val incomingBackup = try {
+            File.createTempFile("import-backup-", ".tmp", appContext.noBackupFilesDir)
+        } catch (failure: Exception) {
+            rollback?.delete()
+            throw failure
+        }
         val previousBackup = legacyBackupFile
         var committed = false
         try {
@@ -176,17 +193,47 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
                     // Publish the new backup reference in the same SQLite commit as its history.
                     // A crash before commit leaves the previous backup available.
                     putMetadata("imported_backup_file", incomingBackup.name)
+                    // Device-local recovery references from an export must never be trusted.
+                    db.delete("metadata", "key IN (?, ?)", arrayOf("import_rollback_file", "import_rollback_until"))
+                    if (rollback != null) {
+                        putMetadata("import_rollback_file", rollback.name)
+                        putMetadata("import_rollback_until", (System.currentTimeMillis() + Duration.ofDays(7).toMillis()).toString())
+                    }
                     db.setTransactionSuccessful()
                 } finally { db.endTransaction() }
                 committed = true
                 backupName = incomingBackup.name
             }
         } finally {
-            if (committed) previousBackup.delete() else incomingBackup.delete()
+            if (committed) {
+                previousBackup.delete()
+                previousRollback?.delete()
+            } else {
+                incomingBackup.delete()
+                rollback?.delete()
+            }
         }
     }
 
+    private fun rollbackFile(): File? = metadata("import_rollback_file")
+        ?.takeIf { it.matches(Regex("import-rollback-[a-zA-Z0-9-]+\\.tmp")) }
+        ?.let { File(appContext.noBackupFilesDir, it) }
+
+    fun importRollbackUntilMillis(nowMillis: Long = System.currentTimeMillis()): Long? {
+        val until = metadata("import_rollback_until")?.toLongOrNull()
+        if (until != null && nowMillis < until && rollbackFile()?.isFile == true) return until
+        rollbackFile()?.delete()
+        writableDatabase.delete("metadata", "key IN (?, ?)", arrayOf("import_rollback_file", "import_rollback_until"))
+        return null
+    }
+
+    fun rollbackImport() {
+        require(importRollbackUntilMillis() != null) { "The seven-day rollback period has ended" }
+        importSnapshot(requireNotNull(rollbackFile()), keepRollback = false)
+    }
+
     fun storedDataSummary(): StoredDataSummary {
+        val rollbackUntil = importRollbackUntilMillis()
         val db = readableDatabase
         val compact = isCompact(db)
         val history = db.rawQuery(
@@ -212,9 +259,10 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
             oldestDate = history.oldestDate,
             newestDate = history.newestDate,
             lastUpdatedMillis = history.lastUpdatedMillis,
-            sizeBytes = databaseSizeBytes() + backupSize,
+            sizeBytes = databaseSizeBytes() + backupSize + (rollbackFile()?.takeIf(File::isFile)?.length() ?: 0L),
             backupSizeBytes = backupSize,
             backupAvailable = backupSize > 0L,
+            importRollbackUntilMillis = rollbackUntil,
             storageFormat = if (compact) ArchiveStorageFormat.Compact else ArchiveStorageFormat.Legacy,
         )
     }
@@ -313,6 +361,65 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
     }
 
     fun day(date: LocalDate): DailyUsage? = if (isCompact(readableDatabase)) compactDay(date) else legacyDay(date)
+
+    /** Read day rows and app rows in batches, without repeating queries for each date. */
+    fun snapshots(dates: Collection<LocalDate>): Map<LocalDate, ArchivedUsageDay> {
+        if (dates.isEmpty()) return emptyMap()
+        val db = readableDatabase
+        val compact = isCompact(db)
+        val zone = java.time.ZoneId.systemDefault()
+        return buildMap {
+            // Stay below SQLite's bind-parameter limit, including on older Android versions.
+            dates.distinct().chunked(400).forEach { batch ->
+                val args = batch.map { it.toEpochDay().toString() }.toTypedArray()
+                val placeholders = batch.joinToString(",") { "?" }
+                val appsByDay = mutableMapOf<Long, MutableList<AppUsage>>()
+                val appSql = if (compact) {
+                    """SELECT app_days.day, apps.package_name, apps.label,
+                       app_days.duration_seconds * 1000, app_days.opens
+                       FROM app_days JOIN apps ON apps.id = app_days.app_id
+                       WHERE app_days.day IN ($placeholders)
+                       ORDER BY app_days.day, app_days.duration_seconds DESC"""
+                } else {
+                    """SELECT day, package_name, label, duration_ms, opens FROM app_days
+                       WHERE day IN ($placeholders) ORDER BY day, duration_ms DESC"""
+                }
+                db.rawQuery(appSql, args).use { cursor ->
+                    while (cursor.moveToNext()) {
+                        appsByDay.getOrPut(cursor.getLong(0)) { mutableListOf() }.add(
+                            AppUsage(AppInfo(cursor.getString(1), cursor.getString(2)),
+                                Duration.ofMillis(cursor.getLong(3)),
+                                if (cursor.isNull(4)) 0 else cursor.getInt(4)),
+                        )
+                    }
+                }
+                val columns = if (compact) arrayOf("day", "range_end_ms", "detailed", "events") else
+                    arrayOf("day", "range_end_ms", "detailed", "events", "total_ms", "unlocks",
+                        "wakeups", "longest_break_ms", "session_count", "quick_check_count")
+                db.query("days", columns, "day IN ($placeholders)", args, null, null, "day DESC").use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val date = LocalDate.ofEpochDay(cursor.getLong(0))
+                        val apps = appsByDay[cursor.getLong(0)].orEmpty()
+                        fun count(index: Int) = if (compact || cursor.isNull(index)) 0 else cursor.getInt(index)
+                        val day = DailyUsage(
+                            date = date,
+                            rangeStart = date.atStartOfDay(zone).toInstant(),
+                            rangeEnd = java.time.Instant.ofEpochMilli(cursor.getLong(1)),
+                            total = if (compact) apps.fold(Duration.ZERO) { total, app -> total.plus(app.duration) }
+                                else Duration.ofMillis(cursor.getLong(4)),
+                            apps = apps, sessions = emptyList(),
+                            checkInCount = count(8), quickCheckCount = count(9),
+                            unlocks = count(5), wakeups = count(6),
+                            longestBreak = if (compact || cursor.isNull(7)) null else Duration.ofMillis(cursor.getLong(7)),
+                            dayline = emptyList(), detailsAvailable = cursor.getInt(2) == 1,
+                        )
+                        put(date, ArchivedUsageDay(day,
+                            if (!day.detailsAvailable || cursor.isNull(3)) null else UsageEventCodec.decode(cursor.getBlob(3))))
+                    }
+                }
+            }
+        }
+    }
 
     fun saveAggregate(date: LocalDate, rangeEndMillis: Long, apps: List<AppUsage>) {
         if (isCompact(writableDatabase)) saveCompactAggregate(date, rangeEndMillis, apps)
@@ -468,25 +575,34 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    fun pruneUnusedApps() {
+        val db = writableDatabase
+        if (isCompact(db)) db.execSQL(
+            "DELETE FROM apps WHERE NOT EXISTS (SELECT 1 FROM app_days WHERE app_days.app_id = apps.id)",
+        )
+    }
+
     private fun replaceCompactApps(db: SQLiteDatabase, day: Long, apps: List<AppUsage>, includeOpens: Boolean) {
         db.delete("app_days", "day = ?", arrayOf(day.toString()))
         val durations = quantizeDurations(apps.map { it.duration.toMillis() })
+        val appIds = mutableMapOf<String, Long>()
+        apps.map { it.app.packageName }.distinct().chunked(400).forEach { packages ->
+            db.query("apps", arrayOf("id", "package_name"),
+                "package_name IN (${packages.joinToString(",") { "?" }})",
+                packages.toTypedArray(), null, null, null).use { cursor ->
+                while (cursor.moveToNext()) appIds[cursor.getString(1)] = cursor.getLong(0)
+            }
+        }
         apps.forEachIndexed { index, usage ->
-            db.insertWithOnConflict(
+            val packageName = usage.app.packageName
+            val appId = appIds[packageName] ?: db.insertOrThrow(
                 "apps", null,
-                ContentValues().apply {
-                    put("package_name", usage.app.packageName)
-                    put("label", usage.app.label)
-                },
-                SQLiteDatabase.CONFLICT_IGNORE,
-            )
+                ContentValues().apply { put("package_name", packageName); put("label", usage.app.label) },
+            ).also { appIds[packageName] = it }
             db.update(
                 "apps", ContentValues().apply { put("label", usage.app.label) },
-                "package_name = ?", arrayOf(usage.app.packageName),
+                "id = ? AND label != ?", arrayOf(appId.toString(), usage.app.label),
             )
-            val appId = db.query(
-                "apps", arrayOf("id"), "package_name = ?", arrayOf(usage.app.packageName), null, null, null,
-            ).use { cursor -> check(cursor.moveToFirst()); cursor.getLong(0) }
             db.insertOrThrow(
                 "app_days", null,
                 ContentValues().apply {
@@ -497,7 +613,6 @@ class LocalUsageArchive(context: Context) : SQLiteOpenHelper(
                 },
             )
         }
-        db.execSQL("DELETE FROM apps WHERE id NOT IN (SELECT app_id FROM app_days)")
     }
 
     private fun saveLegacyAggregate(date: LocalDate, rangeEndMillis: Long, apps: List<AppUsage>) {

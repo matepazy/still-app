@@ -14,6 +14,15 @@ internal object EncryptedDataExport {
     private val magic = "STILLDB1".toByteArray(Charsets.US_ASCII)
     private const val ITERATIONS = 600_000
     const val MAX_BYTES = 512L * 1024 * 1024
+    const val MIME_TYPE = "application/x-still-database"
+    val IMPORT_MIME_TYPES = arrayOf(MIME_TYPE, "application/octet-stream")
+
+    fun validateFile(name: String?, input: InputStream) {
+        require(name?.endsWith(".stilldb", ignoreCase = true) == true) { "Select a .stilldb export created by Still" }
+        val header = ByteArray(magic.size + 16 + 12 + 16)
+        java.io.DataInputStream(input).readFully(header)
+        require(header.copyOfRange(0, magic.size).contentEquals(magic)) { "Not a supported Still export" }
+    }
 
     fun encrypt(input: InputStream, output: OutputStream, pin: CharArray) {
         val salt = ByteArray(16).also(SecureRandom()::nextBytes)

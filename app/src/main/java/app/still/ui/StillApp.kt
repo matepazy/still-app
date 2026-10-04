@@ -406,6 +406,12 @@ private fun MainNavigation(
         }
         composable(SettingsRoute) {
             LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
+            LaunchedEffect(storedDataSummary?.importRollbackUntilMillis) {
+                storedDataSummary?.importRollbackUntilMillis?.let { until ->
+                    kotlinx.coroutines.delay((until - System.currentTimeMillis()).coerceAtLeast(0L))
+                    viewModel.refreshStoredDataSummary()
+                }
+            }
             DestinationScaffold(
                 topBar = {
                     SettingsTopBar {
@@ -441,6 +447,8 @@ private fun MainNavigation(
                     onPrepareExport = viewModel::prepareDataExport,
                     onExportDestination = viewModel::exportData,
                     onImportData = viewModel::importData,
+                    onSelectDataImport = viewModel::selectDataImport,
+                    onRollbackDataImport = viewModel::rollbackDataImport,
                     onDismissDataTransfer = viewModel::dismissDataTransferResult,
                     modifier = Modifier.padding(padding),
                 )

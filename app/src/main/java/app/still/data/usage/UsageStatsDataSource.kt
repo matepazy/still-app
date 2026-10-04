@@ -13,10 +13,15 @@ data class SystemDailyAppUsage(
     val foregroundDurationMillis: Long,
 )
 
-class UsageStatsDataSource(context: Context) {
+interface UsageDataSource {
+    fun events(start: Instant, end: Instant): List<UsageEventRecord>
+    fun dailyAppUsage(start: Instant, end: Instant): List<SystemDailyAppUsage>
+}
+
+class UsageStatsDataSource(context: Context) : UsageDataSource {
     private val manager = context.getSystemService(UsageStatsManager::class.java)
 
-    fun events(start: Instant, end: Instant): List<UsageEventRecord> {
+    override fun events(start: Instant, end: Instant): List<UsageEventRecord> {
         val usageEvents = manager.queryEvents(start.toEpochMilli(), end.toEpochMilli())
         val event = UsageEvents.Event()
         return buildList {
@@ -39,7 +44,7 @@ class UsageStatsDataSource(context: Context) {
      * Reading daily buckets lets Still salvage the oldest history still present on
      * the device even when session-level events have already been pruned.
      */
-    fun dailyAppUsage(start: Instant, end: Instant): List<SystemDailyAppUsage> =
+    override fun dailyAppUsage(start: Instant, end: Instant): List<SystemDailyAppUsage> =
         manager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY,
             start.toEpochMilli(),

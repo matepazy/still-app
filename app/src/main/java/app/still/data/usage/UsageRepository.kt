@@ -22,6 +22,8 @@ import app.still.domain.model.StatisticsRange
 import app.still.data.settings.AppCategory
 import app.still.domain.statistics.StatisticsCalculator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -32,11 +34,16 @@ import java.time.ZoneId
 
 class UsageRepository(
     private val context: Context,
-    private val dataSource: UsageStatsDataSource,
+    private val dataSource: UsageDataSource,
     private val archive: LocalUsageArchive = LocalUsageArchive(context),
     private val clock: Clock = Clock.systemDefaultZone(),
 ) {
     private val syncMutex = Mutex()
+    // Accessed under syncMutex; only completed days are retained.
+    private val completedDays = mutableMapOf<LocalDate, DailyUsage>()
+    private val recentEvents = mutableMapOf<LocalDate, List<app.still.domain.model.UsageEventRecord>?>()
+    private var historyZone: ZoneId? = null
+    private var historyToday: LocalDate? = null
     private val packageManager = context.packageManager
     private val launcherApps = context.getSystemService(LauncherApps::class.java)
     private val metadata = mutableMapOf<String, AppInfo>()
@@ -54,48 +61,98 @@ class UsageRepository(
         }
     }
 
-    suspend fun dashboard(saveHistory: Boolean = true): Result<UsageDashboard> = withContext(Dispatchers.IO) {
+    /** Current usage does not wait for archive synchronization or historical queries. */
+    suspend fun todayUsage(): Result<DailyUsage> = withContext(Dispatchers.IO) {
+        runCatching { readToday(clock.instant(), ZoneId.systemDefault()) }
+    }
+
+    private fun readToday(now: java.time.Instant, zone: ZoneId): DailyUsage {
+        val today = now.atZone(zone).toLocalDate()
+        val start = today.atStartOfDay(zone).toInstant()
+        return buildDay(today, now, zone, dataSource.events(start.minus(Duration.ofHours(24)), now))
+    }
+
+    suspend fun dashboard(
+        saveHistory: Boolean = true,
+        onToday: suspend (DailyUsage) -> Unit = {},
+    ): Result<UsageDashboard> = withContext(Dispatchers.IO) {
         runCatching {
             val zone = ZoneId.systemDefault()
             val now = clock.instant()
-            val today = LocalDate.now(clock)
-            val localTime = now.atZone(zone).toLocalTime()
-            if (!saveHistory) {
-                val start = today.atStartOfDay(zone).toInstant()
-                val current = buildDay(today, now, zone, dataSource.events(start.minus(Duration.ofHours(24)), now))
-                return@runCatching UsageDashboard(
+            val today = now.atZone(zone).toLocalDate()
+            val current = readToday(now, zone)
+            currentCoroutineContext().ensureActive()
+            onToday(current)
+            if (!saveHistory) return@runCatching UsageDashboard(current, null, null, emptyList())
+            syncMutex.withLock {
+                // Take the sync cutoff after acquiring the lock so a queued refresh cannot
+                // overwrite newer archive data with an older snapshot.
+                synchronizeArchive(clock.instant(), zone)
+                currentCoroutineContext().ensureActive()
+                val history = loadHistory(today, zone)
+                val valid = (1L..BASELINE_DAYS.toLong()).mapNotNull { offset ->
+                    val date = today.minusDays(offset)
+                    val events = recentEvents[date] ?: return@mapNotNull null
+                    val cutoff = date.atTime(now.atZone(zone).toLocalTime()).atZone(zone).toInstant()
+                    buildDay(date, cutoff, zone, recentEvents[date.minusDays(1)].orEmpty() + events)
+                }
+                UsageDashboard(
                     today = current,
-                    comparison = null,
-                    mostChanged = null,
-                    history = emptyList(),
+                    comparison = BaselineCalculator.compare(current.total, valid.map { it.total }),
+                    mostChanged = BaselineCalculator.mostChanged(current.apps, valid.map { it.apps }),
+                    history = history,
                 )
             }
-            syncMutex.withLock { synchronizeArchive(now, zone) }
-            val current = loadDay(today, now, zone) ?: buildDay(today, now, zone, emptyList())
-            val history = archive.dates()
-                .asSequence()
-                .filter { it != today }
-                .mapNotNull { date -> loadDay(date, date.plusDays(1).atStartOfDay(zone).toInstant(), zone) }
-                .toList()
-            val sameTimeHistory = (1L..BASELINE_DAYS.toLong()).map { offset ->
-                val date = today.minusDays(offset)
-                val cutoff = date.atTime(localTime).atZone(zone).toInstant()
-                loadDetailedDay(date, cutoff, zone)
-            }
-            // A detailed archived day is valid even when usage was still zero at this time.
-            val valid = sameTimeHistory.filterNotNull()
-            UsageDashboard(
-                today = current,
-                comparison = BaselineCalculator.compare(current.total, valid.map { it.total }),
-                mostChanged = BaselineCalculator.mostChanged(current.apps, valid.map { it.apps }),
-                history = history,
-            )
         }
+    }
+
+    private fun loadHistory(today: LocalDate, zone: ZoneId): List<DailyUsage> {
+        if (historyZone != zone || historyToday != today) invalidateHistory()
+        historyZone = zone
+        historyToday = today
+        val dates = archive.dates().filter { it.isBefore(today) }
+        completedDays.keys.retainAll(dates.toSet())
+        val missing = dates.filter { it !in completedDays }
+        val baselineStart = today.minusDays(BASELINE_DAYS.toLong() + 1)
+        val eventDates = dates.filter { !it.isBefore(baselineStart) && it.isBefore(today) && it !in recentEvents }
+        val needed = (missing + missing.map { it.minusDays(1) } + eventDates).distinct()
+        val snapshots = archive.snapshots(needed)
+        snapshots.values.forEach { snapshot ->
+            snapshot.day.apps.forEach { usage ->
+                synchronized(metadata) { metadata.putIfAbsent(usage.app.packageName, usage.app) }
+            }
+        }
+        missing.forEach { date ->
+            val snapshot = snapshots[date] ?: return@forEach
+            completedDays[date] = snapshot.events?.let { events ->
+                buildDay(date, date.plusDays(1).atStartOfDay(zone).toInstant(), zone,
+                    snapshots[date.minusDays(1)]?.events.orEmpty() + events)
+            } ?: snapshot.day
+        }
+        snapshots.forEach { (date, snapshot) ->
+            if (!date.isBefore(baselineStart) && date.isBefore(today)) recentEvents[date] = snapshot.events
+        }
+        return dates.mapNotNull(completedDays::get)
+    }
+
+    private fun invalidateHistory() {
+        completedDays.clear()
+        recentEvents.clear()
+    }
+
+    private fun invalidateDay(date: LocalDate) {
+        completedDays.remove(date)
+        // A changed lookback can also affect the next day's midnight-spanning session.
+        completedDays.remove(date.plusDays(1))
+        recentEvents.remove(date)
     }
 
     suspend fun syncHistory(saveHistory: Boolean = true): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            if (saveHistory) syncMutex.withLock { synchronizeArchive(clock.instant(), ZoneId.systemDefault()) }
+            syncMutex.withLock {
+                archive.importRollbackUntilMillis()
+                if (saveHistory) synchronizeArchive(clock.instant(), ZoneId.systemDefault())
+            }
         }
     }
 
@@ -152,7 +209,7 @@ class UsageRepository(
     }
 
     suspend fun clearHistory(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching { syncMutex.withLock { archive.clearHistory() } }
+        runCatching { syncMutex.withLock { invalidateHistory(); archive.clearHistory() } }
     }
 
     suspend fun storedDataSummary(): StoredDataSummary = withContext(Dispatchers.IO) {
@@ -168,7 +225,7 @@ class UsageRepository(
     }
 
     suspend fun restoreLegacyBackup(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching { syncMutex.withLock { archive.restoreLegacyBackup() } }
+        runCatching { syncMutex.withLock { invalidateHistory(); archive.restoreLegacyBackup() } }
     }
 
     suspend fun exportDatabase(destination: java.io.File) = withContext(Dispatchers.IO) {
@@ -176,11 +233,15 @@ class UsageRepository(
     }
 
     suspend fun importDatabase(source: java.io.File) = withContext(Dispatchers.IO) {
-        syncMutex.withLock { archive.importSnapshot(source) }
+        syncMutex.withLock { invalidateHistory(); archive.importSnapshot(source) }
+    }
+
+    suspend fun rollbackDatabaseImport() = withContext(Dispatchers.IO) {
+        syncMutex.withLock { invalidateHistory(); archive.rollbackImport() }
     }
 
     suspend fun upgradeLegacyArchive(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching { syncMutex.withLock { archive.upgradeLegacyArchive() } }
+        runCatching { syncMutex.withLock { invalidateHistory(); archive.upgradeLegacyArchive() } }
     }
 
     suspend fun deleteLegacyBackup(): Result<Unit> = withContext(Dispatchers.IO) {
@@ -270,6 +331,7 @@ class UsageRepository(
             if (apps.isNotEmpty()) {
                 val end = minOf(date.plusDays(1).atStartOfDay(zone).toInstant(), now)
                 archive.saveAggregate(date, end.toEpochMilli(), apps)
+                invalidateDay(date)
             }
         }
 
@@ -282,20 +344,18 @@ class UsageRepository(
             .sorted()
         detailDates.forEach { date ->
             val end = minOf(date.plusDays(1).atStartOfDay(zone).toInstant(), now)
-            val relevantEvents = queriedEvents.filter {
-                !it.timestamp.isBefore(date.atStartOfDay(zone).toInstant().minus(Duration.ofHours(24))) &&
-                    !it.timestamp.isAfter(end)
-            }
+            // A 24-hour lookback can reach two calendar dates on a DST transition.
+            val relevantEvents = eventsByDate[date.minusDays(2)].orEmpty() +
+                eventsByDate[date.minusDays(1)].orEmpty() + eventsByDate[date].orEmpty()
             val day = buildDay(date, end, zone, relevantEvents)
             archive.saveDetailed(day, eventsByDate[date].orEmpty())
+            invalidateDay(date)
         }
 
+        archive.pruneUnusedApps()
         archive.putMetadata(INITIAL_IMPORT_KEY, "1")
         archive.putMetadata(LAST_SYNC_KEY, now.toEpochMilli().toString())
     }
-
-    private fun loadDay(date: LocalDate, end: java.time.Instant, zone: ZoneId): DailyUsage? =
-        loadDetailedDay(date, end, zone) ?: archive.day(date)
 
     private fun loadDetailedDay(date: LocalDate, end: java.time.Instant, zone: ZoneId): DailyUsage? {
         val events = archive.eventRecords(date) ?: return null

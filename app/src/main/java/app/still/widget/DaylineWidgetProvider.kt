@@ -77,8 +77,8 @@ class DaylineWidgetProvider : AppWidgetProvider() {
                 val content = if (!container.permissionManager.hasUsageAccess()) {
                     DaylineWidgetContent.PermissionRequired
                 } else {
-                    container.usageRepository.dashboard(settings.saveUsageHistory).fold(
-                        onSuccess = { DaylineWidgetContent.Ready(it.today) },
+                    container.usageRepository.todayUsage().fold(
+                        onSuccess = { DaylineWidgetContent.Ready(it) },
                         onFailure = { DaylineWidgetContent.Unavailable },
                     )
                 }

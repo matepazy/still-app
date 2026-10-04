@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.ZonedDateTime
@@ -57,7 +58,8 @@ sealed interface ArchiveRestoreState {
 sealed interface DataTransferState {
     data object Idle : DataTransferState
     data object ChoosingDestination : DataTransferState
-    data class Working(val importing: Boolean) : DataTransferState
+    data class Working(val importing: Boolean, val rollingBack: Boolean = false) : DataTransferState
+    data class ImportReady(val uri: android.net.Uri) : DataTransferState
     data class Finished(val title: String, val message: String) : DataTransferState
 }
 
@@ -104,6 +106,42 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
 
     fun importData(uri: android.net.Uri, pin: CharArray) = transferData(uri, pin, importing = true)
 
+    private fun validateImportFile(uri: android.net.Uri) {
+        val resolver = container.applicationContext.contentResolver
+        val name = resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { if (it.moveToFirst()) it.getString(0) else null }
+        checkNotNull(resolver.openInputStream(uri)).use { app.still.data.usage.EncryptedDataExport.validateFile(name, it) }
+    }
+
+    fun selectDataImport(uri: android.net.Uri) {
+        if (_dataTransferState.value is DataTransferState.Working) return
+        _dataTransferState.value = DataTransferState.Working(importing = true)
+        viewModelScope.launch {
+            val valid = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { validateImportFile(uri) }.isSuccess
+            }
+            _dataTransferState.value = if (valid) DataTransferState.ImportReady(uri) else
+                DataTransferState.Finished("Import failed", "Choose a .stilldb database export created by Still. Your existing history was kept.")
+        }
+    }
+
+    fun rollbackDataImport() {
+        if (_dataTransferState.value is DataTransferState.Working) return
+        _dataTransferState.value = DataTransferState.Working(importing = true, rollingBack = true)
+        viewModelScope.launch {
+            val result = runCatching { container.usageRepository.rollbackDatabaseImport() }
+            _dataTransferState.value = result.fold(
+                onSuccess = { DataTransferState.Finished("Previous database restored", "Your history and safety backup from before the latest import have been restored.") },
+                onFailure = { DataTransferState.Finished("Rollback failed", "The previous database could not be restored or the seven-day period has ended. Your current history was kept.") },
+            )
+            refreshStoredDataSummary()
+            if (result.isSuccess) {
+                refresh()
+                WidgetUpdateDispatcher.updateAll(container.applicationContext)
+            }
+        }
+    }
+
     private fun transferData(uri: android.net.Uri, pin: CharArray, importing: Boolean) {
         if (_dataTransferState.value is DataTransferState.Working) { pin.fill('\u0000'); return }
         _dataTransferState.value = DataTransferState.Working(importing)
@@ -115,6 +153,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 try {
                     snapshot = File.createTempFile("data-transfer-", ".tmp", context.noBackupFilesDir)
                     if (importing) {
+                        validateImportFile(uri)
                         val input = checkNotNull(context.contentResolver.openInputStream(uri)) { "Cannot open this file" }
                         input.use { source -> snapshot.outputStream().buffered().use { output ->
                             app.still.data.usage.EncryptedDataExport.decrypt(source, output, pin)
@@ -144,7 +183,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             }
             _dataTransferState.value = result.fold(
                 onSuccess = { DataTransferState.Finished(if (importing) "Data imported" else "Data exported",
-                    if (importing) "Your saved usage history has been replaced. Your app settings are unchanged."
+                    if (importing) "Your saved usage history has been replaced. You can restore the previous database for seven days from Settings › Data. Your app settings are unchanged."
                     else "Your full usage database and safety backup were saved in an encrypted file. Keep your PIN to import it.") },
                 onFailure = { DataTransferState.Finished(if (importing) "Import failed" else "Export failed",
                     if (importing) "The PIN may be incorrect, or the file is damaged or unsupported. Your existing history was kept."
@@ -223,18 +262,31 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         else refresh()
     }
 
+    private var refreshJob: kotlinx.coroutines.Job? = null
+
     fun refresh() {
+        refreshJob?.cancel()
         if (!container.permissionManager.hasUsageAccess()) {
             usageState.value = UsageUiState.PermissionRequired
             return
         }
-        viewModelScope.launch {
+        refreshJob = viewModelScope.launch {
             // Keep the navigation tree (and an active scanner) alive during a resume refresh.
             if (usageState.value !is UsageUiState.Ready) usageState.value = UsageUiState.Loading
             val saveHistory = container.settingsRepository.settings.first().saveUsageHistory
-            usageState.value = container.usageRepository.dashboard(saveHistory).fold(
+            val result = container.usageRepository.dashboard(saveHistory) { current ->
+                val previous = (usageState.value as? UsageUiState.Ready)?.dashboard
+                usageState.value = UsageUiState.Ready(
+                    if (saveHistory && previous?.today?.date == current.date) previous.copy(today = current)
+                    else UsageDashboard(current, null, null, emptyList()),
+                )
+            }
+            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+            usageState.value = result.fold(
                 onSuccess = UsageUiState::Ready,
-                onFailure = { UsageUiState.Error(it.message ?: "Usage information is unavailable right now.") },
+                // Keep the freshly loaded current usage if only the history refresh failed.
+                onFailure = { usageState.value.takeIf { it is UsageUiState.Ready }
+                    ?: UsageUiState.Error(it.message ?: "Usage information is unavailable right now.") },
             )
             _archiveMigrationNotice.value = container.usageRepository.migrationNotice()
         }
