@@ -28,6 +28,7 @@ data class GitHubRelease(
     val name: String?,
     val body: String?,
     val assets: List<GitHubAsset>,
+    val draft: Boolean = false,
 )
 
 sealed interface UpdateState {
@@ -54,12 +55,42 @@ object SemanticVersion {
         )
     }
 
-    fun isNewer(remote: String, local: String): Boolean {
+    fun isNewer(remote: String, local: String): Boolean = compare(remote, local) > 0
+
+    fun compare(remote: String, local: String): Int {
         val (remoteMajor, remoteMinor, remotePatch) = parse(remote)
         val (localMajor, localMinor, localPatch) = parse(local)
-        if (remoteMajor != localMajor) return remoteMajor > localMajor
-        if (remoteMinor != localMinor) return remoteMinor > localMinor
-        return remotePatch > localPatch
+        if (remoteMajor != localMajor) return remoteMajor.compareTo(localMajor)
+        if (remoteMinor != localMinor) return remoteMinor.compareTo(localMinor)
+        if (remotePatch != localPatch) return remotePatch.compareTo(localPatch)
+
+        val remotePrerelease = prereleaseParts(remote)
+        val localPrerelease = prereleaseParts(local)
+        if (remotePrerelease == null) return if (localPrerelease == null) 0 else 1
+        if (localPrerelease == null) return -1
+        for (index in 0 until minOf(remotePrerelease.size, localPrerelease.size)) {
+            val remotePart = remotePrerelease[index]
+            val localPart = localPrerelease[index]
+            val remoteNumber = remotePart.toBigIntegerOrNull()
+            val localNumber = localPart.toBigIntegerOrNull()
+            val comparison = when {
+                remoteNumber != null && localNumber != null -> remoteNumber.compareTo(localNumber)
+                remoteNumber != null -> -1
+                localNumber != null -> 1
+                else -> remotePart.compareTo(localPart)
+            }
+            if (comparison != 0) return comparison
+        }
+        return remotePrerelease.size.compareTo(localPrerelease.size)
+    }
+
+    private fun prereleaseParts(version: String): List<String>? {
+        val withoutMetadata = version.substringBefore('+')
+        if ('-' !in withoutMetadata) return null
+        // Accept Still's beta1 spelling as well as the semver beta.1 spelling.
+        val suffix = withoutMetadata.substringAfter('-')
+            .replace(Regex("^beta(\\d+)$"), "beta.$1")
+        return suffix.split('.')
     }
 }
 
@@ -81,8 +112,18 @@ object VersionUpdater {
         includePrereleases: Boolean,
         onResult: (UpdateState) -> Unit,
     ) {
+        fetchReleasePage(currentVersion, includePrereleases, onResult, page = 1, releases = emptyList())
+    }
+
+    private fun fetchReleasePage(
+        currentVersion: String,
+        includePrereleases: Boolean,
+        onResult: (UpdateState) -> Unit,
+        page: Int,
+        releases: List<GitHubRelease>,
+    ) {
         val request = Request.Builder()
-            .url(ReleasesUrl)
+            .url("$ReleasesUrl?per_page=100&page=$page")
             .header("Accept", "application/vnd.github.v3+json")
             .header("X-GitHub-Api-Version", "2022-11-28")
             .build()
@@ -100,34 +141,12 @@ object VersionUpdater {
                     }
 
                     try {
-                        val releases = releasesAdapter.fromJson(it.body?.string().orEmpty()).orEmpty()
-                        val targetRelease = releases.firstOrNull { release ->
-                            includePrereleases || !release.prerelease
-                        }
-                        if (targetRelease == null) {
-                            onResult(UpdateState.Idle)
-                            return
-                        }
-
-                        // Prefer Still's release contract when a release contains multiple APKs.
-                        // Keep the generic APK fallback for older releases that predate this name.
-                        val apkAsset = targetRelease.assets.firstOrNull { asset ->
-                            isStillApkAssetName(asset.name)
-                        } ?: targetRelease.assets.firstOrNull { asset ->
-                            asset.name.endsWith(".apk", ignoreCase = true)
-                        }
-                        if (!SemanticVersion.isNewer(targetRelease.tag_name, currentVersion)) {
-                            onResult(UpdateState.Idle)
-                        } else if (apkAsset == null) {
-                            onResult(UpdateState.Error("Update found but no APK asset is available in the release."))
+                        val allReleases = releases +
+                            releasesAdapter.fromJson(it.body?.string().orEmpty()).orEmpty()
+                        if (it.header("Link").orEmpty().contains("rel=\"next\"")) {
+                            fetchReleasePage(currentVersion, includePrereleases, onResult, page + 1, allReleases)
                         } else {
-                            onResult(
-                                UpdateState.UpdateAvailable(
-                                    version = targetRelease.tag_name,
-                                    notes = targetRelease.body ?: "No release notes provided.",
-                                    downloadUrl = apkAsset.browser_download_url,
-                                ),
-                            )
+                            onResult(updateStateForReleases(allReleases, currentVersion, includePrereleases))
                         }
                     } catch (error: Exception) {
                         onResult(UpdateState.Error("Failed to parse update: ${error.localizedMessage}"))
@@ -135,6 +154,30 @@ object VersionUpdater {
                 }
             }
         })
+    }
+
+    internal fun updateStateForReleases(
+        releases: List<GitHubRelease>,
+        currentVersion: String,
+        includePrereleases: Boolean,
+    ): UpdateState {
+        val targetRelease = releases
+            .filter { !it.draft && (includePrereleases || !it.prerelease) }
+            .maxWithOrNull { first, second ->
+                val comparison = SemanticVersion.compare(first.tag_name, second.tag_name)
+                if (comparison != 0) comparison else second.prerelease.compareTo(first.prerelease)
+            } ?: return UpdateState.Idle
+        if (!SemanticVersion.isNewer(targetRelease.tag_name, currentVersion)) return UpdateState.Idle
+
+        // Prefer Still's release contract, with a generic APK fallback for older releases.
+        val apkAsset = targetRelease.assets.firstOrNull { isStillApkAssetName(it.name) }
+            ?: targetRelease.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
+            ?: return UpdateState.Error("Update found but no APK asset is available in the release.")
+        return UpdateState.UpdateAvailable(
+            version = targetRelease.tag_name,
+            notes = targetRelease.body ?: "No release notes provided.",
+            downloadUrl = apkAsset.browser_download_url,
+        )
     }
 
     internal fun isStillApkAssetName(name: String): Boolean = stillApkName.matches(name)

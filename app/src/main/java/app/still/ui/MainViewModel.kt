@@ -193,7 +193,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                     }
                     when {
                         deferred != null && deferred.remindAfterMillis <= System.currentTimeMillis() -> {
-                            _updateState.value = deferred.toUpdateState()
+                            checkForUpdates(settings.updateChannel)
                         }
                         deferred != null -> Unit
                         settings.deferredUpdate != null -> {
@@ -470,12 +470,13 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         )
         _updateState.value = UpdateState.Idle
         delay(UPDATE_REMINDER_DELAY_MS)
-        val remembered = container.settingsRepository.settings.first().deferredUpdate
+        val settings = container.settingsRepository.settings.first()
+        val remembered = settings.deferredUpdate
         if (remembered?.version == update.version &&
             remembered.remindAfterMillis <= System.currentTimeMillis() &&
             SemanticVersion.isNewer(remembered.version, BuildConfig.VERSION_NAME)
         ) {
-            _updateState.value = remembered.toUpdateState()
+            checkForUpdates(settings.updateChannel)
         }
     }
 
@@ -506,8 +507,6 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(container) as T
     }
-
-    private fun DeferredUpdate.toUpdateState() = UpdateState.UpdateAvailable(version, notes, downloadUrl)
 
     private fun UpdateState.UpdateAvailable.toDeferredUpdate(remindAfterMillis: Long) = DeferredUpdate(
         version = version,
