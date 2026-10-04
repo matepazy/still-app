@@ -32,6 +32,7 @@ import app.still.ui.appdetail.AppDetailTopBar
 import app.still.ui.apps.AppsScreen
 import app.still.ui.apps.AppsTopBar
 import app.still.ui.onboarding.OnboardingScreen
+import app.still.ui.settings.ThemeSettingsScreen
 import app.still.ui.settings.SettingsScreen
 import app.still.ui.settings.SettingsTopBar
 import app.still.ui.theme.StillTheme
@@ -61,6 +62,9 @@ private fun DesignScreen(screen: String) {
         "permission" -> PermissionRequiredScreen({ false }, { Intent(Settings.ACTION_SETTINGS) }, { Intent(Settings.ACTION_SETTINGS) }, { false }, {})
         "detail" -> Scaffold(topBar = { AppDetailTopBar("Instagram", {}) }) { padding ->
             AppDetailScreen(PreviewFixtures.appDetail, Modifier.padding(padding))
+        }
+        "themes" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
+            ThemeSettingsScreen(ThemePreference.Dark, null, {}, {}, Modifier.padding(padding))
         }
         "settings" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             SettingsScreen(
@@ -107,6 +111,7 @@ private fun PreviewNavigationBar(selected: String) {
             Triple("today", "Today", StillIcons.Today),
             Triple("timeline", "Timeline", StillIcons.Timeline),
             Triple("apps", "Apps", StillIcons.Apps),
+            Triple("statistics", "Statistics", StillIcons.Statistics),
         ).forEach { (route, label, icon) ->
             NavigationBarItem(
                 selected = selected == route,

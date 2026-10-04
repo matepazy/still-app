@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -102,7 +103,7 @@ internal fun UsageAccessFlow(
                             state = UsageSetupState.WaitingForAppInfo
                             appInfoLauncher.launch(appInfoIntent().forActivityResult())
                         },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                     ) { Text("Open Still app info") }
                 }
                 TextButton(onClick = openUsageSettings, modifier = Modifier.fillMaxWidth()) {

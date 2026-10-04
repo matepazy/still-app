@@ -24,6 +24,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -881,7 +882,7 @@ internal fun PermissionRequiredScreen(
         )
         Button(
             onClick = openUsageSettings,
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(25.dp),
         ) { Text("Allow screen-time access") }
     }
@@ -890,7 +891,7 @@ internal fun PermissionRequiredScreen(
 
 @Composable
 private fun ErrorScreen(message: String, onRetry: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(StillSpacing.large), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(StillSpacing.large), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
         Text("Usage data unavailable", style = MaterialTheme.typography.headlineSmall)
         Text(message, modifier = Modifier.padding(vertical = StillSpacing.medium), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onClick = onRetry) { Text("Try again") }

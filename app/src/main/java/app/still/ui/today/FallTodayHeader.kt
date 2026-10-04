@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.DurationHeadline
 import app.still.ui.theme.StillSpacing
 import kotlin.math.sin
 
@@ -88,7 +89,7 @@ internal fun FallTodayHeader(date: String, duration: String) {
                 color = Color(0xFFFFE5C4),
             )
             Spacer(Modifier.height(StillSpacing.large))
-            Text(duration, style = MaterialTheme.typography.displayLarge, color = Color.White)
+            DurationHeadline(duration, color = Color.White)
             Text("Screen time today", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFFFE5C4))
         }
     }

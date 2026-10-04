@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -389,7 +392,7 @@ private fun SpecialThemeInfoSheet(theme: ThemePreference, onDismiss: () -> Unit)
 
 @Composable
 private fun ShowAllThemesCard(onClick: () -> Unit) {
-    Column(Modifier.width(104.dp).height(178.dp).clickable(role = Role.Button, onClick = onClick)) {
+    Column(Modifier.width(104.dp).heightIn(min = 178.dp).clickable(role = Role.Button, onClick = onClick)) {
         Box(
             Modifier.fillMaxWidth().height(138.dp)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
@@ -441,21 +444,25 @@ private fun SimpleThemesSheet(
         ) {
             Text("Simple colors", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(StillSpacing.large))
-            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                themes.chunked(3).forEach { rowThemes ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                        rowThemes.forEach { option ->
-                            ThemeCard(
-                                option = option,
-                                selected = selectedTheme == option,
-                                enabled = true,
-                                wallpaperBackground = Color.Unspecified,
-                                wallpaperInk = Color.Unspecified,
-                                onClick = { onSelect(option) },
-                                modifier = Modifier.weight(1f),
-                            )
+            val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val columns = (maxWidth / (104.dp * fontScale + StillSpacing.small)).toInt().coerceIn(1, 3)
+                Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                    themes.chunked(columns).forEach { rowThemes ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                            rowThemes.forEach { option ->
+                                ThemeCard(
+                                    option = option,
+                                    selected = selectedTheme == option,
+                                    enabled = true,
+                                    wallpaperBackground = Color.Unspecified,
+                                    wallpaperInk = Color.Unspecified,
+                                    onClick = { onSelect(option) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            repeat(columns - rowThemes.size) { Spacer(Modifier.weight(1f)) }
                         }
-                        repeat(3 - rowThemes.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
@@ -496,7 +503,7 @@ private fun ThemeCard(
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val textColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
-        modifier.height(178.dp)
+        modifier.heightIn(min = 178.dp)
             .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick),
     ) {
         Box(Modifier.fillMaxWidth().height(138.dp)) {

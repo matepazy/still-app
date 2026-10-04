@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
@@ -119,7 +120,7 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
                 if (openSettings) context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                     Uri.parse("package:${context.packageName}")))
                 else launcher.launch(Manifest.permission.CAMERA)
-            }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+            }, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                 Text(if (openSettings) "Open app settings" else "Continue to camera")
             }
             Spacer(Modifier.height(16.dp))

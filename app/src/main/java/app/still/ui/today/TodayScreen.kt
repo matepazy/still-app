@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.DurationHeadline
+import app.still.ui.components.AdaptivePair
 import app.still.domain.model.DailyUsage
 import app.still.domain.model.UsageDashboard
 import app.still.data.settings.ThemePreference
@@ -81,7 +83,7 @@ fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(StillSpacing.medium))
-            Text(today.total.compactDuration(), style = MaterialTheme.typography.displayLarge)
+            DurationHeadline(today.total.compactDuration())
             Text("Screen time today", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(StillSpacing.large))
@@ -99,20 +101,20 @@ fun TodayScreen(
         )
 
         Spacer(Modifier.height(40.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+        AdaptivePair { itemModifier ->
             MetricPanel(
                 value = "${today.checkInCount}",
                 label = "check-ins",
                 detail = quickCheckText(today),
                 icon = { Icon(painterResource(StillIcons.CheckIn), contentDescription = null) },
-                modifier = Modifier.weight(1f),
+                modifier = itemModifier,
             )
             MetricPanel(
                 value = today.longestBreak?.compactDuration() ?: "—",
                 label = "longest break",
                 detail = if (today.longestBreak == null) "After first use" else "Today",
                 icon = { Icon(painterResource(StillIcons.Break), contentDescription = null) },
-                modifier = Modifier.weight(1f),
+                modifier = itemModifier,
             )
         }
 
@@ -188,7 +190,7 @@ private fun MetricPanel(
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
                 icon()
-                Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text(value, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(StillSpacing.xSmall))
             Text(label, style = MaterialTheme.typography.bodyMedium)

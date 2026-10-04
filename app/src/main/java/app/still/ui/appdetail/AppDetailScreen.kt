@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.AdaptivePair
 import app.still.ui.components.StillBottomSheet
 import app.still.domain.model.AppDetail
 import app.still.data.settings.AppCategory
@@ -99,13 +100,13 @@ fun AppDetailScreen(
             )
         }
         Spacer(Modifier.height(StillSpacing.large))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        AdaptivePair(spacing = StillSpacing.large) { itemModifier ->
             HeroStat(
                 detail.usage.duration.compactDuration(),
                 detail.date.format(DateTimeFormatter.ofPattern("EEE, MMM d", LocalLocale.current.platformLocale)),
+                itemModifier,
             )
-            Spacer(Modifier.width(56.dp))
-            HeroStat(detail.usage.opens.toString(), "opens")
+            HeroStat(detail.usage.opens.toString(), "opens", itemModifier)
         }
         Spacer(Modifier.height(StillSpacing.large))
         SevenDayChart(detail, onDateSelected)
@@ -119,10 +120,10 @@ fun AppDetailScreen(
                 if (detail.sessions.isEmpty()) {
                     Text("No sessions on this day", modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else detail.sessions.forEach { session ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${session.start.clockTime()} – ${session.end.clockTime()}", style = MaterialTheme.typography.bodyMedium)
+                    AdaptivePair(Modifier.padding(vertical = 9.dp), minItemWidth = 120.dp) { itemModifier ->
+                        Text("${session.start.clockTime()} – ${session.end.clockTime()}", modifier = itemModifier, style = MaterialTheme.typography.bodyMedium)
                         val appDuration = session.apps.firstOrNull { it.app.packageName == detail.usage.app.packageName }?.duration
-                        Text(appDuration?.compactDuration() ?: "—", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(appDuration?.compactDuration() ?: "—", modifier = itemModifier, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -198,8 +199,8 @@ private fun AppCategory.iconResource(): Int = when (this) {
 }
 
 @Composable
-private fun HeroStat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun HeroStat(value: String, label: String, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -209,12 +210,12 @@ private fun HeroStat(value: String, label: String) {
 private fun SummaryPanel(detail: AppDetail) {
     val change = detail.averageDaily?.let { detail.usage.duration.minus(it) }
     TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
-        Row(Modifier.fillMaxWidth()) {
-            Column(Modifier.weight(1f)) {
+        AdaptivePair { itemModifier ->
+            Column(itemModifier) {
                 Text("Daily average", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(detail.averageDaily?.compactDuration() ?: "Building", style = MaterialTheme.typography.titleMedium)
             }
-            Column(Modifier.weight(1f)) {
+            Column(itemModifier) {
                 Text("Compared to average", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(change?.signedCompactDuration() ?: "—", style = MaterialTheme.typography.titleMedium, color = if (change?.isNegative == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
             }

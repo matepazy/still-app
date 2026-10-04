@@ -39,6 +39,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.still.ui.components.DurationHeadline
+import app.still.ui.components.AdaptivePair
 import app.still.domain.model.StatisticsRange
 import app.still.domain.model.StatisticsPeriod
 import app.still.data.settings.AppCategory
@@ -133,8 +135,7 @@ private fun LazyListScope.statisticsContent(summary: app.still.domain.model.Stat
     item {
         Text(if (singleDay) "Screen time" else "Daily average", style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text((if (singleDay) day?.screenTime else summary.dailyAverage)?.compactDuration() ?: "—",
-            style = MaterialTheme.typography.displayLarge)
+        DurationHeadline((if (singleDay) day?.screenTime else summary.dailyAverage)?.compactDuration() ?: "—")
         val change = summary.change
         Text(when {
             change == null -> if (singleDay) "No data for the previous day" else "No previous period to compare"
@@ -149,13 +150,13 @@ private fun LazyListScope.statisticsContent(summary: app.still.domain.model.Stat
                 } else {
                     StatisticsChart(summary, period)
                 }
-                Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.SpaceBetween) {
+                AdaptivePair(Modifier.padding(top = StillSpacing.medium)) { itemModifier ->
                     if (singleDay) {
-                        SmallValue("Peak hour", summary.mostActiveHour?.let { "${it.toString().padStart(2, '0')}:00" } ?: "—")
-                        SmallValue("Longest session", day?.longestSession?.compactDuration() ?: "—")
+                        SmallValue("Peak hour", summary.mostActiveHour?.let { "${it.toString().padStart(2, '0')}:00" } ?: "—", itemModifier)
+                        SmallValue("Longest session", day?.longestSession?.compactDuration() ?: "—", itemModifier)
                     } else {
-                        SmallValue("Total", summary.total?.compactDuration() ?: "—")
-                        SmallValue("Median day", summary.median?.compactDuration() ?: "—")
+                        SmallValue("Total", summary.total?.compactDuration() ?: "—", itemModifier)
+                        SmallValue("Median day", summary.median?.compactDuration() ?: "—", itemModifier)
                     }
                 }
             }
@@ -173,22 +174,22 @@ private fun LazyListScope.statisticsContent(summary: app.still.domain.model.Stat
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+            AdaptivePair(Modifier.padding(top = StillSpacing.medium)) { itemModifier ->
                 RhythmValue(if (singleDay) "Check-ins" else "Check-ins / day",
-                    if (singleDay) day?.checkIns?.toString() ?: "—" else summary.checkInsAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
+                    if (singleDay) day?.checkIns?.toString() ?: "—" else summary.checkInsAverage?.let { "%.1f".format(it) } ?: "—", itemModifier)
                 RhythmValue(if (singleDay) "Quick checks" else "Quick checks / day",
-                    if (singleDay) day?.quickChecks?.toString() ?: "—" else summary.quickChecksAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
+                    if (singleDay) day?.quickChecks?.toString() ?: "—" else summary.quickChecksAverage?.let { "%.1f".format(it) } ?: "—", itemModifier)
             }
-            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.small), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+            AdaptivePair(Modifier.padding(top = StillSpacing.small)) { itemModifier ->
                 RhythmValue(if (singleDay) "Longest break" else "Average session",
-                    (if (singleDay) day?.longestBreak else summary.sessionAverage)?.compactDuration() ?: "—", Modifier.weight(1f))
+                    (if (singleDay) day?.longestBreak else summary.sessionAverage)?.compactDuration() ?: "—", itemModifier)
                 RhythmValue(if (singleDay) "App switches" else "Longest break / day",
-                    if (singleDay) day?.appSwitches?.toString() ?: "—" else summary.longestBreakAverage?.compactDuration() ?: "—", Modifier.weight(1f))
+                    if (singleDay) day?.appSwitches?.toString() ?: "—" else summary.longestBreakAverage?.compactDuration() ?: "—", itemModifier)
             }
             if (!singleDay) {
-                Row(Modifier.fillMaxWidth().padding(top = StillSpacing.small), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                    RhythmValue("App switches / day", summary.appSwitchesAverage?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
-                    RhythmValue("Longest session", summary.longestSession?.compactDuration() ?: "—", Modifier.weight(1f))
+                AdaptivePair(Modifier.padding(top = StillSpacing.small)) { itemModifier ->
+                    RhythmValue("App switches / day", summary.appSwitchesAverage?.let { "%.1f".format(it) } ?: "—", itemModifier)
+                    RhythmValue("Longest session", summary.longestSession?.compactDuration() ?: "—", itemModifier)
                 }
             } else if (summary.sessionAverage != null) {
                 Spacer(Modifier.height(StillSpacing.medium))
@@ -213,11 +214,11 @@ private fun LazyListScope.statisticsContent(summary: app.still.domain.model.Stat
     }
     if (!singleDay && (summary.highest != null || summary.lowest != null)) {
         item {
-            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.medium), horizontalArrangement = Arrangement.SpaceBetween) {
+            AdaptivePair(Modifier.padding(top = StillSpacing.medium)) { itemModifier ->
                 SmallValue("Highest · ${summary.highest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
-                    summary.highest?.screenTime?.compactDuration() ?: "—")
+                    summary.highest?.screenTime?.compactDuration() ?: "—", itemModifier)
                 SmallValue("Lowest · ${summary.lowest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
-                    summary.lowest?.screenTime?.compactDuration() ?: "—")
+                    summary.lowest?.screenTime?.compactDuration() ?: "—", itemModifier)
             }
         }
     }
@@ -318,8 +319,8 @@ private fun categoryIcon(category: AppCategory): Int = when (category) {
 }
 
 @Composable
-private fun SmallValue(label: String, value: String) {
-    Column {
+private fun SmallValue(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
         Text(value, style = MaterialTheme.typography.titleLarge)
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -336,10 +337,9 @@ private fun RhythmValue(label: String, value: String, modifier: Modifier = Modif
 internal fun UsageBar(label: String, value: String?, fraction: Float, color: Color = MaterialTheme.colorScheme.primary,
     bottomSpacing: androidx.compose.ui.unit.Dp = StillSpacing.medium) {
     Column(Modifier.fillMaxWidth().padding(bottom = bottomSpacing)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.width(StillSpacing.small))
-            Text(value ?: "—", Modifier.weight(1f), maxLines = 2, textAlign = TextAlign.End,
+        AdaptivePair(minItemWidth = 112.dp) { itemModifier ->
+            Text(label, itemModifier, style = MaterialTheme.typography.bodyMedium)
+            Text(value ?: "—", itemModifier,
                 style = MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.height(6.dp))

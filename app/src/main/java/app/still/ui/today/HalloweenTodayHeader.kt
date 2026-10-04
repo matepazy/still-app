@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.DurationHeadline
 import app.still.ui.theme.StillSpacing
 import kotlin.math.sin
 
@@ -144,7 +145,7 @@ internal fun HalloweenTodayHeader(date: String, duration: String) {
             Text("Today · $date", style = MaterialTheme.typography.labelMedium,
                 color = Color(0xFFE2C8D7))
             Spacer(Modifier.height(StillSpacing.large))
-            Text(duration, style = MaterialTheme.typography.displayLarge, color = Color(0xFFFFF2E5))
+            DurationHeadline(duration, color = Color(0xFFFFF2E5))
             Text("Screen time today", style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFFE2C8D7))
         }

@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.AdaptivePair
 import app.still.domain.model.CompareResult
 import app.still.domain.model.AppInfo
 import app.still.data.settings.AppCategory
@@ -178,9 +179,9 @@ private fun LegendDot(label: String, color: Color) {
 @Composable
 private fun PairedBars(you: Long?, friend: Long?, format: (Long) -> String) {
     val maximum = maxOf(you ?: 0L, friend ?: 0L, 1L)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-        PersonBar(you, maximum, format, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-        PersonBar(friend, maximum, format, MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
+    AdaptivePair(spacing = StillSpacing.medium) { itemModifier ->
+        PersonBar(you, maximum, format, MaterialTheme.colorScheme.primary, itemModifier)
+        PersonBar(friend, maximum, format, MaterialTheme.colorScheme.tertiary, itemModifier)
     }
 }
 

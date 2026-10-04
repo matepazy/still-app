@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -64,7 +65,7 @@ fun OnboardingScreen(
 @Composable
 private fun OnboardingFrame(page: Int, buttonLabel: String, onButtonClick: () -> Unit, content: @Composable () -> Unit) {
     Column(
-        Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 28.dp, vertical = 20.dp),
+        Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 28.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         AnimatedContent(page, modifier = Modifier.weight(1f), label = "Onboarding page") { content() }
@@ -72,10 +73,10 @@ private fun OnboardingFrame(page: Int, buttonLabel: String, onButtonClick: () ->
         Spacer(Modifier.height(StillSpacing.large))
         Button(
             onClick = onButtonClick,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             shape = RoundedCornerShape(26.dp),
         ) { Text(buttonLabel) }
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(StillSpacing.medium))
     }
 }
 

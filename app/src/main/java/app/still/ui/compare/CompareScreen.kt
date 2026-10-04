@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -103,7 +104,7 @@ fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>,
                     }
                 } else {
                     Button(onClick = viewModel::showOwnQr, enabled = state.sharing.flags() != 0,
-                        modifier = Modifier.fillMaxWidth().height(76.dp)) {
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 76.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
                             Icon(painterResource(StillIcons.QrCode), contentDescription = null, modifier = Modifier.size(28.dp))
@@ -115,7 +116,7 @@ fun CompareScreen(viewModel: CompareViewModel, availableDates: List<LocalDate>,
                     }
                     Spacer(Modifier.height(StillSpacing.small))
                     OutlinedButton(onClick = viewModel::scanFriend,
-                        modifier = Modifier.fillMaxWidth().height(76.dp)) {
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 76.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
                             Icon(painterResource(StillIcons.Scan), contentDescription = null, modifier = Modifier.size(28.dp))

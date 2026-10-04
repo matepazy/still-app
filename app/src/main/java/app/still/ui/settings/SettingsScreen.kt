@@ -71,6 +71,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.AdaptivePair
 import app.still.BuildConfig
 import app.still.R
 import app.still.data.settings.ThemePreference
@@ -1124,9 +1125,9 @@ private fun WidgetValueSlider(
     onValueChangeFinished: () -> Unit,
 ) {
     Column {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(valueLabel(value), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        AdaptivePair { itemModifier ->
+            Text(title, modifier = itemModifier, style = MaterialTheme.typography.titleMedium)
+            Text(valueLabel(value), modifier = itemModifier, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Slider(
             value = value,
@@ -1173,7 +1174,8 @@ private fun DirectChoice(title: String, options: List<DirectChoiceOption>) {
                         inactiveContentColor = MaterialTheme.colorScheme.onSurface,
                         inactiveBorderColor = MaterialTheme.colorScheme.outline,
                     ),
-                    label = { Text(option.label, maxLines = 1) },
+                    icon = {},
+                    label = { Text(option.label) },
                 )
             }
         }

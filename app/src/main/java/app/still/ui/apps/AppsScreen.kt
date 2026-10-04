@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.AdaptivePair
 import app.still.domain.model.AppUsage
 import app.still.domain.model.DailyUsage
 import app.still.ui.components.AppIcon
@@ -68,12 +69,12 @@ fun AppsScreen(
         verticalArrangement = Arrangement.spacedBy(StillSpacing.small),
     ) {
         item {
-            Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.small), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
+            AdaptivePair(Modifier.padding(bottom = StillSpacing.small)) { itemModifier ->
+                Column(itemModifier) {
                     DaySelector(day.date, availableDates, onDateSelected)
                     Text("Ordered by usage time", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text(day.total.compactDuration(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(day.total.compactDuration(), modifier = itemModifier, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         items(day.apps, key = { it.app.packageName }) { usage ->
@@ -97,14 +98,16 @@ private fun AppUsageRow(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 AppIcon(usage.app.packageName, usage.app.label, size = 38.dp)
                 Spacer(Modifier.width(StillSpacing.medium))
-                Text(usage.app.label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(usage.duration.compactDuration(), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        if (detailsAvailable) "${usage.opens} ${if (usage.opens == 1) "open" else "opens"}" else "Daily total",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                AdaptivePair(Modifier.weight(1f), minItemWidth = 110.dp) { itemModifier ->
+                    Text(usage.app.label, modifier = itemModifier, style = MaterialTheme.typography.titleSmall)
+                    Column(itemModifier) {
+                        Text(usage.duration.compactDuration(), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            if (detailsAvailable) "${usage.opens} ${if (usage.opens == 1) "open" else "opens"}" else "Daily total",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(StillSpacing.small))
