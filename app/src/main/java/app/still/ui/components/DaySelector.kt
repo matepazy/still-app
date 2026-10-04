@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -68,7 +70,12 @@ fun DaySelector(
             if (showTodayLabel && selectedDate == latestDate) "Today" else selectedDate.format(formatter),
             style = MaterialTheme.typography.titleSmall,
         )
-        Icon(painterResource(StillIcons.Calendar), contentDescription = "Choose day from calendar")
+        Spacer(Modifier.width(StillSpacing.small))
+        Icon(
+            painterResource(StillIcons.Calendar),
+            contentDescription = "Choose day from calendar",
+            modifier = Modifier.size(20.dp),
+        )
     }
 
     if (pickerVisible) {
