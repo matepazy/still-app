@@ -1,6 +1,5 @@
 package app.still.ui.statistics
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -27,9 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -43,18 +40,15 @@ import app.still.domain.model.StatisticsRange
 import app.still.ui.components.AdaptivePair
 import app.still.ui.components.AdaptiveValueRow
 import app.still.ui.components.AppIcon
-import app.still.ui.components.ChartTickLabels
 import app.still.ui.components.DaySelector
 import app.still.ui.components.DurationHeadline
 import app.still.ui.components.LoadingSkeleton
 import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
-import app.still.ui.components.chartLabelWidth
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,7 +145,8 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
                 } else {
                     StatisticsChart(summary, period)
                 }
-                AdaptivePair(Modifier.padding(top = StillSpacing.medium)) { itemModifier ->
+                HorizontalDivider(Modifier.padding(vertical = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
+                AdaptivePair { itemModifier ->
                     if (singleDay) {
                         SmallValue("Peak hour", summary.mostActiveHour?.let { "${it.toString().padStart(2, '0')}:00" } ?: "—", itemModifier)
                         SmallValue("Longest session", day?.longestSession?.compactDuration() ?: "—", itemModifier)
@@ -201,37 +196,31 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
             if (first != null && last != null) UseWindow(first, last, singleDay)
             summary.quickCheckShare?.let { share ->
                 Spacer(Modifier.height(StillSpacing.medium))
-                UsageBar("Quick checks / check-ins", "${(share * 100).toInt()}%", share.toFloat())
+                QuickCheckBreakdown(share)
             }
         }
     }
     if (!singleDay && (summary.weekdayAverage != null || summary.weekendAverage != null)) {
         item {
             SectionTitle("Week at a glance")
-            val max = maxOf(summary.weekdayAverage?.toMillis() ?: 0L, summary.weekendAverage?.toMillis() ?: 0L, 1L)
-            UsageBar("Weekdays", summary.weekdayAverage?.compactDuration(), (summary.weekdayAverage?.toMillis() ?: 0L).toFloat() / max)
-            UsageBar("Weekends", summary.weekendAverage?.compactDuration(), (summary.weekendAverage?.toMillis() ?: 0L).toFloat() / max)
+            WeekPattern(summary.weekdayAverage, summary.weekendAverage)
         }
     }
     if (!singleDay && (summary.highest != null || summary.lowest != null)) {
         item {
-            AdaptivePair(Modifier.padding(top = StillSpacing.medium)) { itemModifier ->
-                SmallValue("Highest · ${summary.highest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
-                    summary.highest?.screenTime?.compactDuration() ?: "—", itemModifier)
-                SmallValue("Lowest · ${summary.lowest?.date?.format(DateTimeFormatter.ofPattern("MMM d")) ?: "—"}",
-                    summary.lowest?.screenTime?.compactDuration() ?: "—", itemModifier)
-            }
+            DayExtremes(summary.lowest, summary.highest)
         }
     }
     if (!singleDay && (summary.mostActiveWeekday != null || summary.dailyVariability != null)) {
         item {
-            Row(Modifier.fillMaxWidth().padding(top = StillSpacing.large), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
-                verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(StillIcons.Activity), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(buildString {
-                    summary.mostActiveWeekday?.let { append("Most active: ").append(it.name.lowercase().replaceFirstChar { c -> c.uppercase() }) }
-                    summary.dailyVariability?.let { if (isNotEmpty()) append(" · "); append(it.compactDuration()).append(" day to day variation") }
-                }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            AdaptivePair(Modifier.padding(top = StillSpacing.large)) { itemModifier ->
+                summary.mostActiveWeekday?.let {
+                    SmallValue("Most active day", it.getDisplayName(java.time.format.TextStyle.FULL,
+                        androidx.compose.ui.platform.LocalLocale.current.platformLocale), itemModifier)
+                }
+                summary.dailyVariability?.let {
+                    SmallValue("Day to day variation", it.compactDuration(), itemModifier)
+                }
             }
         }
     }
@@ -241,11 +230,12 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
             val max = summary.topApps.maxOf { it.total.toMillis() }.coerceAtLeast(1L)
             summary.topApps.take(5).forEach { app ->
                 Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium), verticalAlignment = Alignment.CenterVertically) {
-                    AppIcon(app.packageName, app.label, size = 32.dp)
+                    AppIcon(app.packageName, app.label, size = 36.dp)
                     Spacer(Modifier.width(StillSpacing.medium))
-                    Box(Modifier.weight(1f)) {
-                        UsageBar(app.label, app.total.compactDuration() + (app.change?.let { " · ${signed(it)}" } ?: ""),
+                    Column(Modifier.weight(1f)) {
+                        UsageBar(app.label, app.total.compactDuration(),
                             app.total.toMillis().toFloat() / max, bottomSpacing = 0.dp)
+                        app.change?.let { ChangeCaption(it) }
                     }
                 }
             }
@@ -254,15 +244,18 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
     if (summary.categories.isNotEmpty()) {
         item {
             SectionTitle("By category")
+            CategoryDistribution(summary.categories)
+            Spacer(Modifier.height(StillSpacing.large))
             summary.categories.filter { it.share > 0.0 }.forEach { category ->
                 Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium), verticalAlignment = Alignment.CenterVertically) {
                     Icon(painterResource(categoryIcon(category.category)), contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary)
+                        tint = statisticsCategoryColor(category.category))
                     Spacer(Modifier.width(StillSpacing.medium))
-                    Box(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f)) {
                         UsageBar(category.category.displayName,
-                            "${(category.share * 100).toInt()}% · ${category.total.compactDuration()}" +
-                                (category.change?.let { " · ${signed(it)}" } ?: ""), category.share.toFloat(), bottomSpacing = 0.dp)
+                            "${(category.share * 100).toInt()}% · ${category.total.compactDuration()}",
+                            category.share.toFloat(), color = statisticsCategoryColor(category.category), bottomSpacing = 0.dp)
+                        category.change?.let { ChangeCaption(it) }
                     }
                 }
             }
@@ -271,39 +264,20 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
 }
 
 private fun signed(duration: java.time.Duration): String = (if (duration.isNegative) "−" else "+") + duration.abs().compactDuration()
-private fun clockMinute(minute: Int): String = "${(minute / 60).toString().padStart(2, '0')}:${(minute % 60).toString().padStart(2, '0')}"
+
+@Composable
+private fun ChangeCaption(change: java.time.Duration) {
+    Text("${signed(change)} vs previous period", Modifier.padding(top = StillSpacing.xSmall),
+        style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
 
 @Composable
 private fun SectionTitle(title: String) {
     Spacer(Modifier.height(StillSpacing.section))
     Text(title, style = MaterialTheme.typography.headlineSmall)
     Spacer(Modifier.height(StillSpacing.medium))
-}
-
-@Composable
-private fun UseWindow(first: Int, last: Int, singleDay: Boolean) {
-    val startMinute = first.coerceIn(0, 1440)
-    val start = startMinute / 1440f
-    val end = last.coerceIn(startMinute, 1440) / 1440f
-    Spacer(Modifier.height(StillSpacing.large))
-    Text(if (singleDay) "First to last use" else "Typical use window", style = MaterialTheme.typography.titleMedium)
-    Row(Modifier.fillMaxWidth().padding(top = StillSpacing.small), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(clockMinute(first), style = MaterialTheme.typography.bodyMedium)
-        Text(clockMinute(last), style = MaterialTheme.typography.bodyMedium)
-    }
-    val track = MaterialTheme.colorScheme.surfaceContainerHigh
-    val active = MaterialTheme.colorScheme.primary
-    Canvas(Modifier.fillMaxWidth().height(12.dp).padding(top = 4.dp)) {
-        val radius = CornerRadius(size.height / 2)
-        drawRoundRect(track, cornerRadius = radius)
-        drawRoundRect(active, topLeft = Offset(size.width * start, 0f),
-            size = Size(size.width * (end - start).coerceAtLeast(0.005f), size.height), cornerRadius = radius)
-    }
-    Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("12am", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("12pm", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("12am", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
 }
 
 private fun categoryIcon(category: AppCategory): Int = when (category) {
@@ -322,7 +296,7 @@ private fun categoryIcon(category: AppCategory): Int = when (category) {
 @Composable
 private fun SmallValue(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier) {
-        Text(value, style = MaterialTheme.typography.titleLarge)
+        Text(value, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -341,60 +315,28 @@ internal fun UsageBar(label: String, value: String?, fraction: Float, color: Col
         AdaptiveValueRow(
             minLeadingWidth = 112.dp,
             leading = { Text(label, style = MaterialTheme.typography.bodyMedium) },
-            trailing = { Text(value ?: "—", textAlign = TextAlign.End, style = MaterialTheme.typography.bodySmall) },
+            trailing = { Text(value ?: "—", textAlign = TextAlign.End,
+                style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum")) },
         )
         Spacer(Modifier.height(6.dp))
-        Box(Modifier.fillMaxWidth().height(7.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(4.dp))) {
-            if (fraction > 0f) Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(7.dp).background(color, RoundedCornerShape(4.dp)))
+        Box(Modifier.fillMaxWidth().height(8.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(4.dp))) {
+            if (fraction > 0f) Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(8.dp).background(color, RoundedCornerShape(4.dp)))
         }
     }
 }
 
 @Composable
 private fun TypicalDay(hours: List<Long>) {
-    val max = hours.maxOrNull()?.coerceAtLeast(1L) ?: 1L
-    val axisMaximum = (ceil(max / (20 * 60_000.0)).toLong().coerceAtLeast(1L) * 20 * 60_000L)
-    val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val barColor = MaterialTheme.colorScheme.primary
-    val emptyColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    val axisLabels = listOf(axisMaximum, axisMaximum / 2, 0L).map {
-        val minutes = it / 60_000L
-        if (minutes >= 60) "${minutes / 60}h" else "${minutes}m"
+    val points = hours.take(24).mapIndexed { index, value ->
+        "${index.toString().padStart(2, '0')}:00" to value
     }
-    val axisWidth = chartLabelWidth(axisLabels)
-    Column(Modifier.fillMaxWidth().padding(top = StillSpacing.small)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.width(axisWidth).height(80.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                listOf(axisMaximum, axisMaximum / 2, 0L).forEach { value ->
-                    val minutes = value / 60_000L
-                    Text(if (minutes >= 60) "${minutes / 60}h" else "${minutes}m",
-                        style = MaterialTheme.typography.labelSmall, color = axisColor)
-                }
-            }
-            Canvas(Modifier.weight(1f).height(80.dp)) {
-                val inset = 8.dp.toPx()
-                val plotHeight = size.height - 2 * inset
-                val baseline = size.height - inset
-                listOf(0f, 0.5f, 1f).forEach { fraction ->
-                    val y = inset + plotHeight * fraction
-                    drawLine(axisColor.copy(alpha = 0.25f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
-                }
-                val step = size.width / 24
-                hours.take(24).forEachIndexed { index, value ->
-                    val barHeight = (plotHeight * (value.toFloat() / axisMaximum).coerceIn(0f, 1f))
-                        .coerceAtLeast(2.dp.toPx())
-                    val barWidth = (step - 2.dp.toPx()).coerceAtLeast(1f)
-                    drawRoundRect(if (value == 0L) emptyColor else barColor,
-                        topLeft = Offset(index * step + (step - barWidth) / 2, baseline - barHeight),
-                        size = Size(barWidth, barHeight), cornerRadius = CornerRadius(2.dp.toPx()))
-                }
-            }
-        }
-        ChartTickLabels(
-            listOf("12am", "6am", "12pm", "6pm", "12am").mapIndexed { index, label -> index / 4f to label },
-            Modifier.padding(start = axisWidth, top = 4.dp),
-        )
-    }
+    StatisticsBars(
+        points = points,
+        ticks = listOf(0 to "12am", 6 to "6am", 12 to "12pm", 18 to "6pm", 23 to "11pm")
+            .map { (hour, label) -> (hour + .5f) / 24 to label },
+        modifier = Modifier.fillMaxWidth().padding(top = StillSpacing.small),
+        height = 148.dp,
+    )
 }
 
 fun StatisticsRange.label(): String {

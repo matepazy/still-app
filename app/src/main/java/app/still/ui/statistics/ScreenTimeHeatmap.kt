@@ -1,6 +1,7 @@
 package app.still.ui.statistics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -85,11 +86,7 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
     val dateFormatter = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale) }
 
     Column {
-        Text(
-            selectedDate?.let { date -> "${date.format(dateFormatter)} · ${values[date]?.compactDuration() ?: "No data"}" }
-                ?: "Daily screen time",
-            style = MaterialTheme.typography.titleMedium,
-        )
+        Text("Daily screen time", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(StillSpacing.medium))
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val gap = 2.dp
@@ -172,6 +169,8 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                                             Modifier.size(cell, rowHeight)
                                                 .clip(RoundedCornerShape(3.dp))
                                                 .background(colorFor(date))
+                                                .then(if (selectedDate == date) Modifier.border(2.dp,
+                                                    MaterialTheme.colorScheme.onSurface, RoundedCornerShape(3.dp)) else Modifier)
                                                 .clickable { selectedDate = date }
                                                 .semantics { contentDescription = description },
                                         )
@@ -195,14 +194,18 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                 Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(noData))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Less", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("0m", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 levels.forEach { color ->
                     Spacer(Modifier.width(3.dp))
                     Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(color))
             }
             Spacer(Modifier.width(5.dp))
-            Text("More", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(java.time.Duration.ofMillis(maximum).compactDuration(), style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        Text(selectedDate?.let { date -> "${date.format(dateFormatter)} · ${values[date]?.compactDuration() ?: "No data"}" }
+            ?: "Tap a day to see screen time", modifier = Modifier.padding(top = StillSpacing.medium),
+            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
