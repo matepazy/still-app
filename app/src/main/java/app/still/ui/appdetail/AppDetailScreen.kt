@@ -21,7 +21,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
@@ -44,6 +43,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.StillBottomSheet
 import app.still.domain.model.AppDetail
 import app.still.data.settings.AppCategory
 import app.still.ui.components.AppIcon
@@ -149,35 +149,37 @@ private fun AppCategoryPicker(
     onDismiss: () -> Unit,
     onSelect: (AppCategory) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Text(
-            "App category",
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        AppCategory.entries.forEach { category ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(role = Role.RadioButton) { onSelect(category) }
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RadioButton(
-                    selected = category == selectedCategory,
-                    onClick = { onSelect(category) },
-                )
-                Icon(
-                    painterResource(category.iconResource()),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(category.displayName, style = MaterialTheme.typography.bodyLarge)
+    StillBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState(), overscrollEffect = null)) {
+            Text(
+                "App category",
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            AppCategory.entries.forEach { category ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.RadioButton) { onSelect(category) }
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = category == selectedCategory,
+                        onClick = { onSelect(category) },
+                    )
+                    Icon(
+                        painterResource(category.iconResource()),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(category.displayName, style = MaterialTheme.typography.bodyLarge)
+                }
             }
+            Spacer(Modifier.height(StillSpacing.large))
         }
-        Spacer(Modifier.height(StillSpacing.large))
     }
 }
 

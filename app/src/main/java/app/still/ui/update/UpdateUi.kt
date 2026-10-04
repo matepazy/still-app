@@ -17,10 +17,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.still.ui.components.StillBottomSheet
 import app.still.ui.MainViewModel
 import app.still.ui.components.ActionDrawer
 import app.still.ui.components.TonalPanel
@@ -85,14 +84,13 @@ fun UpdateDetailsSheet(
         }
     }
 
-    ModalBottomSheet(
+    StillBottomSheet(
         onDismissRequest = { if (updateState !is UpdateState.Downloading) onUpdateLater() },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState(), overscrollEffect = null)
                 .padding(horizontal = StillSpacing.large)
                 .padding(bottom = StillSpacing.large),
         ) {

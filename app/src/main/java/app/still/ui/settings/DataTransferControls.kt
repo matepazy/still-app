@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.still.ui.components.StillBottomSheet
 import app.still.ui.DataTransferState
 import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
@@ -76,7 +77,7 @@ internal fun DataTransferControls(
                 } else if (uri != null) onImport(Uri.parse(uri), secret) else secret.fill('\u0000')
             }
         }
-        ModalBottomSheet(onDismissRequest = ::close, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+        StillBottomSheet(onDismissRequest = ::close, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
             Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState())
                 .padding(horizontal = StillSpacing.large).padding(bottom = StillSpacing.large),
                 verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
@@ -133,8 +134,8 @@ internal fun DataTransferControls(
     }
     if (state is DataTransferState.Working) {
         var dismissed by remember(state) { mutableStateOf(false) }
-        if (!dismissed) ModalBottomSheet(onDismissRequest = { dismissed = true }, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
-            Column(Modifier.padding(horizontal = StillSpacing.large).padding(bottom = StillSpacing.xLarge), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
+        if (!dismissed) StillBottomSheet(onDismissRequest = { dismissed = true }, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState(), overscrollEffect = null).padding(horizontal = StillSpacing.large).padding(bottom = StillSpacing.xLarge), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
                 TransferHeading(StillIcons.Storage, if (state.importing) "Restoring your history" else "Encrypting your history",
                     if (state.importing) "Checking your file before replacing any saved data." else "Preparing the complete database and safety backup.")
                 LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -143,7 +144,7 @@ internal fun DataTransferControls(
     }
     if (state is DataTransferState.Finished) {
         val failed = state.title.endsWith("failed")
-        ModalBottomSheet(onDismissRequest = onDismissResult, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+        StillBottomSheet(onDismissRequest = onDismissResult, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.large)
                 .padding(bottom = StillSpacing.large), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
                 TransferHeading(if (failed) StillIcons.Error else StillIcons.Check, state.title, state.message,

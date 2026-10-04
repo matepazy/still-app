@@ -16,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.still.ui.components.StillBottomSheet
 import app.still.ui.theme.StillSpacing
 
 /** Shared by first-run setup and the gate shown if access is revoked later. */
@@ -73,7 +73,7 @@ internal fun UsageAccessFlow(
     content(openUsageSettings)
 
     if (state == UsageSetupState.Recovery) {
-        ModalBottomSheet(onDismissRequest = { state = state.dismissRecovery() }) {
+        StillBottomSheet(onDismissRequest = { state = state.dismissRecovery() }) {
             Column(
                 Modifier.fillMaxWidth().navigationBarsPadding().verticalScroll(rememberScrollState())
                     .padding(horizontal = 28.dp).padding(bottom = StillSpacing.large),

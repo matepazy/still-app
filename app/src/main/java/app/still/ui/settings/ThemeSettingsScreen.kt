@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -31,7 +29,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -58,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Velocity
+import app.still.ui.components.StillBottomSheet
 import app.still.R
 import app.still.data.settings.ThemePreference
 import app.still.data.settings.SeasonalThemeAvailability
@@ -351,7 +349,7 @@ private fun SpecialThemeInfoSheet(theme: ThemePreference, onDismiss: () -> Unit)
         "Fall wordmark and app icon",
         "Autumn sprig on Screen time and Dayline widgets",
     )
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    StillBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = StillSpacing.large)
@@ -431,9 +429,8 @@ private fun SimpleThemesSheet(
                 Velocity(0f, available.y.coerceAtMost(0f))
         }
     }
-    ModalBottomSheet(
+    StillBottomSheet(
         onDismissRequest = onDismiss,
-        contentWindowInsets = { WindowInsets.safeDrawing },
     ) {
         Column(
             // Absorb leftover upward flings, but let downward gestures dismiss the sheet.
