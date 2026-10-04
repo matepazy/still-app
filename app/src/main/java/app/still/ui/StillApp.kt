@@ -7,6 +7,10 @@ import android.os.Process
 import androidx.activity.BackEventCompat
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.CubicBezierEasing
@@ -117,8 +121,67 @@ import java.time.LocalDate
 
 private const val AppDetailRoute = "app/{packageName}"
 private val PredictiveBackShape = RoundedCornerShape(28.dp)
-private val PredictiveBackEasing = CubicBezierEasing(0f, 0f, 0f, 1f)
-private const val PredictiveBackDurationMillis = 300
+private val PredictiveBackEasing = CubicBezierEasing(0.15f, 0f, 0.15f, 1f)
+private val BackHandoffEasing = CubicBezierEasing(0.2f, 0f, 0.2f, 1f)
+private const val PredictiveBackDurationMillis = 240
+private const val PredictiveBackScale = 0.85f
+private const val BackPreviewDurationMillis = 96
+private const val BackHandoffStartMillis = 120
+private const val BackHandoffDurationMillis = PredictiveBackDurationMillis - BackHandoffStartMillis
+private const val BackPreviewAlpha = 0.75f
+
+private class BackAnimationState {
+    var value: Int = BackEventCompat.EDGE_LEFT
+    var tabNavigation: Boolean = false
+}
+
+private fun backPreviewOffset(width: Int, marginPx: Int, swipeEdge: Int): Int {
+    val shift = (width * (1f - PredictiveBackScale) / 2f - marginPx)
+        .toInt().coerceAtLeast(0)
+    return if (swipeEdge == BackEventCompat.EDGE_LEFT) shift else -shift
+}
+
+// Use the same seekable timeline for preview and completion. Navigation can retain the
+// predictive transition on release, so a separate pop-only fade would be skipped.
+// Shrink early, hold the two small pages, then crossfade and expand the destination.
+private fun backDestinationExit(swipeEdge: Int, marginPx: Int): ExitTransition =
+    scaleOut(
+        animationSpec = tween(BackPreviewDurationMillis, easing = PredictiveBackEasing),
+        targetScale = PredictiveBackScale,
+        transformOrigin = TransformOrigin.Center,
+    ) + slideOutHorizontally(
+        animationSpec = tween(BackPreviewDurationMillis, easing = PredictiveBackEasing),
+    ) { width -> backPreviewOffset(width, marginPx, swipeEdge) } + fadeOut(
+        animationSpec = tween(
+            BackHandoffDurationMillis,
+            delayMillis = BackHandoffStartMillis,
+            easing = BackHandoffEasing,
+        ),
+    )
+
+private fun backDestinationEnter(swipeEdge: Int, marginPx: Int): EnterTransition =
+    scaleIn(
+        animationSpec = tween(
+            BackHandoffDurationMillis,
+            delayMillis = BackHandoffStartMillis,
+            easing = BackHandoffEasing,
+        ),
+        initialScale = PredictiveBackScale,
+        transformOrigin = TransformOrigin.Center,
+    ) + slideInHorizontally(
+        animationSpec = tween(
+            BackHandoffDurationMillis,
+            delayMillis = BackHandoffStartMillis,
+            easing = BackHandoffEasing,
+        ),
+    ) { width -> -backPreviewOffset(width, marginPx, swipeEdge) } + fadeIn(
+        animationSpec = tween(
+            BackHandoffDurationMillis,
+            delayMillis = BackHandoffStartMillis,
+            easing = BackHandoffEasing,
+        ),
+        initialAlpha = BackPreviewAlpha,
+    )
 
 @Composable
 fun StillApp(
@@ -270,34 +333,42 @@ private fun MainNavigation(
     LaunchedEffect(settings.appCategoryOverrides) { statisticsViewModel.updateCategories(settings.appCategoryOverrides) }
 
     val predictiveBackMarginPx = with(LocalDensity.current) { 8.dp.roundToPx() }
+    // Retain the gesture edge for the completion transition without triggering recomposition
+    // from inside Navigation's transition callbacks.
+    val backAnimationState = remember { BackAnimationState() }
     NavHost(
         navController = navController,
         startDestination = TodayRoute,
         modifier = Modifier.fillMaxSize(),
-        enterTransition = { EnterTransition.None },
+        enterTransition = {
+            backAnimationState.tabNavigation = false
+            EnterTransition.None
+        },
         exitTransition = { ExitTransition.None },
-        popEnterTransition = { EnterTransition.None },
-        popExitTransition = { ExitTransition.None },
-        predictivePopEnterTransition = { _ -> EnterTransition.None },
+        popEnterTransition = {
+            if (backAnimationState.tabNavigation) EnterTransition.None
+            else backDestinationEnter(backAnimationState.value, predictiveBackMarginPx)
+        },
+        popExitTransition = {
+            if (backAnimationState.tabNavigation) ExitTransition.None
+            else backDestinationExit(backAnimationState.value, predictiveBackMarginPx)
+        },
+        predictivePopEnterTransition = { swipeEdge ->
+            backAnimationState.tabNavigation = false
+            backDestinationEnter(swipeEdge, predictiveBackMarginPx)
+        },
         predictivePopExitTransition = { swipeEdge ->
-            // A seekable tween makes shrinkage apparent early in the gesture. The default
-            // spring barely moves at low progress. Match Android's 90% scale and 8dp margin.
-            scaleOut(
-                animationSpec = tween(PredictiveBackDurationMillis, easing = PredictiveBackEasing),
-                targetScale = 0.9f,
-                transformOrigin = TransformOrigin.Center,
-            ) + slideOutHorizontally(
-                animationSpec = tween(PredictiveBackDurationMillis, easing = PredictiveBackEasing),
-            ) { width ->
-                val shift = (width / 20 - predictiveBackMarginPx).coerceAtLeast(0)
-                if (swipeEdge == BackEventCompat.EDGE_LEFT) shift else -shift
-            }
+            backAnimationState.tabNavigation = false
+            backAnimationState.value = swipeEdge
+            backDestinationExit(swipeEdge, predictiveBackMarginPx)
         },
     ) {
         composable(TodayRoute) {
             DestinationScaffold(
                 topBar = { TodayTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(TodayRoute, navController) },
+                bottomBar = { StillNavigationBar(TodayRoute, navController) {
+                    backAnimationState.tabNavigation = true
+                } },
             ) { padding ->
                 TodayScreen(
                     dashboard,
@@ -313,7 +384,9 @@ private fun MainNavigation(
         composable(TimelineRoute) {
             DestinationScaffold(
                 topBar = { TimelineTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(TimelineRoute, navController) },
+                bottomBar = { StillNavigationBar(TimelineRoute, navController) {
+                    backAnimationState.tabNavigation = true
+                } },
             ) { padding ->
                 TimelineScreen(
                     selectedDay,
@@ -326,7 +399,9 @@ private fun MainNavigation(
         composable(AppsRoute) {
             DestinationScaffold(
                 topBar = { AppsTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(AppsRoute, navController) },
+                bottomBar = { StillNavigationBar(AppsRoute, navController) {
+                    backAnimationState.tabNavigation = true
+                } },
             ) { padding ->
                 AppsScreen(
                     selectedDay,
@@ -343,7 +418,9 @@ private fun MainNavigation(
                     compareRange = statisticsViewModel.range.value
                     navController.navigate(CompareRoute)
                 } },
-                bottomBar = { StillNavigationBar(StatisticsRoute, navController) },
+                bottomBar = { StillNavigationBar(StatisticsRoute, navController) {
+                    backAnimationState.tabNavigation = true
+                } },
             ) { padding ->
                 StatisticsScreen(statisticsViewModel, availableDays.map { it.date }, modifier = Modifier.padding(padding))
             }
@@ -644,7 +721,11 @@ private fun DestinationScaffold(
 }
 
 @Composable
-private fun StillNavigationBar(currentRoute: String, navController: NavHostController) {
+private fun StillNavigationBar(
+    currentRoute: String,
+    navController: NavHostController,
+    onTabNavigation: () -> Unit,
+) {
     NavigationBar(
         modifier = Modifier.clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -658,7 +739,10 @@ private fun StillNavigationBar(currentRoute: String, navController: NavHostContr
         ).forEach { (route, label, icon) ->
             NavigationBarItem(
                 selected = currentRoute == route,
-                onClick = { navController.navigateTopLevel(route) },
+                onClick = {
+                    onTabNavigation()
+                    navController.navigateTopLevel(route)
+                },
                 icon = { Icon(painterResource(icon), contentDescription = null) },
                 label = { Text(label) },
                 colors = NavigationBarItemDefaults.colors(
