@@ -218,6 +218,7 @@ fun StillApp(
     val archiveUpgradeState by viewModel.archiveUpgradeState.collectAsStateWithLifecycle()
     val archiveBackupDeleteState by viewModel.archiveBackupDeleteState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var manageBeta by remember { mutableStateOf(false) }
     var activeUpdate by remember { mutableStateOf<UpdateState.UpdateAvailable?>(null) }
     LaunchedEffect(updateState) {
         if (updateState is UpdateState.UpdateAvailable) activeUpdate = updateState as UpdateState.UpdateAvailable
@@ -258,6 +259,7 @@ fun StillApp(
                         archiveBackupDeleteState,
                         navigationRequest,
                         onNavigationRequestHandled,
+                        onManageBeta = { manageBeta = true },
                     )
                 }
             }
@@ -273,6 +275,17 @@ fun StillApp(
             VersionOptInSheet(onDecision = viewModel::setVersionCheckEnabled)
         }
 
+        if (manageBeta && settings.updateChannel == "pre-release") {
+            app.still.ui.update.ManageBetaDrawer(
+                viewModel = viewModel,
+                onDismiss = { manageBeta = false },
+                onSelect = { update ->
+                    manageBeta = false
+                    viewModel.selectManagedVersion(update)
+                },
+            )
+        }
+
         activeUpdate?.let { update ->
             if (settings.onboardingComplete) {
                 UpdateDetailsSheet(
@@ -280,7 +293,8 @@ fun StillApp(
                     viewModel = viewModel,
                     onUpdateLater = {
                         activeUpdate = null
-                        viewModel.remindAboutUpdateLater(update)
+                        if (update.isVersionSwitch) viewModel.dismissVersionSwitch()
+                        else viewModel.remindAboutUpdateLater(update)
                     },
                 )
             }
@@ -300,6 +314,7 @@ private fun MainNavigation(
     archiveBackupDeleteState: ArchiveBackupDeleteState,
     navigationRequest: NavigationRequest?,
     onNavigationRequestHandled: (Int) -> Unit,
+    onManageBeta: () -> Unit,
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
@@ -545,6 +560,7 @@ private fun MainNavigation(
                     onVersionCheckChange = viewModel::setVersionCheckEnabled,
                     onUpdateChannelChange = viewModel::setUpdateChannel,
                     onCheckForUpdates = viewModel::triggerVersionCheck,
+                    onManageBeta = onManageBeta,
                     dataTransferState = viewModel.dataTransferState.collectAsStateWithLifecycle().value,
                     onPrepareExport = viewModel::prepareDataExport,
                     onExportDestination = viewModel::exportData,

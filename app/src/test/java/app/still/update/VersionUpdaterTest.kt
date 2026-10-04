@@ -63,6 +63,29 @@ class VersionUpdaterTest {
         assertEquals(otherApk.browser_download_url, (check(listOf(target.copy(assets = listOf(otherApk)))) as UpdateState.UpdateAvailable).downloadUrl)
     }
 
+    @Test
+    fun managedVersionsIncludesEveryBetaAndOnlyLatestStableWithoutNewerFilter() {
+        val result = VersionUpdater.managedVersions(listOf(
+            release("v1.5.3"), release("v1.5.4"),
+            release("v1.6.0-beta2", prerelease = true),
+            release("v1.6.0-beta10", prerelease = true),
+            release("v1.6.0-beta1", prerelease = true),
+            release("v1.7.0-beta1", prerelease = true).copy(draft = true),
+        ))
+        assertEquals(listOf("v1.5.4", "v1.6.0-beta10", "v1.6.0-beta2", "v1.6.0-beta1"), result.map { it.version })
+        assertTrue(result.all { it.isVersionSwitch })
+        assertTrue(!result.first().isBeta)
+        assertTrue(result.drop(1).all { it.isBeta })
+    }
+
+    @Test
+    fun betaWarningsUseBothReleaseFlagAndVersionSuffix() {
+        assertTrue(VersionUpdater.releaseUpdate(release("v1.6.0", prerelease = true))!!.isBeta)
+        assertTrue(VersionUpdater.releaseUpdate(release("v1.6.0-beta1"))!!.isBeta)
+        assertTrue(!VersionUpdater.releaseUpdate(release("v1.6.0"))!!.isBeta)
+        assertTrue(VersionUpdater.managedVersions(listOf(release("v1.5.4").copy(assets = emptyList()))).isEmpty())
+    }
+
     private fun check(releases: List<GitHubRelease>, current: String = "1.5.2", beta: Boolean = false) =
         VersionUpdater.updateStateForReleases(releases, current, beta)
 

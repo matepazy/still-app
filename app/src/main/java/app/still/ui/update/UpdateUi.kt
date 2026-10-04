@@ -74,7 +74,8 @@ fun UpdateDetailsSheet(
     onUpdateLater: () -> Unit,
 ) {
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
-    var showPermissionExplanation by remember { mutableStateOf(false) }
+    var showPermissionExplanation by remember(update) { mutableStateOf(false) }
+    var showBetaWarning by remember(update) { mutableStateOf(false) }
 
     LaunchedEffect(updateState) {
         if (updateState is UpdateState.Completed) {
@@ -96,7 +97,7 @@ fun UpdateDetailsSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
                 Icon(painterResource(StillIcons.Update), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Update to ${update.version}", style = MaterialTheme.typography.titleLarge)
+                Text("${if (update.isVersionSwitch) "Switch to" else "Update to"} ${update.version}", style = MaterialTheme.typography.titleLarge)
             }
             Spacer(Modifier.height(StillSpacing.large))
 
@@ -135,7 +136,7 @@ fun UpdateDetailsSheet(
             Spacer(Modifier.height(StillSpacing.large))
             if (updateState !is UpdateState.Downloading) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                    OutlinedButton(onClick = onUpdateLater, modifier = Modifier.weight(1f)) { Text("Update later") }
+                    OutlinedButton(onClick = onUpdateLater, modifier = Modifier.weight(1f)) { Text(if (update.isVersionSwitch) "Cancel" else "Update later") }
                     when (val current = updateState) {
                         is UpdateState.Completed -> Button(
                             onClick = {
@@ -146,13 +147,35 @@ fun UpdateDetailsSheet(
                         ) { Text("Install") }
                         is UpdateState.Error -> Button(onClick = viewModel::resetUpdateState, modifier = Modifier.weight(1.25f)) { Text("Retry") }
                         else -> Button(
-                            onClick = { viewModel.startApkDownload(update.downloadUrl) },
+                            onClick = {
+                                if (update.isBeta) showBetaWarning = true
+                                else viewModel.startApkDownload(update.downloadUrl)
+                            },
                             modifier = Modifier.weight(1.25f),
                         ) { Text("Download & install") }
                     }
                 }
             }
         }
+    }
+
+    if (showBetaWarning) {
+        ActionDrawer(
+            onDismissRequest = { showBetaWarning = false },
+            title = { Text("Install a beta version?") },
+            text = {
+                Text("${update.version} is a test release. It may contain bugs or change how your saved data works. Export a backup in Settings > Data before continuing. You can return to stable from Manage beta; older versions may not be able to read newer backups.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showBetaWarning = false
+                    viewModel.startApkDownload(update.downloadUrl)
+                }) { Text("Continue with beta") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showBetaWarning = false }) { Text("Cancel") }
+            },
+        )
     }
 
     if (showPermissionExplanation) {

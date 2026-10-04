@@ -498,19 +498,24 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         checkForUpdates(state.value.settings?.updateChannel ?: "release")
     }
 
+    private var updateCheckGeneration = 0
+
     private fun checkForUpdates(channel: String) {
+        if (_updateState.value is UpdateState.Downloading || _updateState.value is UpdateState.Completed) return
+        val generation = ++updateCheckGeneration
         _updateState.value = UpdateState.Checking
         VersionUpdater.checkForUpdates(
             currentVersion = BuildConfig.VERSION_NAME,
             includePrereleases = channel == "pre-release",
             onResult = { result ->
                 viewModelScope.launch {
+                    if (generation != updateCheckGeneration) return@launch
                     if (result is UpdateState.UpdateAvailable) {
                         container.settingsRepository.rememberUpdate(result.toDeferredUpdate(remindAfterMillis = 0L))
                     } else if (result is UpdateState.Idle) {
                         container.settingsRepository.clearRememberedUpdate()
                     }
-                    _updateState.value = result
+                    if (generation == updateCheckGeneration) _updateState.value = result
                 }
             },
         )
@@ -532,7 +537,32 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    private val _betaVersions = MutableStateFlow<BetaVersionsState>(BetaVersionsState.Idle)
+    val betaVersions: StateFlow<BetaVersionsState> = _betaVersions
+
+    fun loadBetaVersions() {
+        if (_betaVersions.value is BetaVersionsState.Loading) return
+        _betaVersions.value = BetaVersionsState.Loading
+        VersionUpdater.fetchReleases { result ->
+            _betaVersions.value = result.fold(
+                onSuccess = { BetaVersionsState.Ready(VersionUpdater.managedVersions(it)) },
+                onFailure = { BetaVersionsState.Error(it.message ?: "Couldn’t load versions.") },
+            )
+        }
+    }
+
+    fun selectManagedVersion(update: UpdateState.UpdateAvailable) {
+        if (_updateState.value !is UpdateState.Downloading) {
+            updateCheckGeneration++
+            _updateState.value = update
+        }
+    }
+
+    fun dismissVersionSwitch() { _updateState.value = UpdateState.Idle }
+
     fun startApkDownload(downloadUrl: String) {
+        if (_updateState.value is UpdateState.Downloading) return
+        updateCheckGeneration++
         _updateState.value = UpdateState.Downloading(0f)
         VersionUpdater.downloadApk(
             context = container.applicationContext,
@@ -570,4 +600,11 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     private companion object {
         const val UPDATE_REMINDER_DELAY_MS = 24L * 60L * 60L * 1_000L
     }
+}
+
+sealed interface BetaVersionsState {
+    data object Idle : BetaVersionsState
+    data object Loading : BetaVersionsState
+    data class Ready(val versions: List<UpdateState.UpdateAvailable>) : BetaVersionsState
+    data class Error(val message: String) : BetaVersionsState
 }

@@ -38,6 +38,8 @@ sealed interface UpdateState {
         val version: String,
         val notes: String,
         val downloadUrl: String,
+        val isBeta: Boolean = version.substringBefore('+').contains('-'),
+        val isVersionSwitch: Boolean = false,
     ) : UpdateState
     data class Downloading(val progress: Float) : UpdateState
     data class Completed(val apkFile: File) : UpdateState
@@ -112,13 +114,20 @@ object VersionUpdater {
         includePrereleases: Boolean,
         onResult: (UpdateState) -> Unit,
     ) {
-        fetchReleasePage(currentVersion, includePrereleases, onResult, page = 1, releases = emptyList())
+        fetchReleases { result ->
+            onResult(result.fold(
+                onSuccess = { updateStateForReleases(it, currentVersion, includePrereleases) },
+                onFailure = { UpdateState.Error(it.message ?: "Couldn’t load releases.") },
+            ))
+        }
+    }
+
+    fun fetchReleases(onResult: (Result<List<GitHubRelease>>) -> Unit) {
+        fetchReleasePage(onResult, page = 1, releases = emptyList())
     }
 
     private fun fetchReleasePage(
-        currentVersion: String,
-        includePrereleases: Boolean,
-        onResult: (UpdateState) -> Unit,
+        onResult: (Result<List<GitHubRelease>>) -> Unit,
         page: Int,
         releases: List<GitHubRelease>,
     ) {
@@ -130,13 +139,13 @@ object VersionUpdater {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                onResult(UpdateState.Error("Network error: ${e.localizedMessage}"))
+                onResult(Result.failure(IOException("Network error: ${e.localizedMessage}")))
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!it.isSuccessful) {
-                        onResult(UpdateState.Error("GitHub API error: ${it.code}"))
+                        onResult(Result.failure(IOException("GitHub API error: ${it.code}")))
                         return
                     }
 
@@ -144,12 +153,12 @@ object VersionUpdater {
                         val allReleases = releases +
                             releasesAdapter.fromJson(it.body?.string().orEmpty()).orEmpty()
                         if (it.header("Link").orEmpty().contains("rel=\"next\"")) {
-                            fetchReleasePage(currentVersion, includePrereleases, onResult, page + 1, allReleases)
+                            fetchReleasePage(onResult, page + 1, allReleases)
                         } else {
-                            onResult(updateStateForReleases(allReleases, currentVersion, includePrereleases))
+                            onResult(Result.success(allReleases))
                         }
                     } catch (error: Exception) {
-                        onResult(UpdateState.Error("Failed to parse update: ${error.localizedMessage}"))
+                        onResult(Result.failure(IOException("Failed to parse releases: ${error.localizedMessage}", error)))
                     }
                 }
             }
@@ -169,15 +178,31 @@ object VersionUpdater {
             } ?: return UpdateState.Idle
         if (!SemanticVersion.isNewer(targetRelease.tag_name, currentVersion)) return UpdateState.Idle
 
-        // Prefer Still's release contract, with a generic APK fallback for older releases.
-        val apkAsset = targetRelease.assets.firstOrNull { isStillApkAssetName(it.name) }
-            ?: targetRelease.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
-            ?: return UpdateState.Error("Update found but no APK asset is available in the release.")
+        return releaseUpdate(targetRelease)
+            ?: UpdateState.Error("Update found but no APK asset is available in the release.")
+    }
+
+    internal fun releaseUpdate(release: GitHubRelease): UpdateState.UpdateAvailable? {
+        val apk = release.assets.firstOrNull { isStillApkAssetName(it.name) }
+            ?: release.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
+            ?: return null
         return UpdateState.UpdateAvailable(
-            version = targetRelease.tag_name,
-            notes = targetRelease.body ?: "No release notes provided.",
-            downloadUrl = apkAsset.browser_download_url,
+            version = release.tag_name,
+            notes = release.body ?: "No release notes provided.",
+            downloadUrl = apk.browser_download_url,
+            isBeta = release.prerelease || release.tag_name.substringBefore('+').contains('-'),
         )
+    }
+
+    internal fun managedVersions(releases: List<GitHubRelease>): List<UpdateState.UpdateAvailable> {
+        val published = releases.filter { !it.draft }
+        val stable = published.filter { !it.prerelease && !it.tag_name.substringBefore('+').contains('-') }
+            .maxWithOrNull { a, b -> SemanticVersion.compare(a.tag_name, b.tag_name) }
+        return (listOfNotNull(stable) + published.filter {
+            it.prerelease || it.tag_name.substringBefore('+').contains('-')
+        }.sortedWith { a, b -> SemanticVersion.compare(b.tag_name, a.tag_name) })
+            .mapNotNull(::releaseUpdate).distinctBy { it.version }
+            .map { it.copy(isVersionSwitch = true) }
     }
 
     internal fun isStillApkAssetName(name: String): Boolean = stillApkName.matches(name)

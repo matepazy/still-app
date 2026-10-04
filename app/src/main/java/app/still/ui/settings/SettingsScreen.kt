@@ -149,6 +149,7 @@ fun SettingsScreen(
     onVersionCheckChange: (Boolean) -> Unit = {},
     onUpdateChannelChange: (String) -> Unit = {},
     onCheckForUpdates: () -> Unit = {},
+    onManageBeta: () -> Unit = {},
     dataTransferState: app.still.ui.DataTransferState = app.still.ui.DataTransferState.Idle,
     onPrepareExport: (CharArray) -> Unit = {},
     onExportDestination: (android.net.Uri?) -> Unit = {},
@@ -265,6 +266,15 @@ fun SettingsScreen(
                 )
                 Hairline()
                 UpdateCheckRow(updateState = updateState, onCheckForUpdates = onCheckForUpdates)
+                if (settings.updateChannel == "pre-release") {
+                    Hairline()
+                    SettingRow(
+                        title = "Manage beta",
+                        supporting = "Choose a beta or return to the latest stable release",
+                        enabled = updateState !is UpdateState.Downloading,
+                        onClick = onManageBeta,
+                    )
+                }
             }
         }
 
