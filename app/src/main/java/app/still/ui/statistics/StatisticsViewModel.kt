@@ -75,7 +75,10 @@ class StatisticsViewModel(
         _state.value = StatisticsState.Loading
         viewModelScope.launch {
             runCatching {
-                val current = repository.statisticsDays(selected)
+                // The following morning completes a usage day that crosses midnight.
+                val windowRange = if (selected.days > 1 && selected.endInclusive.isBefore(LocalDate.now()))
+                    StatisticsRange(selected.start, selected.endInclusive.plusDays(1)) else selected
+                val current = repository.statisticsDays(windowRange)
                 val previous = repository.statisticsDays(selected.previous)
                 withContext(Dispatchers.Default) {
                     StatisticsCalculator.calculate(selected, current, previous,

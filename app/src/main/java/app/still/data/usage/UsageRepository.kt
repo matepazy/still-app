@@ -186,7 +186,11 @@ class UsageRepository(
                     Duration.between(overlapStart, overlapEnd).toMillis().coerceAtLeast(0)
                 }
             } else null
-            fun minute(instant: java.time.Instant) = instant.atZone(zone).toLocalTime().toSecondOfDay() / 60
+            fun minute(instant: java.time.Instant): Int {
+                val local = instant.atZone(zone)
+                return (java.time.temporal.ChronoUnit.DAYS.between(date, local.toLocalDate()) * 1440 +
+                    local.toLocalTime().toSecondOfDay() / 60).toInt().coerceIn(0, 1440)
+            }
             StatisticsDay(
                 date, day.total, if (detailed) day.checkInCount else null,
                 if (detailed) day.quickCheckCount else null,
@@ -200,6 +204,8 @@ class UsageRepository(
                 day.apps,
                 if (detailed) day.sessions.size else null,
                 if (detailed) day.sessions.sumOf { it.duration.toMillis() } else null,
+                if (detailed) active.map { app.still.domain.model.UsageMinuteInterval(minute(it.start), minute(it.end)) } else null,
+                minute(end),
             )
         }
     }

@@ -37,7 +37,12 @@ data class StatisticsDay(
     val apps: List<AppUsage>?,
     val sessionCount: Int? = null,
     val sessionTotalMillis: Long? = null,
+    val activityIntervals: List<UsageMinuteInterval>? = null,
+    val observedUntilMinute: Int = 1440,
 )
+
+/** Calendar-day activity, with midnight at the end represented by 1440. */
+data class UsageMinuteInterval(val start: Int, val end: Int)
 
 data class StatisticsApp(val label: String, val packageName: String, val total: Duration, val dailyAverage: Duration, val change: Duration? = null)
 data class StatisticsCategory(val category: AppCategory, val total: Duration, val share: Double, val change: Duration?)
@@ -58,8 +63,9 @@ data class StatisticsSummary(
     val sessionAverage: Duration?,
     val longestSession: Duration?,
     val longestBreakAverage: Duration?,
-    val firstUseAverageMinute: Int?,
-    val lastUseAverageMinute: Int?,
+    /** Minutes on a usage-day timeline; the end can exceed 1440 when crossing midnight. */
+    val firstUseTypicalMinute: Int?,
+    val lastUseTypicalMinute: Int?,
     val mostActiveHour: Int?,
     val hourlyAverageMillis: List<Long>?,
     val quickCheckShare: Double?,

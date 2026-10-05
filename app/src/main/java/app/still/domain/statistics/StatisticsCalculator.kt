@@ -62,6 +62,7 @@ object StatisticsCalculator {
                 bucket.first().date, bucket.last().date,
             )
         }
+        val useWindow = TypicalUsageWindow.calculate(range, current)
         return StatisticsSummary(
             range, days, valid.takeIf { it.isNotEmpty() }?.sum()?.let(Duration::ofMillis), average, median,
             days.filter { it.screenTime != null }.maxByOrNull { it.screenTime!! },
@@ -74,8 +75,8 @@ object StatisticsCalculator {
                 .takeIf { it.isNotEmpty() }?.let { pairs -> val count = pairs.sumOf { it.first }; if (count > 0) Duration.ofMillis(pairs.sumOf { it.second } / count) else null },
             days.mapNotNull { it.longestSession }.maxOrNull(),
             days.mapNotNull { it.longestBreak?.toMillis() }.takeIf { it.isNotEmpty() }?.average()?.toLong()?.let(Duration::ofMillis),
-            days.mapNotNull { it.firstUseMinute }.takeIf { it.isNotEmpty() }?.average()?.toInt(),
-            days.mapNotNull { it.lastUseMinute }.takeIf { it.isNotEmpty() }?.average()?.toInt(),
+            useWindow?.first,
+            useWindow?.second,
             hourly?.indices?.maxByOrNull { hourly[it] }, hourly,
             days.mapNotNull { day -> if (day.checkIns != null && day.quickChecks != null) day.checkIns to day.quickChecks else null }
                 .takeIf { it.isNotEmpty() }?.let { pairs -> val count = pairs.sumOf { it.first }; if (count > 0) pairs.sumOf { it.second }.toDouble() / count else null },

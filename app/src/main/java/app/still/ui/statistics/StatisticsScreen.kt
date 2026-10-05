@@ -231,9 +231,12 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
                     Modifier.padding(top = StillSpacing.small), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            val first = if (singleDay) day?.firstUseMinute else summary.firstUseAverageMinute
-            val last = if (singleDay) day?.lastUseMinute else summary.lastUseAverageMinute
+            val first = if (singleDay) day?.firstUseMinute else summary.firstUseTypicalMinute
+            val last = if (singleDay) day?.lastUseMinute else summary.lastUseTypicalMinute
             if (first != null && last != null) UseWindow(first, last, singleDay)
+            else if (!singleDay) Text("A typical use window needs complete days of detailed activity, including the following morning.",
+                Modifier.padding(top = StillSpacing.medium), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             summary.quickCheckShare?.let { share ->
                 Spacer(Modifier.height(StillSpacing.medium))
                 QuickCheckBreakdown(share)

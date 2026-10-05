@@ -24,11 +24,15 @@ import kotlin.math.sin
 
 @Composable
 internal fun UseWindow(first: Int, last: Int, singleDay: Boolean) {
-    val start = first.coerceIn(0, 1440)
-    val end = last.coerceIn(start, 1440)
+    val start = Math.floorMod(first, 1440)
+    val end = Math.floorMod(last, 1440)
+    val span = (last - first).coerceIn(0, 1440)
     val colors = MaterialTheme.colorScheme
     Spacer(Modifier.height(StillSpacing.large))
     Text(if (singleDay) "First to last use" else "Typical use window", style = MaterialTheme.typography.titleMedium)
+    if (!singleDay) Text("Median first and last use from complete days, split during your quietest hours.",
+        Modifier.padding(top = StillSpacing.xSmall), style = MaterialTheme.typography.bodySmall,
+        color = colors.onSurfaceVariant)
     InsightLayout(graphic = { chartSize ->
         Box(Modifier.size(chartSize).semantics {
             contentDescription = "24 hour clock, first use ${clockMinute(start)}, last use ${clockMinute(end)}"
@@ -45,7 +49,7 @@ internal fun UseWindow(first: Int, last: Int, singleDay: Boolean) {
                     drawLine(colors.onSurfaceVariant, at(radius - if (hour % 6 == 0) 7.dp.toPx() else 3.dp.toPx()),
                         at(radius - 1.dp.toPx()), 1.dp.toPx())
                 }
-                drawArc(colors.primary, start * .25f - 90, (end - start) * .25f, false, topLeft, diameter,
+                drawArc(colors.primary, start * .25f - 90, span * .25f, false, topLeft, diameter,
                     style = Stroke(8.dp.toPx(), cap = StrokeCap.Round))
                 listOf(start, end).forEach { minute ->
                     val angle = Math.toRadians(minute * .25 - 90)
@@ -63,7 +67,7 @@ internal fun UseWindow(first: Int, last: Int, singleDay: Boolean) {
     }, details = {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
             TimeEndpoint("First use", clockMinute(start))
-            TimeEndpoint("Last use", clockMinute(end))
+            TimeEndpoint("Last use", clockMinute(end) + if (span > 0 && end <= start) " (+1 day)" else "")
         }
     })
 }
