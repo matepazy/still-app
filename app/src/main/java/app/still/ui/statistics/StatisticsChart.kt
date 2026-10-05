@@ -53,7 +53,7 @@ fun StatisticsChart(summary: StatisticsSummary, period: StatisticsPeriod) {
     val ticks = points.mapIndexedNotNull { index, point ->
         if (index % stride != 0 && index != points.lastIndex) null else {
             val label = when {
-                singleDay -> index.toString().padStart(2, '0')
+                singleDay -> "${index.toString().padStart(2, '0')}:00"
                 points.size <= 7 -> summary.points[index].start.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
                 else -> point.first.substringBefore(" – ")
             }
@@ -66,6 +66,10 @@ fun StatisticsChart(summary: StatisticsSummary, period: StatisticsPeriod) {
             Text("Hourly detail is unavailable for this day.", Modifier.padding(top = StillSpacing.medium),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
+            Text(if (singleDay) "Screen time each hour" else if (summary.points.any { it.start != it.endInclusive })
+                "Daily average within each bar's date range" else "Screen time each day",
+                Modifier.padding(top = StillSpacing.xSmall), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             StatisticsBars(points, ticks, referenceMillis = if (singleDay) null else summary.dailyAverage?.toMillis(),
                 modifier = Modifier.padding(top = StillSpacing.medium), selectionKey = summary.range to period)
         }
@@ -157,8 +161,9 @@ internal fun StatisticsBars(
                 AdaptiveValueRow(minLeadingWidth = 100.dp,
                     leading = { Text(detail.first, style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant) },
                     trailing = { Text(detail.second?.let { Duration.ofMillis(it).compactDuration() } ?: "No data",
-                        style = MaterialTheme.typography.titleSmall) })
-            } else if (referenceMillis != null) {
+                        style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum")) })
+            }
+            if (referenceMillis != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Canvas(Modifier.width(20.dp).height(12.dp)) {
                         drawLine(colors.onSurfaceVariant, Offset(0f, size.height / 2), Offset(size.width, size.height / 2),
@@ -167,7 +172,7 @@ internal fun StatisticsBars(
                     Text("Daily average · ${Duration.ofMillis(referenceMillis).compactDuration()}",
                         style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
                 }
-            } else Text("Tap a bar to see screen time", style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
+            } else if (detail == null) Text("Tap a bar to see screen time", style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
             if (points.any { it.second == null }) Text("Dots indicate missing data", style = MaterialTheme.typography.labelSmall,
                 color = colors.onSurfaceVariant)
         }

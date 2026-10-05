@@ -1,9 +1,6 @@
 package app.still.ui.statistics
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,20 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import app.still.domain.model.StatisticsPeriod
 import app.still.domain.model.StatisticsSummary
 import app.still.ui.components.chartLabelWidth
+import app.still.ui.components.ChartTickLabels
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.LocalDate
@@ -82,14 +74,15 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
             else -> 4
         }]
     }
-    var selectedDate by remember(summary.range) { mutableStateOf<LocalDate?>(null) }
     val dateFormatter = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale) }
 
     Column {
         Text("Daily screen time", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(StillSpacing.medium))
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val gap = 2.dp
+            val density = LocalDensity.current
+            val gapPixels = with(density) { 2.dp.roundToPx() }
+            val gap = with(density) { gapPixels.toDp() }
             val months = remember(summary.range) {
                 val first = YearMonth.from(summary.range.start)
                 val last = YearMonth.from(summary.range.endInclusive)
@@ -97,47 +90,33 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                     first.plusMonths(offset.toLong())
                 }
             }
-            val weekdayWidth = chartLabelWidth((0..6).map { firstWeekday.plus(it.toLong()).getDisplayName(TextStyle.SHORT, locale) })
-            val labelWidth = chartLabelWidth(months.map { it.month.getDisplayName(TextStyle.SHORT, locale) })
-            val minimumWidth = maxOf(weekdayWidth + gap + (8.dp + gap) * weekCount,
-                weekdayWidth + gap + labelWidth * months.size)
-            val availableWidth = maxOf(maxWidth, minimumWidth)
-            val cell = ((availableWidth - weekdayWidth - gap * (weekCount + 1)) / weekCount)
-                .coerceIn(8.dp, if (period == StatisticsPeriod.Month) 28.dp else 13.dp)
-            val gridWidth = maxOf(weekdayWidth + gap + (cell + gap) * weekCount, minimumWidth)
-            val density = LocalDensity.current
+            val measuredWeekdayWidth = chartLabelWidth((0..6).map { firstWeekday.plus(it.toLong()).getDisplayName(TextStyle.SHORT, locale) })
+            val weekdayPixels = with(density) { measuredWeekdayWidth.roundToPx() }
+            val weekdayWidth = with(density) { weekdayPixels.toDp() }
             val labelHeight = rememberTextMeasurer().measure("Wed", MaterialTheme.typography.labelSmall).size.height
+            // Compose rounds each child independently. Allocate whole pixels first so
+            // rounding cannot consume the last column's width.
+            val cellPixels = with(density) {
+                ((maxWidth.roundToPx() - weekdayPixels - gapPixels * (weekCount + 1)) / weekCount)
+                    .coerceIn(1, (if (period == StatisticsPeriod.Month) 28.dp else 13.dp).roundToPx())
+            }
+            val cell = with(density) { cellPixels.toDp() }
+            val gridWidth = with(density) {
+                (weekdayPixels + gapPixels * (weekCount + 1) + cellPixels * weekCount).toDp()
+            }
             val rowHeight = maxOf(cell, with(density) { labelHeight.toDp() })
-            val firstCenter = weekdayWidth + gap + labelWidth / 2
-            val lastCenter = gridWidth - labelWidth / 2
             val monthCenters = months.map { month ->
                 val firstDay = maxOf(month.atDay(1), summary.range.start)
                 val lastDay = minOf(month.atEndOfMonth(), summary.range.endInclusive)
                 val middle = firstDay.plusDays(ChronoUnit.DAYS.between(firstDay, lastDay) / 2)
                 val weeksFromStart = ChronoUnit.DAYS.between(gridStart, middle).toFloat() / 7f
-                (weekdayWidth + gap + (cell + gap) * weeksFromStart + cell / 2).coerceIn(firstCenter, lastCenter)
-            }.toMutableList()
-            monthCenters.indices.forEach { index ->
-                if (index > 0) monthCenters[index] = maxOf(monthCenters[index], monthCenters[index - 1] + labelWidth)
+                weekdayWidth + gap + (cell + gap) * weeksFromStart + cell / 2
             }
-            for (index in monthCenters.indices.reversed()) {
-                monthCenters[index] = minOf(monthCenters[index], lastCenter - labelWidth * (monthCenters.lastIndex - index))
-            }
-            Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Column(Modifier.width(gridWidth)) {
-                    Box(Modifier.fillMaxWidth().heightIn(min = with(density) { labelHeight.toDp() })) {
-                        months.forEachIndexed { index, month ->
-                            Text(
-                                month.month.getDisplayName(TextStyle.SHORT, locale),
-                                modifier = Modifier.offset(x = monthCenters[index] - labelWidth / 2).width(labelWidth),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
+                    ChartTickLabels(months.mapIndexed { index, month ->
+                        (monthCenters[index] / gridWidth) to month.month.getDisplayName(TextStyle.SHORT, locale)
+                    })
                     Spacer(Modifier.height(StillSpacing.small))
                     Row {
                         Column(Modifier.width(weekdayWidth), verticalArrangement = Arrangement.spacedBy(gap)) {
@@ -165,15 +144,14 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                                         Spacer(Modifier.size(cell, rowHeight))
                                     } else {
                                         val description = "${date.format(dateFormatter)}, ${values[date]?.compactDuration() ?: "no data"}"
-                                        Box(
-                                            Modifier.size(cell, rowHeight)
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(colorFor(date))
-                                                .then(if (selectedDate == date) Modifier.border(2.dp,
-                                                    MaterialTheme.colorScheme.onSurface, RoundedCornerShape(3.dp)) else Modifier)
-                                                .clickable { selectedDate = date }
-                                                .semantics { contentDescription = description },
-                                        )
+                                        Box(Modifier.size(cell, rowHeight), contentAlignment = Alignment.Center) {
+                                            Box(
+                                                Modifier.size(cell)
+                                                    .clip(RoundedCornerShape(3.dp))
+                                                    .background(colorFor(date))
+                                                    .semantics { contentDescription = description },
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -204,8 +182,5 @@ fun ScreenTimeHeatmap(summary: StatisticsSummary, period: StatisticsPeriod) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        Text(selectedDate?.let { date -> "${date.format(dateFormatter)} · ${values[date]?.compactDuration() ?: "No data"}" }
-            ?: "Tap a day to see screen time", modifier = Modifier.padding(top = StillSpacing.medium),
-            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

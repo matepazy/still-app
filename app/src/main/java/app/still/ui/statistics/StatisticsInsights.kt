@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import app.still.ui.components.chartLabelWidth
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
 import java.time.Duration
@@ -82,7 +81,9 @@ internal fun QuickCheckBreakdown(share: Double) {
     val fraction = share.coerceIn(0.0, 1.0).toFloat()
     val percent = (fraction * 100).toInt()
     val colors = MaterialTheme.colorScheme
-    Text("Quick checks / check-ins", style = MaterialTheme.typography.titleMedium)
+    Text("Check-in breakdown", style = MaterialTheme.typography.titleMedium)
+    Text("Quick checks last less than a minute", Modifier.padding(top = StillSpacing.xSmall),
+        style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
     InsightLayout(graphic = { chartSize ->
         Box(Modifier.size(chartSize).semantics { contentDescription = "$percent percent of check-ins were quick checks" },
             contentAlignment = Alignment.Center) {
@@ -97,8 +98,8 @@ internal fun QuickCheckBreakdown(share: Double) {
         }
     }, details = {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
-            BreakdownLegend("Quick checks", colors.primary)
-            BreakdownLegend("Other check-ins", colors.surfaceContainerHighest)
+            BreakdownLegend("Quick checks · $percent%", colors.primary)
+            BreakdownLegend("Other check-ins · ${100 - percent}%", colors.surfaceContainerHighest)
         }
     })
 }
@@ -138,18 +139,14 @@ private fun BreakdownLegend(label: String, color: androidx.compose.ui.graphics.C
 
 @Composable
 internal fun WeekPattern(weekday: Duration?, weekend: Duration?) {
-    val points = listOf("Weekdays" to weekday?.toMillis(), "Weekends" to weekend?.toMillis())
-    val maximum = statisticsAxisMaximum(maxOf(weekday?.toMillis() ?: 0L, weekend?.toMillis() ?: 0L))
-    val axisWidth = chartLabelWidth((4 downTo 0).map { Duration.ofMillis(maximum * it / 4).compactDuration() })
-    Row(Modifier.fillMaxWidth().padding(start = axisWidth), horizontalArrangement = Arrangement.SpaceAround) {
-        listOf(weekday, weekend).forEach { duration ->
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                Text(duration?.compactDuration() ?: "—", style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"))
-            }
-        }
+    val maximum = maxOf(weekday?.toMillis() ?: 0L, weekend?.toMillis() ?: 0L, 1L).toFloat()
+    Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+        Text("Average screen time per day", style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        UsageBar("Weekdays", weekday?.compactDuration(), (weekday?.toMillis() ?: 0L) / maximum, bottomSpacing = 0.dp)
+        UsageBar("Weekends", weekend?.compactDuration(), (weekend?.toMillis() ?: 0L) / maximum,
+            color = MaterialTheme.colorScheme.secondary, bottomSpacing = 0.dp)
     }
-    StatisticsBars(points, listOf(.25f to "Weekdays", .75f to "Weekends"),
-        height = 160.dp, showDetails = false)
 }
 
 private fun clockMinute(minute: Int): String = "${(minute / 60).toString().padStart(2, '0')}:${(minute % 60).toString().padStart(2, '0')}"
@@ -161,19 +158,14 @@ internal fun DayExtremes(lowest: app.still.domain.model.StatisticsDay?, highest:
     val format = java.time.format.DateTimeFormatter.ofPattern("MMM d", locale)
     Column(Modifier.fillMaxWidth().padding(top = StillSpacing.large)) {
         Text("Daily range", style = MaterialTheme.typography.titleMedium)
-        Canvas(Modifier.fillMaxWidth().height(24.dp).padding(horizontal = 6.dp)) {
-            val y = size.height / 2
-            drawLine(colors.outlineVariant, Offset(0f, y), Offset(size.width, y), 2.dp.toPx())
-            drawCircle(colors.secondary, 4.dp.toPx(), Offset(0f, y))
-            drawCircle(colors.primary, 4.dp.toPx(), Offset(size.width, y))
-        }
+        Spacer(Modifier.height(StillSpacing.medium))
         app.still.ui.components.AdaptivePair { itemModifier ->
             listOf("Lowest" to lowest, "Highest" to highest).forEach { (label, day) ->
                 Column(itemModifier) {
                     Text(day?.screenTime?.compactDuration() ?: "—",
                         style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
                     Text("$label · ${day?.date?.format(format) ?: "—"}",
-                        style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                        style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
                 }
             }
         }
