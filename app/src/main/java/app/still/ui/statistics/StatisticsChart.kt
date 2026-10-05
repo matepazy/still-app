@@ -61,15 +61,16 @@ fun StatisticsChart(summary: StatisticsSummary, period: StatisticsPeriod) {
         }
     }
     Column {
-        Text(if (singleDay) "By hour" else "Screen time trend", style = MaterialTheme.typography.titleMedium)
+        StatisticsHeading(if (singleDay) "By hour" else "Screen time trend", help = buildString {
+            append(if (singleDay) "Screen time each hour." else if (summary.points.any { it.start != it.endInclusive })
+                "Daily average within each bar's date range." else "Screen time each day.")
+            append(" Tap a bar to see screen time.")
+            if (!singleDay) append(" The dashed line shows the daily average. Dots indicate missing data.")
+        })
         if (points.isEmpty()) {
             Text("Hourly detail is unavailable for this day.", Modifier.padding(top = StillSpacing.medium),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            Text(if (singleDay) "Screen time each hour" else if (summary.points.any { it.start != it.endInclusive })
-                "Daily average within each bar's date range" else "Screen time each day",
-                Modifier.padding(top = StillSpacing.xSmall), style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
             StatisticsBars(points, ticks, referenceMillis = if (singleDay) null else summary.dailyAverage?.toMillis(),
                 modifier = Modifier.padding(top = StillSpacing.medium), selectionKey = summary.range to period)
         }
@@ -172,9 +173,7 @@ internal fun StatisticsBars(
                     Text("Daily average · ${Duration.ofMillis(referenceMillis).compactDuration()}",
                         style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
                 }
-            } else if (detail == null) Text("Tap a bar to see screen time", style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
-            if (points.any { it.second == null }) Text("Dots indicate missing data", style = MaterialTheme.typography.labelSmall,
-                color = colors.onSurfaceVariant)
+            }
         }
     }
 }

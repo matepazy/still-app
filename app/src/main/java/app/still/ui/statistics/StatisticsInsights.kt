@@ -29,10 +29,8 @@ internal fun UseWindow(first: Int, last: Int, singleDay: Boolean) {
     val span = (last - first).coerceIn(0, 1440)
     val colors = MaterialTheme.colorScheme
     Spacer(Modifier.height(StillSpacing.large))
-    Text(if (singleDay) "First to last use" else "Typical use window", style = MaterialTheme.typography.titleMedium)
-    if (!singleDay) Text("Median first and last use from complete days, split during your quietest hours.",
-        Modifier.padding(top = StillSpacing.xSmall), style = MaterialTheme.typography.bodySmall,
-        color = colors.onSurfaceVariant)
+    StatisticsHeading(if (singleDay) "First to last use" else "Typical use window",
+        help = if (singleDay) null else "Median first and last use from complete days, split during your quietest hours.")
     InsightLayout(graphic = { chartSize ->
         Box(Modifier.size(chartSize).semantics {
             contentDescription = "24 hour clock, first use ${clockMinute(start)}, last use ${clockMinute(end)}"
@@ -85,9 +83,7 @@ internal fun QuickCheckBreakdown(share: Double) {
     val fraction = share.coerceIn(0.0, 1.0).toFloat()
     val percent = (fraction * 100).toInt()
     val colors = MaterialTheme.colorScheme
-    Text("Check-in breakdown", style = MaterialTheme.typography.titleMedium)
-    Text("Quick checks last less than a minute", Modifier.padding(top = StillSpacing.xSmall),
-        style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+    StatisticsHeading("Check-in breakdown", help = "Quick checks last less than a minute.")
     InsightLayout(graphic = { chartSize ->
         Box(Modifier.size(chartSize).semantics { contentDescription = "$percent percent of check-ins were quick checks" },
             contentAlignment = Alignment.Center) {
@@ -145,8 +141,6 @@ private fun BreakdownLegend(label: String, color: androidx.compose.ui.graphics.C
 internal fun WeekPattern(weekday: Duration?, weekend: Duration?) {
     val maximum = maxOf(weekday?.toMillis() ?: 0L, weekend?.toMillis() ?: 0L, 1L).toFloat()
     Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-        Text("Average screen time per day", style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
         UsageBar("Weekdays", weekday?.compactDuration(), (weekday?.toMillis() ?: 0L) / maximum, bottomSpacing = 0.dp)
         UsageBar("Weekends", weekend?.compactDuration(), (weekend?.toMillis() ?: 0L) / maximum,
             color = MaterialTheme.colorScheme.secondary, bottomSpacing = 0.dp)

@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
@@ -134,6 +136,7 @@ fun SettingsScreen(
     onStoredDataClick: () -> Unit,
     onReportIssueClick: () -> Unit = {},
     onDeveloperClick: () -> Unit = {},
+    onVersionArtworkClick: () -> Unit = {},
     reportSubmitted: Boolean = false,
     onDismissReportSubmitted: () -> Unit = {},
     onSaveUsageHistoryChange: (Boolean) -> Unit = {},
@@ -291,12 +294,24 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    StillWordmark(markSize = 22.dp)
+                    Box(
+                        modifier = Modifier
+                            .widthIn(min = 48.dp)
+                            .heightIn(min = 48.dp)
+                            .versionArtworkTrigger(onVersionArtworkClick),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        StillWordmark(markSize = 22.dp)
+                    }
                     Spacer(Modifier.weight(1f))
                     Text(
                         "v${BuildConfig.VERSION_NAME}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .versionArtworkTrigger(onVersionArtworkClick)
+                            .wrapContentHeight(),
                     )
                 }
             }

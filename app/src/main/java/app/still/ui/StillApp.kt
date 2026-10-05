@@ -89,6 +89,7 @@ import app.still.ui.components.LoadingSkeleton
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.onboarding.UsageAccessFlow
 import app.still.ui.settings.SettingsScreen
+import app.still.ui.settings.VersionArtworkScreen
 import app.still.ui.settings.IssueReportBrowser
 import app.still.ui.settings.ThemeSettingsScreen
 import app.still.ui.settings.SettingsTopBar
@@ -121,6 +122,7 @@ import java.time.Duration
 import java.time.LocalDate
 
 private const val AppDetailRoute = "app/{packageName}"
+private const val VersionArtworkRoute = "settings/version-artwork"
 private val PredictiveBackShape = RoundedCornerShape(28.dp)
 private val PredictiveBackEasing = CubicBezierEasing(0.15f, 0f, 0.15f, 1f)
 private val BackHandoffEasing = CubicBezierEasing(0.2f, 0f, 0.2f, 1f)
@@ -539,6 +541,9 @@ private fun MainNavigation(
                 SettingsScreen(
                     settings = settings,
                     onThemeClick = { navController.navigate(ThemeSettingsRoute) },
+                    onVersionArtworkClick = {
+                        navController.navigate(VersionArtworkRoute) { launchSingleTop = true }
+                    },
                     onRefresh = viewModel::refresh,
                     onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
                     onStoredDataClick = { navController.navigate(StoredDataRoute) },
@@ -571,6 +576,9 @@ private fun MainNavigation(
                     modifier = Modifier.padding(padding),
                 )
             }
+        }
+        composable(VersionArtworkRoute) {
+            VersionArtworkScreen(onClose = { navController.popBackStack() })
         }
         composable(IssueReportRoute) {
             DestinationScaffold(

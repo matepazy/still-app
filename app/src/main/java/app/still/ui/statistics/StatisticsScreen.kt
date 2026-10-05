@@ -148,15 +148,13 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
     val singleDay = summary.range.days == 1L
     val day = summary.days.firstOrNull()
     item {
-        Text(if (singleDay) "Screen time" else "Daily average", style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        DurationHeadline((if (singleDay) day?.screenTime else summary.dailyAverage)?.compactDuration() ?: "—")
         val recordedDays = summary.days.count { it.screenTime != null }
+        StatisticsHeading(if (singleDay) "Screen time" else "Daily average",
+            help = if (!singleDay && recordedDays > 0 && recordedDays.toLong() < summary.range.days)
+                "Based on $recordedDays of ${summary.range.days} days · missing days excluded" else null)
+        DurationHeadline((if (singleDay) day?.screenTime else summary.dailyAverage)?.compactDuration() ?: "—")
         if (recordedDays == 0) {
             Text("No screen-time data in this range. Choose another day or period.",
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else if (!singleDay && recordedDays.toLong() < summary.range.days) {
-            Text("Based on $recordedDays of ${summary.range.days} days · missing days excluded",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(StillSpacing.large))
@@ -189,10 +187,18 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
     }
     if (summary.hourlyAverageMillis != null || summary.checkInsAverage != null || summary.sessionAverage != null) {
         item {
-            SectionTitle(if (singleDay) "On this day" else "Daily rhythm")
+            val detailedDays = summary.days.count { it.checkIns != null }
+            SectionTitle(if (singleDay) "On this day" else "Daily rhythm", help = buildString {
+                append("Check-ins count phone sessions. Quick checks last less than a minute.")
+                if (!singleDay) {
+                    append(" Hourly activity shows the average screen time for each hour across days with detailed activity.")
+                    if (detailedDays.toLong() < summary.range.days) {
+                        append("\n\nDetailed activity is available for $detailedDays of ${summary.range.days} days.")
+                    }
+                    append("\n\nA typical use window needs complete days of detailed activity, including the following morning.")
+                }
+            })
             if (!singleDay) summary.hourlyAverageMillis?.let { hours ->
-                Text(if (summary.days.count { it.hourlyMillis != null } > 1) "Typical day" else "Hourly activity",
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TypicalDay(hours)
                 summary.mostActiveHour?.let {
                     Text("Most active around ${it.toString().padStart(2, '0')}:00", style = MaterialTheme.typography.bodySmall,
@@ -225,18 +231,9 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
                     }
                 }
             }
-            if (!singleDay) {
-                val detailedDays = summary.days.count { it.checkIns != null }
-                if (detailedDays.toLong() < summary.range.days) Text("Detailed activity is available for $detailedDays of ${summary.range.days} days.",
-                    Modifier.padding(top = StillSpacing.small), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
             val first = if (singleDay) day?.firstUseMinute else summary.firstUseTypicalMinute
             val last = if (singleDay) day?.lastUseMinute else summary.lastUseTypicalMinute
             if (first != null && last != null) UseWindow(first, last, singleDay)
-            else if (!singleDay) Text("A typical use window needs complete days of detailed activity, including the following morning.",
-                Modifier.padding(top = StillSpacing.medium), style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
             summary.quickCheckShare?.let { share ->
                 Spacer(Modifier.height(StillSpacing.medium))
                 QuickCheckBreakdown(share)
@@ -245,7 +242,7 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
     }
     if (!singleDay && (summary.weekdayAverage != null || summary.weekendAverage != null)) {
         item {
-            SectionTitle("Week at a glance")
+            SectionTitle("Week at a glance", help = "Average screen time per day, grouped into weekdays and weekends.")
             WeekPattern(summary.weekdayAverage, summary.weekendAverage)
         }
     }
@@ -270,9 +267,6 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
     if (summary.topApps.isNotEmpty()) {
         item {
             SectionTitle("Most used apps")
-            Text(if (singleDay) "Screen time by app" else "Total screen time in this period",
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(StillSpacing.large))
             val max = (summary.total?.toMillis() ?: summary.topApps.sumOf { it.total.toMillis() }).coerceAtLeast(1L)
             summary.topApps.take(5).forEach { app ->
                 Row(Modifier.fillMaxWidth().padding(bottom = StillSpacing.medium), verticalAlignment = Alignment.CenterVertically) {
@@ -335,17 +329,20 @@ private fun PeriodComparison(summary: app.still.domain.model.StatisticsSummary, 
     TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
         Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
             Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.xSmall)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(StillSpacing.small), verticalAlignment = Alignment.CenterVertically) {
-                    if (change != null && !change.isZero) Icon(
-                        painterResource(if (change.isNegative) StillIcons.ArrowDown else StillIcons.ArrowUp),
-                        contentDescription = null, modifier = Modifier.size(20.dp), tint = colors.onSurfaceVariant,
-                    )
-                    Text(when {
+                StatisticsHeading(
+                    title = when {
                         change == null -> "Period comparison"
                         change.isZero -> "No change"
                         else -> "${change.abs().compactDuration()} ${if (change.isNegative) "less" else "more"}"
-                    }, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
-                }
+                    },
+                    style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
+                    leading = {
+                        if (change != null && !change.isZero) Icon(
+                            painterResource(if (change.isNegative) StillIcons.ArrowDown else StillIcons.ArrowUp),
+                            contentDescription = null, modifier = Modifier.padding(end = StillSpacing.small).size(20.dp), tint = colors.onSurfaceVariant,
+                        )
+                    },
+                )
                 Text(if (singleDay) "Screen time compared with the previous day" else "Daily average compared with the previous period",
                     style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             }
@@ -367,9 +364,9 @@ private fun ChangeCaption(change: java.time.Duration, singleDay: Boolean) {
 
 
 @Composable
-private fun SectionTitle(title: String) {
+private fun SectionTitle(title: String, help: String? = null) {
     Spacer(Modifier.height(StillSpacing.section))
-    Text(title, Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall)
+    StatisticsHeading(title, help, Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall)
     Spacer(Modifier.height(StillSpacing.medium))
 }
 
