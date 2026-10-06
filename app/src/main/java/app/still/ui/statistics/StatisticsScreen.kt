@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -157,7 +156,7 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
             Text("No screen-time data in this range. Choose another day or period.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Spacer(Modifier.height(StillSpacing.large))
+        Spacer(Modifier.height(StillSpacing.small))
         PeriodComparison(summary, singleDay)
         Spacer(Modifier.height(StillSpacing.xLarge))
         if (period == StatisticsPeriod.Month || period == StatisticsPeriod.SixMonths) {
@@ -317,42 +316,18 @@ private fun signed(duration: java.time.Duration): String = (if (duration.isNegat
 
 @Composable
 private fun PeriodComparison(summary: app.still.domain.model.StatisticsSummary, singleDay: Boolean) {
-    val current = summary.dailyAverage ?: return
-    val previous = summary.previousAverage
+    if (summary.dailyAverage == null) return
+    val previousLabel = if (singleDay) "day" else "period"
     val change = summary.change
-    val colors = MaterialTheme.colorScheme
-    if (previous == null) {
-        Text("No previous ${if (singleDay) "day" else "period"} to compare",
-            style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
-        return
-    }
-    TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(StillSpacing.large)) {
-        Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
-            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.xSmall)) {
-                StatisticsHeading(
-                    title = when {
-                        change == null -> "Period comparison"
-                        change.isZero -> "No change"
-                        else -> "${change.abs().compactDuration()} ${if (change.isNegative) "less" else "more"}"
-                    },
-                    style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
-                    leading = {
-                        if (change != null && !change.isZero) Icon(
-                            painterResource(if (change.isNegative) StillIcons.ArrowDown else StillIcons.ArrowUp),
-                            contentDescription = null, modifier = Modifier.padding(end = StillSpacing.small).size(20.dp), tint = colors.onSurfaceVariant,
-                        )
-                    },
-                )
-                Text(if (singleDay) "Screen time compared with the previous day" else "Daily average compared with the previous period",
-                    style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-            }
-            val maximum = maxOf(current.toMillis(), previous.toMillis(), 1L).toFloat()
-            UsageBar(if (singleDay) "This day" else "This period", current.compactDuration(),
-                current.toMillis() / maximum, bottomSpacing = 0.dp)
-            UsageBar(if (singleDay) "Previous day" else "Previous period", previous.compactDuration(),
-                previous.toMillis() / maximum, color = colors.secondary, bottomSpacing = 0.dp)
-        }
-    }
+    Text(
+        text = when {
+            summary.previousAverage == null || change == null -> "No previous $previousLabel to compare"
+            change.isZero -> "Same as the previous $previousLabel"
+            else -> "${change.abs().compactDuration()} ${if (change.isNegative) "less" else "more"} than the previous $previousLabel"
+        },
+        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

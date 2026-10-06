@@ -24,7 +24,7 @@ android {
         minSdk = 28
         targetSdk = 37
         versionCode = 15
-        versionName = "1.6.0-beta3"
+        versionName = "1.6.0-beta4"
         testInstrumentationRunner = providers.gradleProperty("stillTestRunner")
             .getOrElse("androidx.test.runner.AndroidJUnitRunner")
         buildConfigField("boolean", "HALLOWEEN_PREVIEW", "false")
