@@ -49,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -84,7 +85,6 @@ import app.still.ui.appdetail.AppDetailTopBar
 import app.still.ui.apps.AppsScreen
 import app.still.ui.apps.AppsTopBar
 import app.still.ui.components.StillMark
-import app.still.ui.components.StillIcons
 import app.still.ui.components.LoadingSkeleton
 import app.still.ui.onboarding.OnboardingScreen
 import app.still.ui.onboarding.UsageAccessFlow
@@ -320,6 +320,8 @@ private fun MainNavigation(
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
+    val navigationIconScope = rememberCoroutineScope()
+    val navigationIconMotion = remember(navigationIconScope) { NavigationIconMotion(navigationIconScope) }
     var reportSubmitted by rememberSaveable { mutableStateOf(false) }
     val initialDestination = remember { navigationRequest?.destination ?: settings.lastDestination }
     val initialRequestId = remember { navigationRequest?.id }
@@ -408,7 +410,7 @@ private fun MainNavigation(
         composable(TodayRoute) {
             DestinationScaffold(
                 topBar = { TodayTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(TodayRoute, navController) {
+                bottomBar = { StillNavigationBar(TodayRoute, navController, navigationIconMotion) {
                     backAnimationState.tabNavigation = true
                 } },
             ) { padding ->
@@ -426,7 +428,7 @@ private fun MainNavigation(
         composable(TimelineRoute) {
             DestinationScaffold(
                 topBar = { TimelineTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(TimelineRoute, navController) {
+                bottomBar = { StillNavigationBar(TimelineRoute, navController, navigationIconMotion) {
                     backAnimationState.tabNavigation = true
                 } },
             ) { padding ->
@@ -441,7 +443,7 @@ private fun MainNavigation(
         composable(AppsRoute) {
             DestinationScaffold(
                 topBar = { AppsTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(AppsRoute, navController) {
+                bottomBar = { StillNavigationBar(AppsRoute, navController, navigationIconMotion) {
                     backAnimationState.tabNavigation = true
                 } },
             ) { padding ->
@@ -460,7 +462,7 @@ private fun MainNavigation(
                     compareRange = statisticsViewModel.range.value
                     navController.navigate(CompareRoute)
                 } },
-                bottomBar = { StillNavigationBar(StatisticsRoute, navController) {
+                bottomBar = { StillNavigationBar(StatisticsRoute, navController, navigationIconMotion) {
                     backAnimationState.tabNavigation = true
                 } },
             ) { padding ->
@@ -578,7 +580,10 @@ private fun MainNavigation(
             }
         }
         composable(VersionArtworkRoute) {
-            VersionArtworkScreen(onClose = { navController.popBackStack() })
+            VersionArtworkScreen(
+                onClose = { navController.popBackStack() },
+                modifier = Modifier.clip(PredictiveBackShape),
+            )
         }
         composable(IssueReportRoute) {
             DestinationScaffold(
@@ -773,6 +778,7 @@ private fun DestinationScaffold(
 private fun StillNavigationBar(
     currentRoute: String,
     navController: NavHostController,
+    iconMotion: NavigationIconMotion,
     onTabNavigation: () -> Unit,
 ) {
     NavigationBar(
@@ -781,18 +787,19 @@ private fun StillNavigationBar(
         tonalElevation = 0.dp,
     ) {
         listOf(
-            Triple(TodayRoute, "Today", StillIcons.Today),
-            Triple(TimelineRoute, "Timeline", StillIcons.Timeline),
-            Triple(AppsRoute, "Apps", StillIcons.Apps),
-            Triple(StatisticsRoute, "Statistics", StillIcons.Statistics),
-        ).forEach { (route, label, icon) ->
+            TodayRoute to "Today",
+            TimelineRoute to "Timeline",
+            AppsRoute to "Apps",
+            StatisticsRoute to "Statistics",
+        ).forEach { (route, label) ->
             NavigationBarItem(
                 selected = currentRoute == route,
                 onClick = {
+                    iconMotion.play(route, alreadySelected = currentRoute == route)
                     onTabNavigation()
                     navController.navigateTopLevel(route)
                 },
-                icon = { Icon(painterResource(icon), contentDescription = null) },
+                icon = { NavigationIcon(route, iconMotion, selected = currentRoute == route) },
                 label = { Text(label) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,

@@ -75,12 +75,23 @@ internal class VersionArtworkTaps {
     }
 }
 
+internal fun versionArtworkLabel(version: String): String {
+    val normalized = version.removePrefix("v")
+    val beta = Regex("^(.+)-beta(\\d+)$").matchEntire(normalized)
+    return when {
+        beta != null -> "Still v${beta.groupValues[1]} Beta ${beta.groupValues[2]}"
+        '-' !in normalized -> "Still v.$normalized Release"
+        else -> "Still v$normalized"
+    }
+}
+
 /** A local, deterministic color composition; no release lookup or downloaded assets. */
 @Composable
 fun VersionArtworkScreen(
     onClose: () -> Unit,
     version: String = BuildConfig.VERSION_NAME,
     releaseName: String? = null,
+    modifier: Modifier = Modifier,
 ) {
     val seed = remember(version) {
         version.fold(2166136261L) { hash, char ->
@@ -106,7 +117,7 @@ fun VersionArtworkScreen(
         ),
         label = "Gradient orbit",
     )
-    Box(Modifier.fillMaxSize().background(Color.hsv(hue, .62f, .16f))) {
+    Box(modifier.fillMaxSize().background(Color.hsv(hue, .62f, .16f))) {
         Canvas(Modifier.fillMaxSize()) {
             colors.forEachIndexed { index, color ->
                 val phase = progress + index * (2 * PI / 3).toFloat() + (seed % 100) / 100f
@@ -141,7 +152,7 @@ fun VersionArtworkScreen(
                 modifier = Modifier.size(176.dp),
             )
             Text(
-                text = releaseName?.takeIf { it.isNotBlank() } ?: "v$version",
+                text = releaseName?.takeIf { it.isNotBlank() } ?: versionArtworkLabel(version),
                 color = Color.White,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
