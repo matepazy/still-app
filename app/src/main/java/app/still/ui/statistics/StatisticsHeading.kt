@@ -42,14 +42,14 @@ internal fun StatisticsHeading(
                 modifier = Modifier.size(48.dp),
             ) {
                 Box(
-                    Modifier.size(36.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
+                    Modifier.size(28.dp).background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         painter = painterResource(StillIcons.Info),
                         contentDescription = "About $title",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
