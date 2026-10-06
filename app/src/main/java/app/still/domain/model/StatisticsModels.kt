@@ -39,6 +39,13 @@ data class StatisticsDay(
     val sessionTotalMillis: Long? = null,
     val activityIntervals: List<UsageMinuteInterval>? = null,
     val observedUntilMinute: Int = 1440,
+    val dayline: StatisticsDayline? = null,
+)
+
+data class StatisticsDayline(
+    val start: java.time.Instant,
+    val end: java.time.Instant,
+    val segments: List<DaylineSegment>,
 )
 
 /** Calendar-day activity, with midnight at the end represented by 1440. */

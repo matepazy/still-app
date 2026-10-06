@@ -206,6 +206,7 @@ class UsageRepository(
                 if (detailed) day.sessions.sumOf { it.duration.toMillis() } else null,
                 if (detailed) active.map { app.still.domain.model.UsageMinuteInterval(minute(it.start), minute(it.end)) } else null,
                 minute(end),
+                if (detailed) app.still.domain.model.StatisticsDayline(day.rangeStart, day.rangeEnd, day.dayline) else null,
             )
         }
     }

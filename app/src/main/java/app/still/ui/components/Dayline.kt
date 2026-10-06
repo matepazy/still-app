@@ -57,8 +57,9 @@ fun Dayline(
     end: Instant,
     segments: List<DaylineSegment>,
     summary: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    showNowMarker: Boolean = true,
 ) {
     val active = MaterialTheme.colorScheme.primary
     val inactive = MaterialTheme.colorScheme.outline.copy(alpha = .55f)
@@ -74,13 +75,13 @@ fun Dayline(
     val markerSize = rememberTextMeasurer().measure(nowLabel,
         MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), softWrap = false).size
     val markerWidth = with(density) { markerSize.width.toDp() }
-    val bandOffset = with(density) { markerSize.height.toDp() + 6.dp }.coerceAtLeast(26.dp)
+    val bandOffset = if (showNowMarker) with(density) { markerSize.height.toDp() + 6.dp }.coerceAtLeast(26.dp) else 0.dp
     Column(
         modifier
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .semantics(mergeDescendants = true) {
                 contentDescription = summary
-                role = Role.Button
+                if (onClick != null) role = Role.Button
             },
     ) {
         BoxWithConstraints(Modifier.fillMaxWidth().height(bandOffset + 56.dp)) {
@@ -114,12 +115,14 @@ fun Dayline(
                         drawLine(guide, Offset(x, bandTop), Offset(x, bandTop + bandHeight), 1.dp.toPx())
                     }
                 }
-                drawLine(now, Offset(nowX, bandTop - 8.dp.toPx()), Offset(nowX, bandTop + 49.dp.toPx()), 2.dp.toPx(), StrokeCap.Round)
-                drawCircle(now, radius = 3.dp.toPx(), center = Offset(nowX, bandTop + bandHeight / 2))
+                if (showNowMarker) {
+                    drawLine(now, Offset(nowX, bandTop - 8.dp.toPx()), Offset(nowX, bandTop + 49.dp.toPx()), 2.dp.toPx(), StrokeCap.Round)
+                    drawCircle(now, radius = 3.dp.toPx(), center = Offset(nowX, bandTop + bandHeight / 2))
+                }
             }
             val markerLabelWidth = markerWidth.coerceAtMost(maxWidth)
             val markerOffset = (maxWidth * nowProgress - markerLabelWidth / 2).coerceIn(0.dp, maxWidth - markerLabelWidth)
-            Text(
+            if (showNowMarker) Text(
                 nowLabel,
                 modifier = Modifier.offset(x = markerOffset).width(markerLabelWidth),
                 style = MaterialTheme.typography.labelMedium,

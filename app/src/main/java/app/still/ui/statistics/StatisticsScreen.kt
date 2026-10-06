@@ -42,6 +42,7 @@ import app.still.ui.components.AdaptivePair
 import app.still.ui.components.AdaptiveValueRow
 import app.still.ui.components.AppIcon
 import app.still.ui.components.DaySelector
+import app.still.ui.components.Dayline
 import app.still.ui.components.DurationHeadline
 import app.still.ui.components.LoadingSkeleton
 import app.still.ui.components.StillIcons
@@ -100,6 +101,11 @@ private fun StatisticsLoadingContent(period: StatisticsPeriod) {
         LoadingSkeleton(Modifier.width(112.dp).height(20.dp))
         Spacer(Modifier.height(StillSpacing.medium))
         LoadingSkeleton(Modifier.width(172.dp).height(52.dp))
+        if (period == StatisticsPeriod.Day) {
+            Spacer(Modifier.height(StillSpacing.large))
+            LoadingSkeleton(Modifier.fillMaxWidth().height(82.dp))
+            Spacer(Modifier.height(StillSpacing.medium))
+        }
         Spacer(Modifier.height(StillSpacing.small))
         LoadingSkeleton(Modifier.width(226.dp).height(16.dp))
         Spacer(Modifier.height(StillSpacing.large))
@@ -152,6 +158,17 @@ internal fun LazyListScope.statisticsContent(summary: app.still.domain.model.Sta
             help = if (!singleDay && recordedDays > 0 && recordedDays.toLong() < summary.range.days)
                 "Based on $recordedDays of ${summary.range.days} days · missing days excluded" else null)
         DurationHeadline((if (singleDay) day?.screenTime else summary.dailyAverage)?.compactDuration() ?: "—")
+        if (period == StatisticsPeriod.Day) day?.dayline?.let { dayline ->
+            Spacer(Modifier.height(StillSpacing.large))
+            Dayline(
+                start = dayline.start,
+                end = dayline.end,
+                segments = dayline.segments,
+                summary = "Dayline for ${day.date}, showing ${day.screenTime?.compactDuration() ?: "—"} of screen use",
+                showNowMarker = day.date == LocalDate.now(),
+            )
+            Spacer(Modifier.height(StillSpacing.medium))
+        }
         if (recordedDays == 0) {
             Text("No screen-time data in this range. Choose another day or period.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
