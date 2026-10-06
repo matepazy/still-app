@@ -66,6 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -145,6 +146,11 @@ private const val BackPreviewAlpha = 0.75f
 private const val ForwardNavigationDurationMillis = 240
 private val ForwardNavigationEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 private val TopLevelRoutes = setOf(TodayRoute, TimelineRoute, AppsRoute, StatisticsRoute)
+
+/** Optional device-test observer of real draw calls; never schedules or invalidates a frame. */
+internal object NavigationDrawObserver {
+    @Volatile var onDraw: ((String) -> Unit)? = null
+}
 
 private fun forwardDestinationEnter(offsetPx: Int): EnterTransition =
     fadeIn(tween(ForwardNavigationDurationMillis, easing = ForwardNavigationEasing)) +
@@ -770,12 +776,13 @@ private fun NavHostController.navigateTopLevel(route: String) {
 @Composable
 private fun DestinationScaffold(
     topBar: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
     sharedNavigationBar: Boolean = false,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .clip(PredictiveBackShape),
         containerColor = MaterialTheme.colorScheme.background,
@@ -805,6 +812,10 @@ private fun TopLevelDestinationScaffold(
     // Only those transitions need a bar inside the page; tab switches use the shared bar.
     DestinationScaffold(
         topBar = topBar,
+        modifier = Modifier.drawWithContent {
+            NavigationDrawObserver.onDraw?.invoke(route)
+            drawContent()
+        },
         sharedNavigationBar = sharedNavigationBar,
         bottomBar = {
             if (!sharedNavigationBar) StillNavigationBar(route, navController, iconMotion, onTabNavigation = {})
