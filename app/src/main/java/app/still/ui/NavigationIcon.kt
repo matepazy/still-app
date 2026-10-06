@@ -33,12 +33,29 @@ internal class NavigationIconMotion(private val scope: CoroutineScope) {
     private val progress = listOf(TodayRoute, TimelineRoute, AppsRoute, StatisticsRoute)
         .associateWith { Animatable(1f) }
     private var animation: Job? = null
+    private var pressedRoute: String? = null
     var fillingRoute by mutableStateOf<String?>(null)
         private set
 
     fun progress(route: String): Float = progress.getValue(route).value
 
     fun play(route: String, alreadySelected: Boolean) {
+        val startedOnPress = pressedRoute == route && animation?.isActive == true
+        pressedRoute = null
+        if (startedOnPress) return
+        startAnimation(route, alreadySelected)
+    }
+
+    fun press(route: String, alreadySelected: Boolean) {
+        pressedRoute = route
+        startAnimation(route, alreadySelected)
+    }
+
+    fun cancelPress(route: String) {
+        if (pressedRoute == route) pressedRoute = null
+    }
+
+    private fun startAnimation(route: String, alreadySelected: Boolean) {
         fillingRoute = if (alreadySelected) null else route
         animation?.cancel()
         animation = scope.launch(start = CoroutineStart.UNDISPATCHED) {

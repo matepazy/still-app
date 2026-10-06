@@ -33,6 +33,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -81,6 +83,11 @@ data class MainUiState(
     val settings: UserSettings? = null,
     val usage: UsageUiState = UsageUiState.Loading,
 )
+
+// Restore the first saved destination, then let NavController own live selection.
+// Persisting another tab must not rebuild the UI as though its settings changed.
+internal fun Flow<UserSettings>.distinctUiSettings(): Flow<UserSettings> =
+    distinctUntilChangedBy { it.copy(lastDestination = LastDestination.Today) }
 
 class MainViewModel(private val container: AppContainer) : ViewModel() {
     private val _dataTransferState = MutableStateFlow<DataTransferState>(DataTransferState.Idle)
@@ -217,7 +224,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     val archiveUpgradeState: StateFlow<ArchiveUpgradeState> = _archiveUpgradeState
     private val _archiveBackupDeleteState = MutableStateFlow<ArchiveBackupDeleteState>(ArchiveBackupDeleteState.Idle)
     val archiveBackupDeleteState: StateFlow<ArchiveBackupDeleteState> = _archiveBackupDeleteState
-    val state: StateFlow<MainUiState> = combine(container.settingsRepository.settings, usageState) { settings, usage ->
+    val state: StateFlow<MainUiState> = combine(container.settingsRepository.settings.distinctUiSettings(), usageState) { settings, usage ->
         MainUiState(settings, usage)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MainUiState())
 

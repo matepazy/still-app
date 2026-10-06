@@ -21,7 +21,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -41,14 +47,17 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
@@ -153,6 +162,12 @@ private fun forwardDestinationExit(): ExitTransition =
 private class BackAnimationState {
     var value: Int = BackEventCompat.EDGE_LEFT
     var tabNavigation: Boolean = false
+}
+
+// A single synchronous snapshot prevents a new page from drawing a fallback
+// bar while a separate Flow collector waits for its initial route emission.
+private class NavigationBarState {
+    var route by mutableStateOf<String?>(TodayRoute)
 }
 
 private fun backPreviewOffset(width: Int, marginPx: Int, swipeEdge: Int): Int {
@@ -320,6 +335,7 @@ private fun MainNavigation(
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
+    val navigationBarState = remember(navController) { NavigationBarState() }
     val navigationIconScope = rememberCoroutineScope()
     val navigationIconMotion = remember(navigationIconScope) { NavigationIconMotion(navigationIconScope) }
     var reportSubmitted by rememberSaveable { mutableStateOf(false) }
@@ -343,9 +359,9 @@ private fun MainNavigation(
         }
     }
     DisposableEffect(navController, navigationReady) {
-        if (!navigationReady) return@DisposableEffect onDispose { }
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            lastDestinationForRoute(destination.route)?.let(viewModel::setLastDestination)
+            navigationBarState.route = destination.route
+            if (navigationReady) lastDestinationForRoute(destination.route)?.let(viewModel::setLastDestination)
         }
         navController.addOnDestinationChangedListener(listener)
         onDispose { navController.removeOnDestinationChangedListener(listener) }
@@ -374,335 +390,329 @@ private fun MainNavigation(
     // Retain the gesture edge for the completion transition without triggering recomposition
     // from inside Navigation's transition callbacks.
     val backAnimationState = remember { BackAnimationState() }
-    NavHost(
-        navController = navController,
-        startDestination = TodayRoute,
-        modifier = Modifier.fillMaxSize(),
-        enterTransition = {
-            backAnimationState.tabNavigation = false
-            if (initialState.destination.route in TopLevelRoutes &&
-                targetState.destination.route in TopLevelRoutes
-            ) EnterTransition.None else forwardDestinationEnter(forwardNavigationOffsetPx)
-        },
-        exitTransition = {
-            if (initialState.destination.route in TopLevelRoutes &&
-                targetState.destination.route in TopLevelRoutes
-            ) ExitTransition.None else forwardDestinationExit()
-        },
-        popEnterTransition = {
-            if (backAnimationState.tabNavigation) EnterTransition.None
-            else backDestinationEnter(backAnimationState.value, predictiveBackMarginPx)
-        },
-        popExitTransition = {
-            if (backAnimationState.tabNavigation) ExitTransition.None
-            else backDestinationExit(backAnimationState.value, predictiveBackMarginPx)
-        },
-        predictivePopEnterTransition = { swipeEdge ->
-            backAnimationState.tabNavigation = false
-            backDestinationEnter(swipeEdge, predictiveBackMarginPx)
-        },
-        predictivePopExitTransition = { swipeEdge ->
-            backAnimationState.tabNavigation = false
-            backAnimationState.value = swipeEdge
-            backDestinationExit(swipeEdge, predictiveBackMarginPx)
-        },
-    ) {
-        composable(TodayRoute) {
-            DestinationScaffold(
-                topBar = { TodayTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(TodayRoute, navController, navigationIconMotion) {
-                    backAnimationState.tabNavigation = true
-                } },
-            ) { padding ->
-                TodayScreen(
-                    dashboard,
-                    onDaylineClick = { navController.navigate(TimelineRoute) },
-                    onAppClick = { packageName ->
-                        selectedDateValue = dashboard.today.date.toString()
-                        navController.navigate("app/$packageName")
-                    },
-                    modifier = Modifier.padding(padding),
-                )
-            }
-        }
-        composable(TimelineRoute) {
-            DestinationScaffold(
-                topBar = { TimelineTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(TimelineRoute, navController, navigationIconMotion) {
-                    backAnimationState.tabNavigation = true
-                } },
-            ) { padding ->
-                TimelineScreen(
-                    selectedDay,
-                    availableDays.map { it.date },
-                    selectDate,
-                    modifier = Modifier.padding(padding),
-                )
-            }
-        }
-        composable(AppsRoute) {
-            DestinationScaffold(
-                topBar = { AppsTopBar { navController.navigate(SettingsRoute) } },
-                bottomBar = { StillNavigationBar(AppsRoute, navController, navigationIconMotion) {
-                    backAnimationState.tabNavigation = true
-                } },
-            ) { padding ->
-                AppsScreen(
-                    selectedDay,
-                    onAppClick = { packageName -> navController.navigate("app/$packageName") },
-                    availableDates = availableDays.map { it.date },
-                    onDateSelected = selectDate,
-                    modifier = Modifier.padding(padding),
-                )
-            }
-        }
-        composable(StatisticsRoute) {
-            DestinationScaffold(
-                topBar = { StatisticsTopBar {
-                    compareRange = statisticsViewModel.range.value
-                    navController.navigate(CompareRoute)
-                } },
-                bottomBar = { StillNavigationBar(StatisticsRoute, navController, navigationIconMotion) {
-                    backAnimationState.tabNavigation = true
-                } },
-            ) { padding ->
-                StatisticsScreen(statisticsViewModel, availableDays.map { it.date }, modifier = Modifier.padding(padding))
-            }
-        }
-        composable(CompareRoute) {
-            val compareViewModel: CompareViewModel = viewModel(
-                factory = CompareViewModel.Factory(
-                    (context.applicationContext as StillApplication).container.usageRepository,
-                    settings.appCategoryOverrides,
-                    compareRange,
-                ),
-            )
-            DestinationScaffold(
-                topBar = { CompareTopBar {
-                    if (!compareViewModel.back() && !navController.popBackStack()) navController.navigate(StatisticsRoute)
-                } },
-            ) { padding ->
-                val appContext = context.applicationContext
-                val localApps by produceState<Map<String, AppInfo>>(emptyMap(), appContext, availableDays) {
-                    // Launcher queries and label loading must not block the first Compare frame.
-                    value = withContext(Dispatchers.IO) {
-                        val installed = runCatching {
-                            appContext.getSystemService(LauncherApps::class.java)
-                                ?.getActivityList(null, Process.myUserHandle()).orEmpty()
-                                .map { AppInfo(it.applicationInfo.packageName, it.label.toString()) }
-                        }.getOrDefault(emptyList())
-                        (installed + availableDays.flatMap { it.apps.orEmpty() }.map { it.app })
-                            .groupBy { it.label }.mapNotNull { (label, matches) ->
-                                matches.distinctBy { it.packageName }.singleOrNull()?.let { label to it }
-                            }.toMap()
-                    }
-                }
-                CompareScreen(compareViewModel, availableDays.map { it.date }, localApps, Modifier.padding(padding))
-            }
-        }
-        composable(AppDetailRoute) { entry ->
-            val packageName = entry.arguments?.getString("packageName").orEmpty()
-            val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
-            val suggestedCategory = remember(packageName) {
-                AppCategory.forPackage(context.packageManager, packageName)
-            }
-            val appCategory = settings.appCategoryOverrides[packageName] ?: suggestedCategory
-            DestinationScaffold(
-                topBar = { AppDetailTopBar(title) { navController.popBackStack() } },
-            ) { padding ->
-                buildAppDetail(packageName, dashboard, selectedDate)?.let {
-                    AppDetailScreen(
-                        it,
+    // Keep one bar alive across tabs. Recreating it inside each destination both
+    // resets Material's selection animation and adds its layout to every tab entry.
+    NavigationLayout(navigationBarState, navController, navigationIconMotion,
+        onTabNavigation = { backAnimationState.tabNavigation = true },
+    ) { navigationModifier ->
+        NavHost(
+            navController = navController,
+            startDestination = TodayRoute,
+            modifier = navigationModifier,
+            enterTransition = {
+                backAnimationState.tabNavigation = false
+                if (initialState.destination.route in TopLevelRoutes &&
+                    targetState.destination.route in TopLevelRoutes
+                ) EnterTransition.None else forwardDestinationEnter(forwardNavigationOffsetPx)
+            },
+            exitTransition = {
+                if (initialState.destination.route in TopLevelRoutes &&
+                    targetState.destination.route in TopLevelRoutes
+                ) ExitTransition.None else forwardDestinationExit()
+            },
+            popEnterTransition = {
+                if (backAnimationState.tabNavigation) EnterTransition.None
+                else backDestinationEnter(backAnimationState.value, predictiveBackMarginPx)
+            },
+            popExitTransition = {
+                if (backAnimationState.tabNavigation) ExitTransition.None
+                else backDestinationExit(backAnimationState.value, predictiveBackMarginPx)
+            },
+            predictivePopEnterTransition = { swipeEdge ->
+                backAnimationState.tabNavigation = false
+                backDestinationEnter(swipeEdge, predictiveBackMarginPx)
+            },
+            predictivePopExitTransition = { swipeEdge ->
+                backAnimationState.tabNavigation = false
+                backAnimationState.value = swipeEdge
+                backDestinationExit(swipeEdge, predictiveBackMarginPx)
+            },
+        ) {
+            composable(TodayRoute) {
+                TopLevelDestinationScaffold(TodayRoute, navigationBarState, navController, navigationIconMotion,
+                    topBar = { TodayTopBar { navController.navigate(SettingsRoute) } },
+                ) { padding ->
+                    TodayScreen(
+                        dashboard,
+                        onDaylineClick = { navController.navigate(TimelineRoute) },
+                        onAppClick = { packageName ->
+                            selectedDateValue = dashboard.today.date.toString()
+                            navController.navigate("app/$packageName")
+                        },
                         modifier = Modifier.padding(padding),
+                    )
+                }
+            }
+            composable(TimelineRoute) {
+                TopLevelDestinationScaffold(TimelineRoute, navigationBarState, navController, navigationIconMotion,
+                    topBar = { TimelineTopBar { navController.navigate(SettingsRoute) } },
+                ) { padding ->
+                    TimelineScreen(
+                        selectedDay,
+                        availableDays.map { it.date },
+                        selectDate,
+                        modifier = Modifier.padding(padding),
+                    )
+                }
+            }
+            composable(AppsRoute) {
+                TopLevelDestinationScaffold(AppsRoute, navigationBarState, navController, navigationIconMotion,
+                    topBar = { AppsTopBar { navController.navigate(SettingsRoute) } },
+                ) { padding ->
+                    AppsScreen(
+                        selectedDay,
+                        onAppClick = { packageName -> navController.navigate("app/$packageName") },
+                        availableDates = availableDays.map { it.date },
                         onDateSelected = selectDate,
-                        category = appCategory,
-                        onCategorySelected = { category -> viewModel.setAppCategory(packageName, category) },
+                        modifier = Modifier.padding(padding),
                     )
                 }
-                    ?: ErrorScreen(
-                        "This app has no usage information for the selected day.",
-                        navController::popBackStack,
-                    )
             }
-        }
-        composable(SettingsRoute) {
-            LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
-            LaunchedEffect(storedDataSummary?.importRollbackUntilMillis) {
-                storedDataSummary?.importRollbackUntilMillis?.let { until ->
-                    kotlinx.coroutines.delay((until - System.currentTimeMillis()).coerceAtLeast(0L))
-                    viewModel.refreshStoredDataSummary()
+            composable(StatisticsRoute) {
+                TopLevelDestinationScaffold(StatisticsRoute, navigationBarState, navController, navigationIconMotion,
+                    topBar = { StatisticsTopBar {
+                        compareRange = statisticsViewModel.range.value
+                        navController.navigate(CompareRoute)
+                    } },
+                ) { padding ->
+                    StatisticsScreen(statisticsViewModel, availableDays.map { it.date }, modifier = Modifier.padding(padding))
                 }
             }
-            DestinationScaffold(
-                topBar = {
-                    SettingsTopBar {
-                        if (!navController.popBackStack()) navController.navigate(TodayRoute)
+            composable(CompareRoute) {
+                val compareViewModel: CompareViewModel = viewModel(
+                    factory = CompareViewModel.Factory(
+                        (context.applicationContext as StillApplication).container.usageRepository,
+                        settings.appCategoryOverrides,
+                        compareRange,
+                    ),
+                )
+                DestinationScaffold(
+                    topBar = { CompareTopBar {
+                        if (!compareViewModel.back() && !navController.popBackStack()) navController.navigate(StatisticsRoute)
+                    } },
+                ) { padding ->
+                    val appContext = context.applicationContext
+                    val localApps by produceState<Map<String, AppInfo>>(emptyMap(), appContext, availableDays) {
+                        // Launcher queries and label loading must not block the first Compare frame.
+                        value = withContext(Dispatchers.IO) {
+                            val installed = runCatching {
+                                appContext.getSystemService(LauncherApps::class.java)
+                                    ?.getActivityList(null, Process.myUserHandle()).orEmpty()
+                                    .map { AppInfo(it.applicationInfo.packageName, it.label.toString()) }
+                            }.getOrDefault(emptyList())
+                            (installed + availableDays.flatMap { it.apps.orEmpty() }.map { it.app })
+                                .groupBy { it.label }.mapNotNull { (label, matches) ->
+                                    matches.distinctBy { it.packageName }.singleOrNull()?.let { label to it }
+                                }.toMap()
+                        }
                     }
-                },
-            ) { padding ->
-                SettingsScreen(
-                    settings = settings,
-                    onThemeClick = { navController.navigate(ThemeSettingsRoute) },
-                    onVersionArtworkClick = {
-                        navController.navigate(VersionArtworkRoute) { launchSingleTop = true }
-                    },
-                    onRefresh = viewModel::refresh,
-                    onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
-                    onStoredDataClick = { navController.navigate(StoredDataRoute) },
-                    onReportIssueClick = { navController.navigate(IssueReportRoute) },
-                    reportSubmitted = reportSubmitted,
-                    onDismissReportSubmitted = { reportSubmitted = false },
-                    onDeveloperClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://matepazy.hu")))
-                    },
-                    onSaveUsageHistoryChange = viewModel::setSaveUsageHistory,
-                    storedDataSummary = storedDataSummary,
-                    archiveRestoreState = archiveRestoreState,
-                    archiveUpgradeState = archiveUpgradeState,
-                    onRestoreArchive = viewModel::restoreArchiveBackup,
-                    onUpgradeArchive = viewModel::upgradeArchive,
-                    onDismissArchiveRestoreResult = viewModel::dismissArchiveRestoreResult,
-                    onDismissArchiveUpgradeResult = viewModel::dismissArchiveUpgradeResult,
-                    updateState = updateState,
-                    onVersionCheckChange = viewModel::setVersionCheckEnabled,
-                    onUpdateChannelChange = viewModel::setUpdateChannel,
-                    onCheckForUpdates = viewModel::triggerVersionCheck,
-                    onManageBeta = onManageBeta,
-                    dataTransferState = viewModel.dataTransferState.collectAsStateWithLifecycle().value,
-                    onPrepareExport = viewModel::prepareDataExport,
-                    onExportDestination = viewModel::exportData,
-                    onImportData = viewModel::importData,
-                    onSelectDataImport = viewModel::selectDataImport,
-                    onRollbackDataImport = viewModel::rollbackDataImport,
-                    onDismissDataTransfer = viewModel::dismissDataTransferResult,
-                    modifier = Modifier.padding(padding),
-                )
+                    CompareScreen(compareViewModel, availableDays.map { it.date }, localApps, Modifier.padding(padding))
+                }
             }
-        }
-        composable(VersionArtworkRoute) {
-            VersionArtworkScreen(
-                onClose = { navController.popBackStack() },
-                modifier = Modifier.clip(PredictiveBackShape),
-            )
-        }
-        composable(IssueReportRoute) {
-            DestinationScaffold(
-                topBar = {
-                    SettingsTopBar(title = "Report an issue", onBack = { navController.popBackStack() })
-                },
-            ) { padding ->
-                IssueReportBrowser(
-                    onSubmitted = {
-                        reportSubmitted = true
-                        navController.popBackStack()
+            composable(AppDetailRoute) { entry ->
+                val packageName = entry.arguments?.getString("packageName").orEmpty()
+                val title = selectedDay.apps.firstOrNull { it.app.packageName == packageName }?.app?.label ?: "App"
+                val suggestedCategory = remember(packageName) {
+                    AppCategory.forPackage(context.packageManager, packageName)
+                }
+                val appCategory = settings.appCategoryOverrides[packageName] ?: suggestedCategory
+                DestinationScaffold(
+                    topBar = { AppDetailTopBar(title) { navController.popBackStack() } },
+                ) { padding ->
+                    buildAppDetail(packageName, dashboard, selectedDate)?.let {
+                        AppDetailScreen(
+                            it,
+                            modifier = Modifier.padding(padding),
+                            onDateSelected = selectDate,
+                            category = appCategory,
+                            onCategorySelected = { category -> viewModel.setAppCategory(packageName, category) },
+                        )
+                    }
+                        ?: ErrorScreen(
+                            "This app has no usage information for the selected day.",
+                            navController::popBackStack,
+                        )
+                }
+            }
+            composable(SettingsRoute) {
+                LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
+                LaunchedEffect(storedDataSummary?.importRollbackUntilMillis) {
+                    storedDataSummary?.importRollbackUntilMillis?.let { until ->
+                        kotlinx.coroutines.delay((until - System.currentTimeMillis()).coerceAtLeast(0L))
+                        viewModel.refreshStoredDataSummary()
+                    }
+                }
+                DestinationScaffold(
+                    topBar = {
+                        SettingsTopBar {
+                            if (!navController.popBackStack()) navController.navigate(TodayRoute)
+                        }
                     },
+                ) { padding ->
+                    SettingsScreen(
+                        settings = settings,
+                        onThemeClick = { navController.navigate(ThemeSettingsRoute) },
+                        onVersionArtworkClick = {
+                            navController.navigate(VersionArtworkRoute) { launchSingleTop = true }
+                        },
+                        onRefresh = viewModel::refresh,
+                        onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
+                        onStoredDataClick = { navController.navigate(StoredDataRoute) },
+                        onReportIssueClick = { navController.navigate(IssueReportRoute) },
+                        reportSubmitted = reportSubmitted,
+                        onDismissReportSubmitted = { reportSubmitted = false },
+                        onDeveloperClick = {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://matepazy.hu")))
+                        },
+                        onSaveUsageHistoryChange = viewModel::setSaveUsageHistory,
+                        storedDataSummary = storedDataSummary,
+                        archiveRestoreState = archiveRestoreState,
+                        archiveUpgradeState = archiveUpgradeState,
+                        onRestoreArchive = viewModel::restoreArchiveBackup,
+                        onUpgradeArchive = viewModel::upgradeArchive,
+                        onDismissArchiveRestoreResult = viewModel::dismissArchiveRestoreResult,
+                        onDismissArchiveUpgradeResult = viewModel::dismissArchiveUpgradeResult,
+                        updateState = updateState,
+                        onVersionCheckChange = viewModel::setVersionCheckEnabled,
+                        onUpdateChannelChange = viewModel::setUpdateChannel,
+                        onCheckForUpdates = viewModel::triggerVersionCheck,
+                        onManageBeta = onManageBeta,
+                        dataTransferState = viewModel.dataTransferState.collectAsStateWithLifecycle().value,
+                        onPrepareExport = viewModel::prepareDataExport,
+                        onExportDestination = viewModel::exportData,
+                        onImportData = viewModel::importData,
+                        onSelectDataImport = viewModel::selectDataImport,
+                        onRollbackDataImport = viewModel::rollbackDataImport,
+                        onDismissDataTransfer = viewModel::dismissDataTransferResult,
+                        modifier = Modifier.padding(padding),
+                    )
+                }
+            }
+            composable(VersionArtworkRoute) {
+                VersionArtworkScreen(
                     onClose = { navController.popBackStack() },
-                    modifier = Modifier.padding(padding),
+                    modifier = Modifier.clip(PredictiveBackShape),
                 )
             }
-        }
-        composable(ThemeSettingsRoute) {
-            DestinationScaffold(
-                topBar = { SettingsTopBar(title = "Theme", onBack = { navController.popBackStack() }) },
-            ) { padding ->
-                ThemeSettingsScreen(
-                    selectedTheme = settings.theme,
-                    promotedSimpleTheme = settings.promotedSimpleTheme,
-                    onThemeChange = viewModel::setTheme,
-                    onDrawerThemeChange = viewModel::setThemeFromDrawer,
-                    modifier = Modifier.padding(padding),
-                )
-            }
-        }
-        composable(StoredDataRoute) {
-            LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
-            DestinationScaffold(
-                topBar = {
-                    SettingsTopBar(
-                        title = "Data stored on this device",
-                        onBack = {
-                            if (!navController.popBackStack()) navController.navigate(SettingsRoute)
+            composable(IssueReportRoute) {
+                DestinationScaffold(
+                    topBar = {
+                        SettingsTopBar(title = "Report an issue", onBack = { navController.popBackStack() })
+                    },
+                ) { padding ->
+                    IssueReportBrowser(
+                        onSubmitted = {
+                            reportSubmitted = true
+                            navController.popBackStack()
                         },
+                        onClose = { navController.popBackStack() },
+                        modifier = Modifier.padding(padding),
                     )
-                },
-            ) { padding ->
-                StoredDataScreen(
-                    summary = storedDataSummary,
-                    archiveBackupDeleteState = archiveBackupDeleteState,
-                    onDeleteArchiveBackup = viewModel::deleteArchiveBackup,
-                    onDismissArchiveBackupDeleteResult = viewModel::dismissArchiveBackupDeleteResult,
-                    modifier = Modifier.padding(padding),
-                )
+                }
             }
-        }
-        composable(WidgetSettingsRoute) {
-            DestinationScaffold(
-                topBar = {
-                    SettingsTopBar(
-                        title = "Widgets",
-                        onBack = {
-                            if (!navController.popBackStack()) navController.navigate(SettingsRoute)
-                        },
+            composable(ThemeSettingsRoute) {
+                DestinationScaffold(
+                    topBar = { SettingsTopBar(title = "Theme", onBack = { navController.popBackStack() }) },
+                ) { padding ->
+                    ThemeSettingsScreen(
+                        selectedTheme = settings.theme,
+                        promotedSimpleTheme = settings.promotedSimpleTheme,
+                        onThemeChange = viewModel::setTheme,
+                        onDrawerThemeChange = viewModel::setThemeFromDrawer,
+                        modifier = Modifier.padding(padding),
                     )
-                },
-            ) { padding ->
-                WidgetSelectorScreen(
-                    settings = settings,
-                    previewDay = dashboard.today,
-                    onScreenTimeClick = { navController.navigate(ScreenTimeWidgetSettingsRoute) },
-                    onDaylineClick = { navController.navigate(DaylineWidgetSettingsRoute) },
-                    modifier = Modifier.padding(padding),
-                )
+                }
             }
-        }
-        composable(ScreenTimeWidgetSettingsRoute) {
-            DestinationScaffold(
-                topBar = {
-                    SettingsTopBar(
-                        title = "Screen time",
-                        onBack = navController::backFromWidgetSettings,
-                        onReset = viewModel::resetWidgetSettings,
+            composable(StoredDataRoute) {
+                LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
+                DestinationScaffold(
+                    topBar = {
+                        SettingsTopBar(
+                            title = "Data stored on this device",
+                            onBack = {
+                                if (!navController.popBackStack()) navController.navigate(SettingsRoute)
+                            },
+                        )
+                    },
+                ) { padding ->
+                    StoredDataScreen(
+                        summary = storedDataSummary,
+                        archiveBackupDeleteState = archiveBackupDeleteState,
+                        onDeleteArchiveBackup = viewModel::deleteArchiveBackup,
+                        onDismissArchiveBackupDeleteResult = viewModel::dismissArchiveBackupDeleteResult,
+                        modifier = Modifier.padding(padding),
                     )
-                },
-            ) { padding ->
-                WidgetSettingsScreen(
-                    settings = settings,
-                    widgetPreviewDay = dashboard.today,
-                    onWidgetColorChange = viewModel::setWidgetColor,
-                    onWidgetThemeChange = viewModel::setWidgetTheme,
-                    onWidgetLabelChange = viewModel::setWidgetLabel,
-                    onWidgetFontSizeChange = viewModel::setWidgetFontSize,
-                    onWidgetFontStyleChange = viewModel::setWidgetFontStyle,
-                    onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
-                    onShowThemeGraphicsChange = viewModel::setWidgetShowThemeGraphics,
-                    onWidgetCornerRadiusChange = viewModel::setWidgetCornerRadius,
-                    onWidgetBackgroundOpacityChange = viewModel::setWidgetBackgroundOpacity,
-                    modifier = Modifier.padding(padding),
-                )
+                }
             }
-        }
-        composable(DaylineWidgetSettingsRoute) {
-            DestinationScaffold(
-                topBar = {
-                    SettingsTopBar(
-                        title = "Dayline",
-                        onBack = navController::backFromWidgetSettings,
-                        onReset = viewModel::resetDaylineWidgetSettings,
+            composable(WidgetSettingsRoute) {
+                DestinationScaffold(
+                    topBar = {
+                        SettingsTopBar(
+                            title = "Widgets",
+                            onBack = {
+                                if (!navController.popBackStack()) navController.navigate(SettingsRoute)
+                            },
+                        )
+                    },
+                ) { padding ->
+                    WidgetSelectorScreen(
+                        settings = settings,
+                        previewDay = dashboard.today,
+                        onScreenTimeClick = { navController.navigate(ScreenTimeWidgetSettingsRoute) },
+                        onDaylineClick = { navController.navigate(DaylineWidgetSettingsRoute) },
+                        modifier = Modifier.padding(padding),
                     )
-                },
-            ) { padding ->
-                DaylineWidgetSettingsScreen(
-                    settings = settings,
-                    widgetPreviewDay = dashboard.today,
-                    onWidgetColorChange = viewModel::setDaylineWidgetColor,
-                    onWidgetThemeChange = viewModel::setDaylineWidgetTheme,
-                    onWidgetLabelChange = viewModel::setDaylineWidgetLabel,
-                    onWidgetShowRefreshChange = viewModel::setDaylineWidgetShowRefresh,
-                    onShowThemeGraphicsChange = viewModel::setDaylineWidgetShowThemeGraphics,
-                    onWidgetCornerRadiusChange = viewModel::setDaylineWidgetCornerRadius,
-                    onWidgetBackgroundOpacityChange = viewModel::setDaylineWidgetBackgroundOpacity,
-                    modifier = Modifier.padding(padding),
-                )
+                }
+            }
+            composable(ScreenTimeWidgetSettingsRoute) {
+                DestinationScaffold(
+                    topBar = {
+                        SettingsTopBar(
+                            title = "Screen time",
+                            onBack = navController::backFromWidgetSettings,
+                            onReset = viewModel::resetWidgetSettings,
+                        )
+                    },
+                ) { padding ->
+                    WidgetSettingsScreen(
+                        settings = settings,
+                        widgetPreviewDay = dashboard.today,
+                        onWidgetColorChange = viewModel::setWidgetColor,
+                        onWidgetThemeChange = viewModel::setWidgetTheme,
+                        onWidgetLabelChange = viewModel::setWidgetLabel,
+                        onWidgetFontSizeChange = viewModel::setWidgetFontSize,
+                        onWidgetFontStyleChange = viewModel::setWidgetFontStyle,
+                        onWidgetShowRefreshChange = viewModel::setWidgetShowRefresh,
+                        onShowThemeGraphicsChange = viewModel::setWidgetShowThemeGraphics,
+                        onWidgetCornerRadiusChange = viewModel::setWidgetCornerRadius,
+                        onWidgetBackgroundOpacityChange = viewModel::setWidgetBackgroundOpacity,
+                        modifier = Modifier.padding(padding),
+                    )
+                }
+            }
+            composable(DaylineWidgetSettingsRoute) {
+                DestinationScaffold(
+                    topBar = {
+                        SettingsTopBar(
+                            title = "Dayline",
+                            onBack = navController::backFromWidgetSettings,
+                            onReset = viewModel::resetDaylineWidgetSettings,
+                        )
+                    },
+                ) { padding ->
+                    DaylineWidgetSettingsScreen(
+                        settings = settings,
+                        widgetPreviewDay = dashboard.today,
+                        onWidgetColorChange = viewModel::setDaylineWidgetColor,
+                        onWidgetThemeChange = viewModel::setDaylineWidgetTheme,
+                        onWidgetLabelChange = viewModel::setDaylineWidgetLabel,
+                        onWidgetShowRefreshChange = viewModel::setDaylineWidgetShowRefresh,
+                        onShowThemeGraphicsChange = viewModel::setDaylineWidgetShowThemeGraphics,
+                        onWidgetCornerRadiusChange = viewModel::setDaylineWidgetCornerRadius,
+                        onWidgetBackgroundOpacityChange = viewModel::setDaylineWidgetBackgroundOpacity,
+                        modifier = Modifier.padding(padding),
+                    )
+                }
             }
         }
     }
@@ -760,6 +770,7 @@ private fun NavHostController.navigateTopLevel(route: String) {
 @Composable
 private fun DestinationScaffold(
     topBar: @Composable () -> Unit,
+    sharedNavigationBar: Boolean = false,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
@@ -770,8 +781,67 @@ private fun DestinationScaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = topBar,
         bottomBar = bottomBar,
+        // The shared bar already occupies the navigation inset below top-level pages.
+        contentWindowInsets = if (sharedNavigationBar)
+            WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+        else ScaffoldDefaults.contentWindowInsets,
         content = content,
     )
+}
+
+@Composable
+private fun TopLevelDestinationScaffold(
+    route: String,
+    navigationBarState: NavigationBarState,
+    navController: NavHostController,
+    iconMotion: NavigationIconMotion,
+    topBar: @Composable () -> Unit,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    val sharedNavigationBar by remember(navigationBarState) {
+        derivedStateOf { navigationBarState.route in TopLevelRoutes }
+    }
+    // Secondary navigation and predictive back animate complete destination surfaces.
+    // Only those transitions need a bar inside the page; tab switches use the shared bar.
+    DestinationScaffold(
+        topBar = topBar,
+        sharedNavigationBar = sharedNavigationBar,
+        bottomBar = {
+            if (!sharedNavigationBar) StillNavigationBar(route, navController, iconMotion, onTabNavigation = {})
+        },
+        content = content,
+    )
+}
+
+@Composable
+private fun NavigationLayout(
+    navigationBarState: NavigationBarState,
+    navController: NavHostController,
+    iconMotion: NavigationIconMotion,
+    onTabNavigation: () -> Unit,
+    content: @Composable (Modifier) -> Unit,
+) {
+    val showNavigationBar by remember(navigationBarState) {
+        derivedStateOf { navigationBarState.route in TopLevelRoutes }
+    }
+    Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) { content(Modifier.fillMaxSize()) }
+        if (showNavigationBar) {
+            SelectedNavigationBar(navigationBarState, navController, iconMotion, onTabNavigation)
+        }
+    }
+}
+
+@Composable
+private fun SelectedNavigationBar(
+    navigationBarState: NavigationBarState,
+    navController: NavHostController,
+    iconMotion: NavigationIconMotion,
+    onTabNavigation: () -> Unit,
+) {
+    // A tab selection only invalidates the bar, not the layout or navigation graph.
+    val currentRoute = navigationBarState.route ?: return
+    StillNavigationBar(currentRoute, navController, iconMotion, onTabNavigation)
 }
 
 @Composable
@@ -792,8 +862,19 @@ private fun StillNavigationBar(
             AppsRoute to "Apps",
             StatisticsRoute to "Statistics",
         ).forEach { (route, label) ->
+            val interactions = remember(route) { MutableInteractionSource() }
+            val selected by rememberUpdatedState(currentRoute == route)
+            LaunchedEffect(interactions, iconMotion) {
+                interactions.interactions.collect { interaction ->
+                    when (interaction) {
+                        is PressInteraction.Press -> iconMotion.press(route, alreadySelected = selected)
+                        is PressInteraction.Cancel -> iconMotion.cancelPress(route)
+                    }
+                }
+            }
             NavigationBarItem(
                 selected = currentRoute == route,
+                interactionSource = interactions,
                 onClick = {
                     iconMotion.play(route, alreadySelected = currentRoute == route)
                     onTabNavigation()
