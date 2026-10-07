@@ -241,13 +241,27 @@ fun StillApp(
     val archiveUpgradeState by viewModel.archiveUpgradeState.collectAsStateWithLifecycle()
     val archiveBackupDeleteState by viewModel.archiveBackupDeleteState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val communityRepository = (context.applicationContext as StillApplication).container.communityThemes
+    val community by communityRepository.state.collectAsStateWithLifecycle()
+    if (!community.loaded) return
+    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+    var themeRefresh by remember { mutableStateOf(0) }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) { themeRefresh++ }
+    val activeCommunityStyle = remember(community.active, systemDark, fontScale, themeRefresh) {
+        community.active?.let { app.still.ui.theme.communityStyle(context, it, systemDark) }
+    }
     var manageBeta by remember { mutableStateOf(false) }
     var activeUpdate by remember { mutableStateOf<UpdateState.UpdateAvailable?>(null) }
     LaunchedEffect(updateState) {
         if (updateState is UpdateState.UpdateAvailable) activeUpdate = updateState as UpdateState.UpdateAvailable
     }
+    val navigationVisible = settings.onboardingComplete && state.usage is UsageUiState.Ready
+    val navigationBarState = remember(navigationVisible) { NavigationBarState() }
     StillTheme(
         themePreference = if (!settings.onboardingComplete) ThemePreference.Dark else settings.theme,
+        communityStyle = activeCommunityStyle.takeIf { settings.onboardingComplete },
+        darkStatusBarIcons = if (navigationVisible && navigationBarState.route == VersionArtworkRoute) false else null,
     ) {
         SideEffect(onContentReady)
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -282,6 +296,7 @@ fun StillApp(
                         archiveBackupDeleteState,
                         navigationRequest,
                         onNavigationRequestHandled,
+                        navigationBarState,
                         onManageBeta = { manageBeta = true },
                     )
                 }
@@ -337,11 +352,11 @@ private fun MainNavigation(
     archiveBackupDeleteState: ArchiveBackupDeleteState,
     navigationRequest: NavigationRequest?,
     onNavigationRequestHandled: (Int) -> Unit,
+    navigationBarState: NavigationBarState,
     onManageBeta: () -> Unit,
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
-    val navigationBarState = remember(navController) { NavigationBarState() }
     val navigationIconScope = rememberCoroutineScope()
     val navigationIconMotion = remember(navigationIconScope) { NavigationIconMotion(navigationIconScope) }
     var reportSubmitted by rememberSaveable { mutableStateOf(false) }
@@ -541,6 +556,8 @@ private fun MainNavigation(
                 }
             }
             composable(SettingsRoute) {
+                val communityThemeTitle = app.still.ui.theme.LocalCommunityStyle.current?.installed?.content?.theme?.title
+                app.still.ui.theme.TrustedThemeControls {
                 LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
                 LaunchedEffect(storedDataSummary?.importRollbackUntilMillis) {
                     storedDataSummary?.importRollbackUntilMillis?.let { until ->
@@ -557,6 +574,7 @@ private fun MainNavigation(
                 ) { padding ->
                     SettingsScreen(
                         settings = settings,
+                        communityThemeTitle = communityThemeTitle,
                         onThemeClick = { navController.navigate(ThemeSettingsRoute) },
                         onVersionArtworkClick = {
                             navController.navigate(VersionArtworkRoute) { launchSingleTop = true }
@@ -593,6 +611,7 @@ private fun MainNavigation(
                         modifier = Modifier.padding(padding),
                     )
                 }
+                }
             }
             composable(VersionArtworkRoute) {
                 VersionArtworkScreen(
@@ -617,6 +636,7 @@ private fun MainNavigation(
                 }
             }
             composable(ThemeSettingsRoute) {
+                app.still.ui.theme.TrustedThemeControls {
                 DestinationScaffold(
                     topBar = { SettingsTopBar(title = "Theme", onBack = { navController.popBackStack() }) },
                 ) { padding ->
@@ -627,6 +647,7 @@ private fun MainNavigation(
                         onDrawerThemeChange = viewModel::setThemeFromDrawer,
                         modifier = Modifier.padding(padding),
                     )
+                }
                 }
             }
             composable(StoredDataRoute) {

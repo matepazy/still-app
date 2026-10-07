@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -46,6 +47,9 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayTopBar(onSettings: () -> Unit) {
+    val community = app.still.ui.theme.LocalCommunityStyle.current
+    val colors = community?.let { app.still.ui.theme.communityControlColors(it.installed.appearance) } ?: MaterialTheme.colorScheme
+    MaterialTheme(colorScheme = colors) {
     TopAppBar(
         title = { StillWordmark() },
         actions = {
@@ -54,6 +58,7 @@ fun TodayTopBar(onSettings: () -> Unit) {
             }
         },
     )
+    }
 }
 
 @Composable
@@ -64,6 +69,7 @@ fun TodayScreen(
     modifier: Modifier = Modifier,
 ) {
     val today = dashboard.today
+    val communityArtwork = app.still.ui.theme.LocalCommunityStyle.current?.image("today.background")
     Column(
         modifier
             .fillMaxSize()
@@ -71,6 +77,14 @@ fun TodayScreen(
             .padding(horizontal = StillSpacing.medium),
     ) {
         Spacer(Modifier.height(24.dp))
+        communityArtwork?.let { bitmap ->
+            androidx.compose.foundation.Image(
+                bitmap = bitmap.asImageBitmap(), contentDescription = null,
+                modifier = Modifier.fillMaxWidth().heightIn(max = 180.dp),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            )
+            Spacer(Modifier.height(StillSpacing.medium))
+        }
         val date = today.date.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
         if (LocalThemePreference.current == ThemePreference.Halloween) {
             HalloweenTodayHeader(date, today.total.compactDuration())

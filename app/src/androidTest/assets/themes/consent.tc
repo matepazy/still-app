@@ -1,0 +1,30 @@
+compose-version: 1
+target: still
+id: test-theme
+version: 1.0.0
+title: Example
+author: Test
+#request sysLightMode:
+  id LightMode
+  as string
+  reason "Follow system appearance"
+#request sysFontScale:
+  id FontScale
+  as number
+  reason "Adjust for larger text"
+@common
+colors:
+  light:
+    primary: = LightMode == "dark" ? "#345D42" : "#286C43"
+    on-primary: "#FFFFFF"
+    background: "#FFFFFF"
+    on-background: "#111111"
+    surface: "#FFFFFF"
+    on-surface: "#111111"
+  dark:
+    primary: "#ABCDEF"
+    on-primary: "#000000"
+    background: "#111111"
+    on-background: "#FFFFFF"
+    surface: "#111111"
+    on-surface: "#FFFFFF"

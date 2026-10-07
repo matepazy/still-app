@@ -51,7 +51,8 @@ internal data class WidgetPalette(
                 return WidgetPalette(colors.background, colors.foreground, colors.foreground)
             }
             if (appearance == WidgetAppearance.App) {
-                val colors = appColorScheme(context, appTheme)
+                val community = (context.applicationContext as? app.still.StillApplication)?.container?.communityThemes?.state?.value?.active
+                val colors = community?.let { app.still.ui.theme.communityStyle(context, it).colors } ?: appColorScheme(context, appTheme)
                 return WidgetPalette(
                     colors.surfaceContainer.toArgb(),
                     colors.onSurface.toArgb(),
@@ -89,4 +90,12 @@ object WidgetUpdateDispatcher {
         ScreenTimeWidgetProvider.updateAll(context)
         DaylineWidgetProvider.updateAll(context)
     }
+}
+
+/** Keep RemoteViews image payloads below Binder limits and retain native content contrast. */
+internal fun communityWidgetArtwork(context: Context, slot: String): android.graphics.Bitmap? {
+    val active = (context.applicationContext as? app.still.StillApplication)?.container?.communityThemes?.state?.value?.active ?: return null
+    val source = app.still.ui.theme.communityStyle(context, active).image(slot) ?: return null
+    val scale = minOf(1f, 192f / maxOf(source.width, source.height))
+    return android.graphics.Bitmap.createScaledBitmap(source, (source.width * scale).toInt().coerceAtLeast(1), (source.height * scale).toInt().coerceAtLeast(1), true)
 }

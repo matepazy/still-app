@@ -130,6 +130,7 @@ fun SettingsTopBar(
 @Composable
 fun SettingsScreen(
     settings: UserSettings,
+    communityThemeTitle: String? = null,
     onThemeClick: () -> Unit,
     onRefresh: () -> Unit,
     onWidgetClick: () -> Unit,
@@ -176,7 +177,7 @@ fun SettingsScreen(
             Column {
                 SettingRow(
                     title = "Theme",
-                    supporting = settings.theme.displayName,
+                    supporting = communityThemeTitle ?: settings.theme.displayName,
                     onClick = onThemeClick,
                 )
                 Hairline()

@@ -1,0 +1,12 @@
+{
+  "cancelledCheckDoesNotCommit": true,
+  "updateStagedWithoutActivation": true,
+  "newRequestsDenied": true,
+  "revocationApplied": true,
+  "privateStorageRestored": true,
+  "identityChangeRejected": true,
+  "sameVersionMutationRejected": true,
+  "unsupportedRequestUpdateRejected": true,
+  "checksRevocable": true,
+  "removeRestoresBuiltin": true
+}

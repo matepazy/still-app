@@ -101,6 +101,9 @@ class DaylineWidgetProvider : AppWidgetProvider() {
             val options = manager.getAppWidgetOptions(id)
             val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 110).coerceIn(110, 300)
             val views = RemoteViews(context.packageName, R.layout.widget_dayline).apply {
+                val communityArt = if (settings.daylineWidgetShowThemeGraphics) communityWidgetArtwork(context, "widgets.dayline-background") else null
+                setViewVisibility(R.id.widget_dayline_community_artwork, if (communityArt != null) View.VISIBLE else View.GONE)
+                if (communityArt != null) setImageViewBitmap(R.id.widget_dayline_community_artwork, communityArt)
                 setImageViewResource(R.id.widget_dayline_background, settings.daylineWidgetCornerRadiusDp.widgetBackgroundDrawable)
                 setInt(R.id.widget_dayline_background, "setColorFilter", palette.background)
                 setViewVisibility(R.id.widget_dayline_fall_leaves, if (settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)

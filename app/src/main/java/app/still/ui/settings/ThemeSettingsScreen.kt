@@ -40,6 +40,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,6 +79,34 @@ fun ThemeSettingsScreen(
     onDrawerThemeChange: (ThemePreference) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = if (app.still.ui.theme.LocalCommunityStyle.current != null) {
+        app.still.ui.theme.communityControlColors(app.still.ui.theme.LocalCommunityStyle.current!!.installed.appearance)
+    } else MaterialTheme.colorScheme
+    androidx.compose.material3.MaterialTheme(colorScheme = colors) {
+        androidx.compose.material3.Surface(modifier = modifier.fillMaxSize(), color = colors.background) {
+            ThemeSettingsContent(selectedTheme, promotedSimpleTheme, onThemeChange, onDrawerThemeChange)
+        }
+    }
+}
+
+@Composable
+private fun ThemeSettingsContent(
+    selectedTheme: ThemePreference,
+    promotedSimpleTheme: ThemePreference?,
+    onThemeChange: (ThemePreference) -> Unit,
+    onDrawerThemeChange: (ThemePreference) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val themeContext = LocalContext.current
+    val communityRepository = (themeContext.applicationContext as app.still.StillApplication).container.communityThemes
+    val communityState by communityRepository.state.collectAsStateWithLifecycle()
+    val communityScope = rememberCoroutineScope()
+    fun selectBuiltIn(theme: ThemePreference, fromDrawer: Boolean = false) {
+        communityScope.launch {
+            communityRepository.select(null)
+            if (fromDrawer) onDrawerThemeChange(theme) else onThemeChange(theme)
+        }
+    }
     val supportsWallpaper = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val defaultThemes = listOf(ThemePreference.System, ThemePreference.Light, ThemePreference.Dark, ThemePreference.Wallpaper)
     val simpleThemes = listOf(
@@ -114,11 +145,11 @@ fun ThemeSettingsScreen(
                 val available = option != ThemePreference.Wallpaper || supportsWallpaper
                 ThemeCard(
                     option = option,
-                    selected = selectedTheme == option,
+                    selected = selectedTheme == option && communityState.activeId == null,
                     enabled = available,
                     wallpaperBackground = wallpaperColors?.primaryContainer ?: MaterialTheme.colorScheme.surfaceContainerHighest,
                     wallpaperInk = wallpaperColors?.onPrimaryContainer ?: MaterialTheme.colorScheme.onSurfaceVariant,
-                    onClick = { onThemeChange(option) },
+                    onClick = { selectBuiltIn(option) },
                 )
             }
         }
@@ -148,11 +179,11 @@ fun ThemeSettingsScreen(
             orderedSimpleThemes.take(4).forEach { option ->
                 ThemeCard(
                     option = option,
-                    selected = selectedTheme == option,
+                    selected = selectedTheme == option && communityState.activeId == null,
                     enabled = true,
                     wallpaperBackground = Color.Unspecified,
                     wallpaperInk = Color.Unspecified,
-                    onClick = { onThemeChange(option) },
+                    onClick = { selectBuiltIn(option) },
                 )
             }
             if (simpleThemes.size > 4) {
@@ -178,9 +209,9 @@ fun ThemeSettingsScreen(
             specialThemes.forEach { theme ->
                 SpecialThemeCard(
                     theme = theme,
-                    selected = selectedTheme == theme,
+                    selected = selectedTheme == theme && communityState.activeId == null,
                     enabled = theme == ThemePreference.Fall || halloweenSelectable,
-                    onClick = { onThemeChange(theme) },
+                    onClick = { selectBuiltIn(theme) },
                     onInfoClick = {
                         if (theme == ThemePreference.Halloween) showHalloweenInfo = true
                         else showFallInfo = true
@@ -188,6 +219,8 @@ fun ThemeSettingsScreen(
                 )
             }
         }
+        Spacer(Modifier.height(StillSpacing.xLarge))
+        CommunityThemesSection(onCommunitySelected = { onThemeChange(ThemePreference.System) })
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
 
@@ -197,7 +230,7 @@ fun ThemeSettingsScreen(
             selectedTheme = selectedTheme,
             onDismiss = { showAllSimpleThemes = false },
             onSelect = { option ->
-                onDrawerThemeChange(option)
+                selectBuiltIn(option, fromDrawer = true)
                 scrollToFrontRequest++
                 showAllSimpleThemes = false
             },

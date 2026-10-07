@@ -533,6 +533,8 @@ private val StillTypography = androidx.compose.material3.Typography(
 @Composable
 fun StillTheme(
     themePreference: ThemePreference,
+    darkStatusBarIcons: Boolean? = null,
+    communityStyle: CommunityStyle? = null,
     content: @Composable () -> Unit,
 ) {
     val systemDark = isSystemInDarkTheme()
@@ -545,7 +547,7 @@ fun StillTheme(
         ThemePreference.Mint, ThemePreference.Amber, ThemePreference.Fall -> false
     }
     val context = LocalContext.current
-    val colors = appColorScheme(context, themePreference)
+    val colors = communityStyle?.colors ?: appColorScheme(context, themePreference)
     val view = LocalView.current
     if (!view.isInEditMode) {
         val window = (context as Activity).window
@@ -553,11 +555,12 @@ fun StillTheme(
             // Keep the activity surface behind Compose in sync with the selected app theme.
             // Android exposes this surface while animating predictive back to the launcher/widget.
             window.setBackgroundDrawable(ColorDrawable(colors.background.toArgb()))
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !dark
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !dark
+            // Full-screen content can require different contrast from the surrounding app theme.
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkStatusBarIcons ?: communityStyle?.darkIcons() ?: !dark
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = communityStyle?.darkIcons() ?: !dark
         }
     }
-    CompositionLocalProvider(LocalThemePreference provides themePreference) {
+    CompositionLocalProvider(LocalThemePreference provides themePreference, LocalCommunityStyle provides communityStyle) {
         MaterialTheme(colorScheme = colors, typography = StillTypography, content = content)
     }
 }

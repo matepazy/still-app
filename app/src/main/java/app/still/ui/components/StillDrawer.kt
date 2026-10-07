@@ -1,5 +1,6 @@
 package app.still.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,6 +47,8 @@ fun StillBottomSheet(
     dismissible: Boolean = true,
     expandToFitContent: Boolean = true,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    onBackRequest: (() -> Unit)? = null,
+    dismissRequested: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val density = LocalDensity.current
@@ -56,11 +60,17 @@ fun StillBottomSheet(
         skipPartiallyExpanded = expandToFitContent,
         confirmValueChange = { dismissible || it != SheetValue.Hidden },
     )
+    LaunchedEffect(dismissRequested) {
+        if (dismissRequested) {
+            sheetState.hide()
+            if (!sheetState.isVisible) onDismissRequest()
+        }
+    }
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
         containerColor = containerColor,
-        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = dismissible),
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = dismissible && onBackRequest == null),
         contentWindowInsets = { WindowInsets.safeDrawing },
         dragHandle = {
             Box(Modifier.fillMaxWidth().height(handleHeight), contentAlignment = Alignment.Center) {
@@ -68,6 +78,7 @@ fun StillBottomSheet(
             }
         },
     ) {
+        BackHandler(enabled = dismissible && onBackRequest != null) { onBackRequest?.invoke() }
         // Keep the sheet's anchor calculation in the full window coordinate space.
         // Constrain its content instead, reserving room for the handle and bottom inset.
         Column(Modifier.fillMaxWidth().heightIn(max = maxContentHeight), content = content)
@@ -81,6 +92,8 @@ fun StillDrawer(
     onDismissRequest: () -> Unit,
     dismissible: Boolean = true,
     expandToFitContent: Boolean = true,
+    onBackRequest: (() -> Unit)? = null,
+    dismissRequested: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val contentScrollConnection = remember {
@@ -93,6 +106,8 @@ fun StillDrawer(
         onDismissRequest = onDismissRequest,
         dismissible = dismissible,
         expandToFitContent = expandToFitContent,
+        onBackRequest = onBackRequest,
+        dismissRequested = dismissRequested,
     ) {
         Column(
             Modifier.fillMaxWidth()

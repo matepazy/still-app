@@ -93,18 +93,9 @@ fun VersionArtworkScreen(
     releaseName: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val seed = remember(version) {
-        version.fold(2166136261L) { hash, char ->
-            ((hash xor char.code.toLong()) * 16777619L) and 0xffffffffL
-        }
-    }
-    val hue = (seed % 360).toFloat()
-    val colors = remember(seed) {
-        listOf(
-            Color.hsv(hue, .72f, .64f),
-            Color.hsv((hue + 65f) % 360f, .62f, .78f),
-            Color.hsv((hue + 305f) % 360f, .76f, .57f),
-        )
+    val palette = remember(version) { versionArtworkPalette(version) }
+    val colors = remember(palette) {
+        palette.colors.map { Color.hsv(it.hue, it.saturation, it.value) }
     }
     val animation = rememberInfiniteTransition(label = "Version gradient")
     // A full orbit has no seam. Compose respects the system animator duration scale.
@@ -117,10 +108,12 @@ fun VersionArtworkScreen(
         ),
         label = "Gradient orbit",
     )
-    Box(modifier.fillMaxSize().background(Color.hsv(hue, .62f, .16f))) {
+    Box(modifier.fillMaxSize().background(
+        palette.background.let { Color.hsv(it.hue, it.saturation, it.value) },
+    )) {
         Canvas(Modifier.fillMaxSize()) {
             colors.forEachIndexed { index, color ->
-                val phase = progress + index * (2 * PI / 3).toFloat() + (seed % 100) / 100f
+                val phase = progress + index * (2 * PI / 3).toFloat() + palette.orbitPhase
                 val center = Offset(
                     size.width * (.5f + .48f * cos(phase)),
                     size.height * (.5f + .40f * sin(phase)),

@@ -19,6 +19,8 @@
         </intent>
     </queries>
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".StillApplication"
         android:allowBackup="true"
@@ -30,6 +32,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Still">
+        <service android:name=".data.themes.ThemeUpdateJobService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true" />

@@ -15,6 +15,8 @@ val halloweenPreview = providers.gradleProperty("halloweenPreview")
     .map(String::toBoolean)
     .getOrElse(false)
 
+val themePreview = providers.gradleProperty("themePreview").map(String::toBoolean).getOrElse(false)
+
 android {
     namespace = "app.still"
     compileSdk = 37
@@ -24,7 +26,7 @@ android {
         minSdk = 28
         targetSdk = 37
         versionCode = 15
-        versionName = "1.6.0-beta4"
+        versionName = "1.6.0-beta5"
         testInstrumentationRunner = providers.gradleProperty("stillTestRunner")
             .getOrElse("androidx.test.runner.AndroidJUnitRunner")
         buildConfigField("boolean", "HALLOWEEN_PREVIEW", "false")
@@ -44,6 +46,7 @@ android {
 
     buildTypes {
         getByName("debug") {
+            if (themePreview) applicationIdSuffix = ".themepreview"
             if (halloweenPreview) {
                 applicationIdSuffix = ".halloweenpreview"
                 buildConfigField("boolean", "HALLOWEEN_PREVIEW", "true")

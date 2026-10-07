@@ -72,6 +72,7 @@ fun StillWordmark(
     Image(
         painter = painterResource(wordmarkResource),
         contentDescription = "Still",
+        colorFilter = app.still.ui.theme.LocalCommunityStyle.current?.wordmark?.let { androidx.compose.ui.graphics.ColorFilter.tint(it) },
         modifier = modifier.size(width = markSize * 2.04f, height = markSize),
     )
 }

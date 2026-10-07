@@ -30,6 +30,7 @@ class StillApplication : Application() {
 
 class AppContainer(val applicationContext: Application) {
     val permissionManager = UsagePermissionManager(applicationContext)
+    val communityThemes = app.still.data.themes.CommunityThemeRepository(applicationContext)
     val settingsRepository = SettingsRepository(applicationContext)
     val usageRepository = UsageRepository(applicationContext, UsageStatsDataSource(applicationContext))
 }
