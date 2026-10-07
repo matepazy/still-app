@@ -106,11 +106,10 @@ Theme cards and selection borders use the rounded theme-card shape. Small contai
 ## Components
 
 - **Theme choices:** existing preview cards, labels, radio/check semantics and primary selection indicators.
-- **Installed theme cards:** low tonal containers, title and author/version metadata, explicit selected/update state, Use theme and Manage actions.
-- **Drawers:** shared `StillDrawer` for focused settings, source choices, review and management; `ActionDrawer` for confirmations and wrapping action groups.
-- **Actions and inputs:** Material `Button`, `OutlinedButton`, `TextButton` and `OutlinedTextField`; choose variants according to the incumbent flow hierarchy.
-- **Permission choices:** a whole toggleable row with checkbox semantics; weighted, wrapping text separates the host capability label, Allow/Deny state and author's reason.
-- **Trusted recovery:** `TrustedThemeControls` provides a host-themed surface; the Theme screen and community drawers also restore built-in host colors when needed.
+- **Custom theme cards:** low tonal containers, title and author/version metadata, explicit selected state, Use theme, Export, and Manage actions.
+- **Drawers:** shared `StillDrawer` for focused settings, theme creation with live preview, palette fine-tuning, and management; `ActionDrawer` for confirmations and wrapping action groups.
+- **Actions and inputs:** Material `Button`, `OutlinedButton`, `TextButton`, `FilterChip`, and `OutlinedTextField`; choose variants according to the incumbent flow hierarchy.
+- **Trusted recovery:** `TrustedThemeControls` provides a host-themed surface; the Theme screen and custom theme drawers also restore built-in host colors when needed.
 
 ## Do's and Don'ts
 

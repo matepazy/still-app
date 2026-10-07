@@ -220,7 +220,7 @@ private fun ThemeSettingsContent(
             }
         }
         Spacer(Modifier.height(StillSpacing.xLarge))
-        CommunityThemesSection(onCommunitySelected = { onThemeChange(ThemePreference.System) })
+        CustomThemesSection(onCustomThemeSelected = { onThemeChange(ThemePreference.System) })
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
 
