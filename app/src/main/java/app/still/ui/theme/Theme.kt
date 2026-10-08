@@ -560,7 +560,9 @@ fun StillTheme(
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = communityStyle?.darkIcons() ?: !dark
         }
     }
-    CompositionLocalProvider(LocalThemePreference provides themePreference, LocalCommunityStyle provides communityStyle) {
+    val effectivePreference = if (communityStyle == null) themePreference
+        else if (communityStyle.darkIcons()) ThemePreference.Light else ThemePreference.Dark
+    CompositionLocalProvider(LocalThemePreference provides effectivePreference, LocalCommunityStyle provides communityStyle) {
         MaterialTheme(colorScheme = colors, typography = StillTypography, content = content)
     }
 }

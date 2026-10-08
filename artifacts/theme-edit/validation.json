@@ -1,0 +1,65 @@
+{
+  "tests": 126,
+  "failures": 0,
+  "deviceChecks": {
+    "installedAppearanceDoesNotFollowSystem": true,
+    "appearanceOverrideKeepsSystemRequestAccurate": true,
+    "cancelledCheckDoesNotCommit": true,
+    "updateStagedWithoutActivation": true,
+    "appearancePreservedAcrossUpdate": true,
+    "newRequestsDenied": true,
+    "revocationApplied": true,
+    "appearanceRestored": true,
+    "privateStorageRestored": true,
+    "legacySystemAppearanceFrozenAndPersisted": true,
+    "createdPaletteStaysFixed": true,
+    "editingReplacesAndPersistsSameThemeWithoutDuplicates": true,
+    "staleEditRejected": true,
+    "localEditPreservesConsentAndStopsLinkedUpdates": true,
+    "editingPreservesBundledArtwork": true,
+    "identityChangeRejected": true,
+    "sameVersionMutationRejected": true,
+    "unsupportedRequestUpdateRejected": true,
+    "checksRevocable": true,
+    "removeRestoresBuiltin": true
+  },
+  "uiEditSavedWithoutDuplicate": true,
+  "screenColors": {
+    "theme-list": {
+      "topbar": [
+        21,
+        27,
+        34
+      ],
+      "background": [
+        21,
+        27,
+        34
+      ]
+    },
+    "editor": {
+      "topbar": [
+        21,
+        27,
+        34
+      ],
+      "background": [
+        21,
+        27,
+        34
+      ]
+    },
+    "edited-theme-list": {
+      "topbar": [
+        18,
+        18,
+        18
+      ],
+      "background": [
+        18,
+        18,
+        18
+      ]
+    }
+  }
+}

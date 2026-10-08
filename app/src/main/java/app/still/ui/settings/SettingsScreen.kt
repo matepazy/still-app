@@ -117,6 +117,10 @@ fun SettingsTopBar(
     onBack: () -> Unit,
 ) {
     TopAppBar(
+        colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            scrolledContainerColor = MaterialTheme.colorScheme.background,
+        ),
         title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = { IconButton(onClick = onBack) { Icon(painterResource(StillIcons.Back), contentDescription = "Back") } },
         actions = {

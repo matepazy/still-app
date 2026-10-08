@@ -39,6 +39,9 @@ fun StillMark(
         Image(
             painter = painterResource(markResource),
             contentDescription = "Still logo",
+            colorFilter = app.still.ui.theme.LocalCommunityStyle.current?.let {
+                androidx.compose.ui.graphics.ColorFilter.tint(it.wordmark ?: it.colors.primary)
+            },
             modifier = Modifier.size(size),
         )
     }

@@ -88,6 +88,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
         content: WidgetContent,
         settings: UserSettings,
     ) {
+        val customThemeActive = (context.applicationContext as StillApplication).container.communityThemes.state.value.active != null
         val palette = WidgetPalette.resolve(context, settings)
         appWidgetIds.forEach { appWidgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_screen_time).apply {
@@ -96,9 +97,9 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
                 if (communityArt != null) setImageViewBitmap(R.id.widget_community_artwork, communityArt)
                 setImageViewResource(R.id.widget_background, settings.widgetCornerRadiusDp.widgetBackgroundDrawable)
                 setInt(R.id.widget_background, "setColorFilter", palette.background)
-                setViewVisibility(R.id.widget_fall_leaves, if (settings.widgetShowThemeGraphics && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.widget_fall_leaves, if (settings.widgetShowThemeGraphics && !customThemeActive && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_fall_leaves, "setColorFilter", palette.secondary)
-                setViewVisibility(R.id.widget_halloween_moon, if (settings.widgetShowThemeGraphics && settings.theme == ThemePreference.Halloween) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.widget_halloween_moon, if (settings.widgetShowThemeGraphics && !customThemeActive && settings.theme == ThemePreference.Halloween) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_halloween_moon, "setColorFilter", palette.secondary)
                 setInt(
                     R.id.widget_background,

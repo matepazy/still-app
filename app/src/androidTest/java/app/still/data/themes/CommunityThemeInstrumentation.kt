@@ -41,6 +41,11 @@ class CommunityThemeInstrumentation : Instrumentation() {
                 val originalGrant = CommunityThemeRepository.permissionKey(original.theme.requests.first())
                 repository.install(original, setOf(originalGrant), link, true)
                 check(repository.state.value.active?.content?.theme?.version == "1.0.0")
+                val frozen = repository.state.value.active!!
+                check(frozen.appearance != ThemeAppearance.System)
+                // Granted expressions still receive the actual system value; only the slot is frozen.
+                check(communityStyle(application, frozen, false).colors.background == communityStyle(application, frozen, true).colors.background)
+                report.put("installedAppearanceDoesNotFollowSystem", true)
                 check(application.getSystemService(JobScheduler::class.java).allPendingJobs.any { it.service.className == ThemeUpdateJobService::class.java.name && it.intervalMillis == 24 * 60 * 60 * 1000L })
                 repository.appearance(original.theme.id, ThemeAppearance.Dark)
                 val forcedDark = repository.state.value.active!!
@@ -84,6 +89,62 @@ class CommunityThemeInstrumentation : Instrumentation() {
                 check(saved.active?.appearance == ThemeAppearance.Dark)
                 report.put("appearanceRestored", true)
                 report.put("privateStorageRestored", true)
+                // Legacy System entries freeze once and persist that choice through restarts.
+                val migrationDirectory = File(targetContext.noBackupFilesDir, "theme-migration-${UUID.randomUUID()}")
+                val migration = CommunityThemeRepository(application, directory = migrationDirectory)
+                migration.state.first { it.loaded }
+                migration.install(original, emptySet(), null, false)
+                val catalog = File(migrationDirectory, "catalog.json")
+                val legacy = JSONObject(catalog.readText())
+                legacy.getJSONArray("themes").getJSONObject(0).put("appearance", "System")
+                catalog.writeText(legacy.toString())
+                val migrated = CommunityThemeRepository(application, directory = migrationDirectory).state.first { it.loaded }.active!!
+                check(migrated.appearance != ThemeAppearance.System)
+                check(JSONObject(catalog.readText()).getJSONArray("themes").getJSONObject(0).getString("appearance") == migrated.appearance.name)
+                val restoredMigration = CommunityThemeRepository(application, directory = migrationDirectory).state.first { it.loaded }.active!!
+                check(restoredMigration.appearance == migrated.appearance)
+                report.put("legacySystemAppearanceFrozenAndPersisted", true)
+                val fixedSource = CustomThemeBuilder.buildFixedSource("Fixed ocean", CustomThemeBuilder.palette("#285B8A", CustomThemeBuilder.lightTones.first()), "custom-fixed-ocean")
+                migration.install(ThemePackages.load(fixedSource.toByteArray()), emptySet(), null, false)
+                val fixed = migration.state.value.active!!
+                check(fixed.appearance == ThemeAppearance.Light)
+                check(communityStyle(application, fixed, false).colors.toString() == communityStyle(application, fixed, true).colors.toString())
+                report.put("createdPaletteStaysFixed", true)
+                val editedColors = CustomThemeBuilder.palette("#64558F", CustomThemeBuilder.darkTones.last())
+                val edited = CustomThemeBuilder.editPackage(fixed.content, "Edited lavender", editedColors)
+                val originalDigest = ThemeCompose.digest(fixed.content.bytes)
+                migration.edit(fixed.content.theme.id, originalDigest, edited)
+                check(migration.state.value.themes.size == 2 && migration.state.value.activeId == fixed.content.theme.id)
+                check(migration.state.value.active!!.content.theme.title == "Edited lavender")
+                check(migration.state.value.active!!.content.theme.light == migration.state.value.active!!.content.theme.dark)
+                check(runCatching { migration.edit(fixed.content.theme.id, originalDigest, fixed.content) }.isFailure)
+                val restoredEdit = CommunityThemeRepository(application, directory = migrationDirectory).state.first { it.loaded }.active!!
+                check(restoredEdit.content.theme.title == "Edited lavender" && restoredEdit.content.theme.id == fixed.content.theme.id)
+                report.put("editingReplacesAndPersistsSameThemeWithoutDuplicates", true)
+                report.put("staleEditRejected", true)
+                val localEditRepo = CommunityThemeRepository(application, directory = File(targetContext.noBackupFilesDir, "theme-edit-${UUID.randomUUID()}"))
+                localEditRepo.state.first { it.loaded }
+                localEditRepo.install(original, setOf(originalGrant), link, true)
+                val localContent = CustomThemeBuilder.editPackage(original, "Local revision", editedColors)
+                localEditRepo.edit(original.theme.id, ThemeCompose.digest(original.bytes), localContent)
+                val localRevision = localEditRepo.state.value.active!!
+                check(localRevision.grants == setOf(originalGrant) && localRevision.content.theme.requests == original.theme.requests)
+                check(localRevision.link == null && !localRevision.checkUpdates && localRevision.pending == null)
+                report.put("localEditPreservesConsentAndStopsLinkedUpdates", true)
+                val bitmap = android.graphics.Bitmap.createBitmap(2, 2, android.graphics.Bitmap.Config.ARGB_8888)
+                val imageBytes = java.io.ByteArrayOutputStream().also { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+                bitmap.recycle()
+                val artworkSource = fixedSource + "@still-app\ntoday:\n  background: \"assets/bg.png\"\n"
+                val bundleBytes = java.io.ByteArrayOutputStream()
+                java.util.zip.ZipOutputStream(bundleBytes).use { zip ->
+                    for ((name, bytes) in mapOf("theme.tc" to artworkSource.toByteArray(), "assets/bg.png" to imageBytes)) {
+                        zip.putNextEntry(java.util.zip.ZipEntry(name)); zip.write(bytes); zip.closeEntry()
+                    }
+                }
+                val artworkPackage = ThemePackages.load(bundleBytes.toByteArray())
+                val editedArtwork = CustomThemeBuilder.editPackage(artworkPackage, "Still has artwork", editedColors)
+                check(editedArtwork.theme.images == artworkPackage.theme.images && editedArtwork.assets.getValue("assets/bg.png").contentEquals(imageBytes))
+                report.put("editingPreservesBundledArtwork", true)
                 response = source.replace("version: 1.0.0", "version: 9.0.0").replace("id: test-theme", "id: other-theme").toByteArray()
                 repository.checkForUpdates(original.theme.id)
                 check(repository.state.value.active!!.content.theme.version == "1.1.0" && repository.state.value.themes.single().pending == null && repository.state.value.themes.single().updateError != null)

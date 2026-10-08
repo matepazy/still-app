@@ -48,17 +48,21 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TodayTopBar(onSettings: () -> Unit) {
     val community = app.still.ui.theme.LocalCommunityStyle.current
-    val colors = community?.let { app.still.ui.theme.communityControlColors(it.installed.appearance) } ?: MaterialTheme.colorScheme
-    MaterialTheme(colorScheme = colors) {
-    TopAppBar(
+    val colors = community?.let { app.still.ui.theme.communityControlColors(it.colors) } ?: MaterialTheme.colorScheme
+    TopAppBar(colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background,
+        scrolledContainerColor = MaterialTheme.colorScheme.background,
+    ),
         title = { StillWordmark() },
         actions = {
-            IconButton(onClick = onSettings) {
+            IconButton(onClick = onSettings, colors = androidx.compose.material3.IconButtonDefaults.iconButtonColors(
+                containerColor = if (community != null) colors.surfaceContainer else androidx.compose.ui.graphics.Color.Transparent,
+                contentColor = if (community != null) colors.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )) {
                 Icon(painterResource(StillIcons.Settings), contentDescription = "Settings")
             }
         },
     )
-    }
 }
 
 @Composable

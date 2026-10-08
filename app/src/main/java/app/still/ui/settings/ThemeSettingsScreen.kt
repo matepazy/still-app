@@ -78,13 +78,15 @@ fun ThemeSettingsScreen(
     onThemeChange: (ThemePreference) -> Unit,
     onDrawerThemeChange: (ThemePreference) -> Unit,
     modifier: Modifier = Modifier,
+    onCreateTheme: () -> Unit = {},
+    onEditTheme: (String) -> Unit = {},
 ) {
     val colors = if (app.still.ui.theme.LocalCommunityStyle.current != null) {
-        app.still.ui.theme.communityControlColors(app.still.ui.theme.LocalCommunityStyle.current!!.installed.appearance)
+        app.still.ui.theme.communityControlColors(app.still.ui.theme.LocalCommunityStyle.current!!.colors)
     } else MaterialTheme.colorScheme
     androidx.compose.material3.MaterialTheme(colorScheme = colors) {
         androidx.compose.material3.Surface(modifier = modifier.fillMaxSize(), color = colors.background) {
-            ThemeSettingsContent(selectedTheme, promotedSimpleTheme, onThemeChange, onDrawerThemeChange)
+            ThemeSettingsContent(selectedTheme, promotedSimpleTheme, onThemeChange, onDrawerThemeChange, onCreateTheme = onCreateTheme, onEditTheme = onEditTheme)
         }
     }
 }
@@ -96,6 +98,8 @@ private fun ThemeSettingsContent(
     onThemeChange: (ThemePreference) -> Unit,
     onDrawerThemeChange: (ThemePreference) -> Unit,
     modifier: Modifier = Modifier,
+    onCreateTheme: () -> Unit = {},
+    onEditTheme: (String) -> Unit = {},
 ) {
     val themeContext = LocalContext.current
     val communityRepository = (themeContext.applicationContext as app.still.StillApplication).container.communityThemes
@@ -220,7 +224,7 @@ private fun ThemeSettingsContent(
             }
         }
         Spacer(Modifier.height(StillSpacing.xLarge))
-        CustomThemesSection(onCustomThemeSelected = { onThemeChange(ThemePreference.System) })
+        CustomThemesSection(onCustomThemeSelected = { onThemeChange(ThemePreference.System) }, onCreateTheme = onCreateTheme, onEditTheme = onEditTheme)
         Spacer(Modifier.height(StillSpacing.xLarge))
     }
 

@@ -52,7 +52,10 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompareTopBar(onBack: () -> Unit) {
-    TopAppBar(title = { Text("Compare") }, navigationIcon = {
+    TopAppBar(colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background,
+        scrolledContainerColor = MaterialTheme.colorScheme.background,
+    ), title = { Text("Compare") }, navigationIcon = {
         IconButton(onClick = onBack) { Icon(painterResource(StillIcons.Back), contentDescription = "Back") }
     })
 }

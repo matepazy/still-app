@@ -1,0 +1,18 @@
+{
+  "installedAppearanceDoesNotFollowSystem": true,
+  "appearanceOverrideKeepsSystemRequestAccurate": true,
+  "cancelledCheckDoesNotCommit": true,
+  "updateStagedWithoutActivation": true,
+  "appearancePreservedAcrossUpdate": true,
+  "newRequestsDenied": true,
+  "revocationApplied": true,
+  "appearanceRestored": true,
+  "privateStorageRestored": true,
+  "legacySystemAppearanceFrozenAndPersisted": true,
+  "createdPaletteStaysFixed": true,
+  "identityChangeRejected": true,
+  "sameVersionMutationRejected": true,
+  "unsupportedRequestUpdateRejected": true,
+  "checksRevocable": true,
+  "removeRestoresBuiltin": true
+}

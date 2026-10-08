@@ -1,0 +1,158 @@
+{
+  "unitTests": 122,
+  "failures": 0,
+  "suites": [
+    {
+      "name": "app.still.data.comparison.ComparePayloadCodecTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.data.settings.AppCategoryOverridesTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.data.settings.SeasonalThemeAvailabilityTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.data.settings.WidgetColorTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.data.themes.CustomThemeBuilderTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.data.themes.ThemeComposeTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.data.usage.EncryptedDataExportTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.data.usage.UsageEventCodecTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.domain.analytics.UsageAnalyticsTest",
+      "tests": 24,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.domain.statistics.StatisticsCalculatorTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.domain.statistics.TypicalUsageWindowTest",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.AppDetailBuilderTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.AppNavigationTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.components.DaylineTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.CustomThemeColorsTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.NavigationSettingsTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.onboarding.UsageSetupStateTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.settings.VersionArtworkPaletteTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.statistics.StatisticsChartScaleTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.ui.update.MarkdownTextTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.update.SemanticVersionTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "name": "app.still.update.VersionUpdaterTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "deviceChecks": {
+    "installedAppearanceDoesNotFollowSystem": true,
+    "appearanceOverrideKeepsSystemRequestAccurate": true,
+    "cancelledCheckDoesNotCommit": true,
+    "updateStagedWithoutActivation": true,
+    "appearancePreservedAcrossUpdate": true,
+    "newRequestsDenied": true,
+    "revocationApplied": true,
+    "appearanceRestored": true,
+    "privateStorageRestored": true,
+    "legacySystemAppearanceFrozenAndPersisted": true,
+    "createdPaletteStaysFixed": true,
+    "identityChangeRejected": true,
+    "sameVersionMutationRejected": true,
+    "unsupportedRequestUpdateRejected": true,
+    "checksRevocable": true,
+    "removeRestoresBuiltin": true
+  },
+  "lint": "Completed with two pre-existing NewApi errors in SeasonalLauncherIcon.kt",
+  "rendering": "Android emulator: normal, density 560/font 1.3, tablet width 800dp; Today uses debug fixture usage"
+}

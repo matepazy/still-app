@@ -55,7 +55,10 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsTopBar(onCompare: () -> Unit) {
-    TopAppBar(title = { Text("Statistics") }, actions = {
+    TopAppBar(colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background,
+        scrolledContainerColor = MaterialTheme.colorScheme.background,
+    ), title = { Text("Statistics") }, actions = {
         IconButton(onClick = onCompare) {
             Icon(painterResource(StillIcons.Compare), contentDescription = "Compare with a friend", tint = MaterialTheme.colorScheme.onSurface)
         }

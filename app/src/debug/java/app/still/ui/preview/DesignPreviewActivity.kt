@@ -20,6 +20,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,8 +66,11 @@ class DesignPreviewActivity : ComponentActivity() {
         val screen = intent.getStringExtra("screen") ?: "today"
         val light = intent.getBooleanExtra("light", false)
         setContent {
-            StillTheme(if (light) ThemePreference.Light else ThemePreference.Dark) {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { DesignScreen(screen) }
+            val repository = (application as app.still.StillApplication).container.communityThemes
+            val state by repository.state.collectAsState()
+            val customStyle = if (screen.startsWith("custom-")) state.active?.let { app.still.ui.theme.communityStyle(this, it) } else null
+            StillTheme(if (screen.startsWith("custom-")) ThemePreference.Fall else if (light) ThemePreference.Light else ThemePreference.Dark, communityStyle = customStyle) {
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { DesignScreen(screen.removePrefix("custom-")) }
             }
         }
     }
@@ -74,15 +78,19 @@ class DesignPreviewActivity : ComponentActivity() {
 
 @Composable
 private fun DesignScreen(screen: String) {
-    when (screen) {
+    var activeScreen by remember(screen) { mutableStateOf(screen) }
+    var editingId by remember { mutableStateOf<String?>(null) }
+    when (activeScreen) {
         "onboarding" -> OnboardingScreen(UsageUiState.PermissionRequired, { false }, { Intent(Settings.ACTION_SETTINGS) }, { Intent(Settings.ACTION_SETTINGS) }, { false }, {})
         "permission" -> PermissionRequiredScreen({ false }, { Intent(Settings.ACTION_SETTINGS) }, { Intent(Settings.ACTION_SETTINGS) }, { false }, {})
         "detail" -> Scaffold(topBar = { AppDetailTopBar("Instagram", {}) }) { padding ->
             AppDetailScreen(PreviewFixtures.appDetail, Modifier.padding(padding))
         }
-        "themes" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
-            ThemeSettingsScreen(ThemePreference.Dark, null, {}, {}, Modifier.padding(padding))
-        }
+        "theme-creator" -> app.still.ui.theme.TrustedThemeControls { app.still.ui.settings.ThemeCreatorScreen(onClose = { activeScreen = "themes" }, themeId = editingId) }
+        "themes" -> app.still.ui.theme.TrustedThemeControls { Scaffold(topBar = { SettingsTopBar(title = "Theme", onBack = { activeScreen = "settings" }) }) { padding ->
+            ThemeSettingsScreen(ThemePreference.Dark, null, {}, {}, Modifier.padding(padding), onCreateTheme = { editingId = null; activeScreen = "theme-creator" },
+                onEditTheme = { editingId = it; activeScreen = "theme-creator" })
+        } }
         "widget" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             WidgetSettingsScreen(
                 UserSettings(theme = ThemePreference.Dark), PreviewFixtures.today,
@@ -92,16 +100,17 @@ private fun DesignScreen(screen: String) {
         "widgets" -> Scaffold(topBar = { SettingsTopBar(title = "Widgets") {} }) { padding ->
             WidgetSelectorScreen(UserSettings(), PreviewFixtures.today, {}, {}, Modifier.padding(padding))
         }
-        "settings" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
+        "settings" -> app.still.ui.theme.TrustedThemeControls { Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             SettingsScreen(
                 settings = UserSettings(onboardingComplete = true, theme = ThemePreference.Dark),
-                onThemeClick = {},
+                onThemeClick = { activeScreen = "themes" },
+                communityThemeTitle = app.still.ui.theme.LocalCommunityStyle.current?.installed?.content?.theme?.title,
                 onRefresh = {},
                 onWidgetClick = {},
                 onStoredDataClick = {},
                 modifier = Modifier.padding(padding),
             )
-        }
+        } }
         else -> PreviewMainScaffold(screen)
     }
 }

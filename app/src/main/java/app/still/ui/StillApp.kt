@@ -645,9 +645,18 @@ private fun MainNavigation(
                         promotedSimpleTheme = settings.promotedSimpleTheme,
                         onThemeChange = viewModel::setTheme,
                         onDrawerThemeChange = viewModel::setThemeFromDrawer,
+                        onCreateTheme = { navController.navigate(ThemeCreatorRoute) },
+                        onEditTheme = { navController.navigate("$ThemeCreatorRoute?themeId=${android.net.Uri.encode(it)}") },
                         modifier = Modifier.padding(padding),
                     )
                 }
+                }
+            }
+            composable("$ThemeCreatorRoute?themeId={themeId}", arguments = listOf(androidx.navigation.navArgument("themeId") {
+                type = androidx.navigation.NavType.StringType; nullable = true; defaultValue = null
+            })) { entry ->
+                app.still.ui.theme.TrustedThemeControls {
+                    app.still.ui.settings.ThemeCreatorScreen(onClose = { navController.popBackStack() }, themeId = entry.arguments?.getString("themeId"))
                 }
             }
             composable(StoredDataRoute) {

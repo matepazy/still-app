@@ -49,7 +49,10 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimelineTopBar(onSettings: () -> Unit) {
-    TopAppBar(
+    TopAppBar(colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background,
+        scrolledContainerColor = MaterialTheme.colorScheme.background,
+    ),
         title = { Text("Timeline", style = MaterialTheme.typography.titleLarge) },
         actions = { IconButton(onClick = onSettings) { Icon(painterResource(StillIcons.Settings), contentDescription = "Settings") } },
     )

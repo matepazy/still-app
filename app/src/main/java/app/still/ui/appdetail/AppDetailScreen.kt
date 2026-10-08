@@ -64,7 +64,10 @@ import java.time.format.TextStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppDetailTopBar(@Suppress("UNUSED_PARAMETER") title: String, onBack: () -> Unit) {
-    TopAppBar(
+    TopAppBar(colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background,
+        scrolledContainerColor = MaterialTheme.colorScheme.background,
+    ),
         title = {},
         navigationIcon = { IconButton(onClick = onBack) { Icon(painterResource(StillIcons.Back), contentDescription = "Back") } },
         actions = { IconButton(onClick = {}) { Icon(painterResource(StillIcons.More), contentDescription = "More options") } },

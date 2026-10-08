@@ -36,7 +36,7 @@ Expressions support literals, request aliases, grouping, `!`, comparisons, `==`/
 - Every request starts denied. Installation and Manage → Review permissions show the host's capability description and the author's reason separately. Consent keys include the source, alias, type and reason.
 - A denied capability is never queried. Its expression value is `null`. All evaluation and asset decoding happen locally.
 - System appearance and font configuration changes refresh rendering; resume also refreshes granted system settings. Availability is checked against the local date. Outside the interval, the app uses its built-in preference.
-- Permissions, source review, theme management, and the recovery path use trusted host controls. Community colors cannot disguise these controls.
+- The recovery path preserves readable custom palettes and falls back to trusted host colors when text or controls would be unreadable or transparent. Community colors cannot hide these controls.
 - Choosing a built-in theme clears the active community selection. Removing a theme clears its consent and pending update. Widgets follow community colors when their appearance follows the app; theme artwork respects their graphics switch.
 - Android retains its packaged launcher icon. The installer explicitly explains this when a theme includes `branding.launcher-icon`.
 

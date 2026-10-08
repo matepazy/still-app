@@ -73,7 +73,7 @@ Still uses its incumbent Kotlin/Compose Material 3 system: compact sans-serif hi
 - Content-sized, scrolling drawers that accommodate enlarged text.
 - Host-styled settings and recovery controls when community artwork is active.
 
-The sources of authority are `app/src/main/java/app/still/ui/theme/Theme.kt`, `Dimensions.kt`, `ui/components/StillDrawer.kt` and the existing settings screens. Surface-specific choices and evidence belong in [the Theme Compose UI sidecar](docs/theme-compose-ui.md).
+The sources of authority are `app/src/main/java/app/still/ui/theme/Theme.kt`, `Dimensions.kt`, `ui/components/StillDrawer.kt` and the existing settings screens. Surface-specific choices and evidence belong in [the Theme Compose UI sidecar](docs/theme-compose-ui.md) and [the custom theme creator brief](docs/theme-creator-ui.md).
 
 ## Colors
 
@@ -81,7 +81,7 @@ The frontmatter records a reusable subset of the built-in light and dark green p
 
 Primary colors identify actions and selections; primary containers carry supporting emphasis. Background and low containers distinguish the page from grouped content. On-surface colors carry main text, on-surface-variant carries supporting text, and outline-variant carries quiet unselected borders.
 
-**The Host Controls Rule.** Permission, source, management and recovery surfaces retain trusted host colors. Community appearance belongs in the app appearance and its contained preview, not in the controls used to revoke it.
+**The Host Controls Rule.** Settings, theme selection and creation retain the selected custom palette when its controls are readable. Recovery surfaces fall back to trusted host colors only for unreadable or transparent palettes.
 
 ## Typography
 
@@ -107,9 +107,10 @@ Theme cards and selection borders use the rounded theme-card shape. Small contai
 
 - **Theme choices:** existing preview cards, labels, radio/check semantics and primary selection indicators.
 - **Custom theme cards:** low tonal containers, title and author/version metadata, explicit selected state, Use theme, Export, and Manage actions.
-- **Drawers:** shared `StillDrawer` for focused settings, theme creation with live preview, palette fine-tuning, and management; `ActionDrawer` for confirmations and wrapping action groups.
+- **Drawers:** shared `StillDrawer` for focused settings and theme management; `ActionDrawer` for confirmations and wrapping action groups.
+- **Theme creation:** a dedicated four-step settings screen (Accent, Background, Fine-tune, Preview & save) with a contained live preview, wrapping palette choices, six color-role rows opening native editing drawers, a centered body bounded to 600dp, and a persistent Next/Back/save footer above the keyboard. Its composition and fixed-palette behavior are recorded in [the creator brief](docs/theme-creator-ui.md).
 - **Actions and inputs:** Material `Button`, `OutlinedButton`, `TextButton`, `FilterChip`, and `OutlinedTextField`; choose variants according to the incumbent flow hierarchy.
-- **Trusted recovery:** `TrustedThemeControls` provides a host-themed surface; the Theme screen and custom theme drawers also restore built-in host colors when needed.
+- **Trusted recovery:** `TrustedThemeControls` preserves readable custom colors and supplies a local host-colored fallback when recovery controls would be unreadable, without changing the activity window or clearing the active style.
 
 ## Do's and Don'ts
 

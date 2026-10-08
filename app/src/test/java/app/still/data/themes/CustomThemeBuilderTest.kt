@@ -5,6 +5,59 @@ import org.junit.Test
 
 class CustomThemeBuilderTest {
     @Test
+    fun editingRetainsIdentityMetadataAndBrandingWhileReplacingTheFixedPalette() {
+        val palette = CustomThemeBuilder.palette("#285B8A", CustomThemeBuilder.darkTones.first())
+        val source = CustomThemeBuilder.buildFixedSource("Before", palette, "custom-edit")
+            .replace("@common", "description: Original description\nlicense: MIT\n@common") +
+            "@still-app\nbranding:\n  wordmark-color: \"#123456\"\n"
+        val original = ThemePackages.load(source.toByteArray())
+        val changed = palette + ("primary" to "#ABCDEF88")
+        val updated = CustomThemeBuilder.editPackage(original, "After: \"quiet\"", changed).theme
+        assertEquals(original.theme.id, updated.id)
+        assertEquals(original.theme.version, updated.version)
+        assertEquals(original.theme.author, updated.author)
+        assertEquals(original.theme.description, updated.description)
+        assertEquals(original.theme.license, updated.license)
+        assertEquals(original.theme.wordmark, updated.wordmark)
+        assertEquals("After: \"quiet\"", updated.title)
+        assertEquals(changed, updated.light.mapValues { it.value.text })
+        assertEquals(updated.light, updated.dark)
+    }
+
+    @Test
+    fun editingLegacyUnversionedSourceRetainsItsInstalledIdentity() {
+        val palette = CustomThemeBuilder.palette("#285B8A", CustomThemeBuilder.lightTones.first())
+        val source = CustomThemeBuilder.buildFixedSource("Before", palette).lines().filterNot {
+            it.startsWith("id:") || it.startsWith("version:")
+        }.joinToString("\n")
+        val original = ThemePackages.load(source.toByteArray())
+        val updated = CustomThemeBuilder.editPackage(original, "After", palette)
+        assertEquals(original.theme.id, updated.theme.id)
+        assertEquals("0.0.0", updated.theme.version)
+    }
+
+    @Test
+    fun fixedThemeRoundTripsOnePaletteInBothLegacySlots() {
+        val colors = CustomThemeBuilder.palette("#F4A261", CustomThemeBuilder.darkTones.first())
+        val theme = ThemeCompose.parse(CustomThemeBuilder.buildFixedSource("My theme", colors, "custom-fixed"))
+        assertEquals(colors, theme.light.mapValues { it.value.resolve(emptyMap()) })
+        assertEquals(colors, theme.dark.mapValues { it.value.resolve(emptyMap()) })
+    }
+
+    @Test
+    fun everyGeneratedPaletteHasReadableText() {
+        for (swatch in CustomThemeBuilder.swatches) {
+            for (tone in CustomThemeBuilder.backgroundTones) {
+                val colors = CustomThemeBuilder.palette(swatch.hex, tone)
+                for ((fill, text) in listOf("primary" to "on-primary", "background" to "on-background", "surface" to "on-surface")) {
+                    assertTrue("${swatch.name}/${tone.name}/$text", CustomThemeBuilder.contrastRatio(colors.getValue(fill), colors.getValue(text)) >= 4.5f)
+                }
+            }
+        }
+        assertEquals("#000000", CustomThemeBuilder.contrastingInk("#777777", darkInk = "#000000"))
+    }
+
+    @Test
     fun generatesValidThemeComposeSource() {
         val light = CustomThemeBuilder.defaultPalette("#285B8A", CustomThemeBuilder.lightTones.first(), isDark = false)
         val dark = CustomThemeBuilder.defaultPalette("#A8C8F2", CustomThemeBuilder.darkTones.first(), isDark = true)
@@ -23,9 +76,9 @@ class CustomThemeBuilderTest {
         assertEquals("Ocean Breeze", theme.title)
         assertEquals("Still User", theme.author)
         assertEquals("1.0.0", theme.version)
-        assertEquals("#285B8A", theme.light["primary"]?.resolve(emptyMap()))
+        assertEquals(light.getValue("primary"), theme.light["primary"]?.resolve(emptyMap()))
         assertEquals("#FFFFFF", theme.light["on-primary"]?.resolve(emptyMap()))
-        assertEquals("#A8C8F2", theme.dark["primary"]?.resolve(emptyMap()))
+        assertEquals(dark.getValue("primary"), theme.dark["primary"]?.resolve(emptyMap()))
         assertTrue(theme.requests.isEmpty())
         assertTrue(theme.available())
     }

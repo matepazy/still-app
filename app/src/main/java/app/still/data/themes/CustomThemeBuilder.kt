@@ -29,18 +29,20 @@ object CustomThemeBuilder {
     val lightTones = listOf(
         BackgroundTone("white", "White", "#FFFFFF", "#F7F9F6"),
         BackgroundTone("warm", "Warm", "#FFFDF8", "#F6EDDF"),
-        BackgroundTone("tint", "Tinted", "#F4F8F5", "#EAF1EB"),
+        BackgroundTone("tint", "Mist", "#F4F8F5", "#EAF1EB"),
         BackgroundTone("neutral", "Neutral", "#F5F5F5", "#EBEBEB"),
     )
 
     val darkTones = listOf(
         BackgroundTone("charcoal", "Charcoal", "#121212", "#1E1E1E"),
         BackgroundTone("black", "Black", "#000000", "#141414"),
-        BackgroundTone("tint", "Tinted", "#111713", "#18201B"),
+        BackgroundTone("tint", "Forest", "#111713", "#18201B"),
         BackgroundTone("slate", "Slate", "#151B22", "#21262D"),
     )
 
-    private val hexRegex = Regex("^#[0-9a-fA-F]{6}$")
+    val backgroundTones = lightTones + darkTones
+
+    private val hexRegex = Regex("^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$")
 
     fun isValidHex(hex: String): Boolean = hexRegex.matches(hex.trim())
 
@@ -56,19 +58,83 @@ object CustomThemeBuilder {
         val r = clean.substring(0, 2).toIntOrNull(16) ?: 0
         val g = clean.substring(2, 4).toIntOrNull(16) ?: 0
         val b = clean.substring(4, 6).toIntOrNull(16) ?: 0
-        return (0.2126f * r + 0.7152f * g + 0.0722f * b) / 255f
+        fun linear(channel: Int): Double {
+            val value = channel / 255.0
+            return if (value <= .04045) value / 12.92 else Math.pow((value + .055) / 1.055, 2.4)
+        }
+        return (0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)).toFloat()
     }
 
     fun contrastingInk(hex: String, lightInk: String = "#FFFFFF", darkInk: String = "#172019"): String =
-        if (luminance(hex) > 0.45f) darkInk else lightInk
+        if (contrastRatio(hex, darkInk) >= contrastRatio(hex, lightInk)) darkInk else lightInk
+
+    fun contrastRatio(first: String, second: String): Float {
+        val a = luminance(first); val b = luminance(second)
+        return (maxOf(a, b) + .05f) / (minOf(a, b) + .05f)
+    }
+
+    private fun mixHex(first: String, second: String, fraction: Float): String {
+        val a = normalizeHex(first).removePrefix("#").take(6).toInt(16)
+        val b = normalizeHex(second).removePrefix("#").take(6).toInt(16)
+        val channels = listOf(16, 8, 0).map { shift ->
+            val from = (a shr shift) and 255; val to = (b shr shift) and 255
+            (from + (to - from) * fraction).toInt().coerceIn(0, 255)
+        }
+        return "#%02X%02X%02X".format(channels[0], channels[1], channels[2])
+    }
+
+    /** Presets must work as small action text and chart marks, as well as button fills. */
+    private fun readableAccent(accent: String, background: String, surface: String, ink: String): String {
+        // Reserve contrast for the elevated tonal containers too.
+        val surfaces = listOf(background, surface, mixHex(surface, ink, .2f))
+        val toward = if (luminance(background) < .179f) "#FFFFFF" else "#000000"
+        return (0..100).asSequence().map { mixHex(accent, toward, it / 100f) }
+            .first { candidate -> surfaces.all { contrastRatio(candidate, it) >= 4.5f } }
+    }
+
+    fun palette(accentHex: String, tone: BackgroundTone): Map<String, String> =
+        defaultPalette(accentHex, tone, luminance(tone.backgroundHex) < .5f)
+
+    /** V1 packages carry two slots; a created theme writes the same palette to both. */
+    fun buildFixedSource(title: String, colors: Map<String, String>, customId: String? = null): String =
+        buildSource(title, lightColors = colors, darkColors = colors, customId = customId)
+
+    /** Replace only the editable name and palette; retain metadata, requests, artwork and identity. */
+    fun editPackage(original: ThemePackage, title: String, colors: Map<String, String>): ThemePackage {
+        require(roles.all { isValidHex(colors[it].orEmpty()) }) { "Enter valid theme colors" }
+        val (source, assets) = ThemePackages.unpack(original.bytes)
+        val generated = buildFixedSource(title, colors, original.theme.id)
+        val nameLine = generated.lines().first { it.startsWith("title:") }
+        val lines = source.replace("\r\n", "\n").replace('\r', '\n').lines().toMutableList()
+        val titleIndex = lines.indexOfFirst { it.startsWith("title:") }
+        require(titleIndex >= 0)
+        lines[titleIndex] = nameLine
+        if (lines.none { it.startsWith("id:") }) {
+            lines.add(if (lines.getOrNull(1)?.startsWith("target:") == true) 2 else 1, "id: ${original.theme.id}")
+        }
+        val start = lines.indexOfFirst { it.trim() == "@common" }
+        require(start >= 0)
+        val end = (start + 1 until lines.size).firstOrNull { lines[it].startsWith('@') } ?: lines.size
+        val updated = (lines.take(start) + listOf("@common") + generated.substringAfter("@common\n").lines() + lines.drop(end)).joinToString("\n")
+        val bytes = if (assets.isEmpty()) updated.toByteArray(Charsets.UTF_8) else {
+            val out = java.io.ByteArrayOutputStream()
+            java.util.zip.ZipOutputStream(out).use { zip ->
+                (mapOf("theme.tc" to updated.toByteArray(Charsets.UTF_8)) + assets).forEach { (name, data) ->
+                    zip.putNextEntry(java.util.zip.ZipEntry(name)); zip.write(data); zip.closeEntry()
+                }
+            }
+            out.toByteArray()
+        }
+        return ThemePackages.load(bytes)
+    }
 
     fun defaultPalette(accentHex: String, bgTone: BackgroundTone, isDark: Boolean): Map<String, String> {
-        val normAccent = normalizeHex(accentHex)
-        val onPrimary = contrastingInk(normAccent)
         val bg = bgTone.backgroundHex
         val surface = bgTone.surfaceHex
-        val onBg = contrastingInk(bg, lightInk = "#E9F5EC", darkInk = "#172019")
-        val onSurface = contrastingInk(surface, lightInk = "#E9F5EC", darkInk = "#172019")
+        val onBg = contrastingInk(bg, lightInk = "#F4F4F4", darkInk = "#202020")
+        val onSurface = contrastingInk(surface, lightInk = "#F4F4F4", darkInk = "#202020")
+        val normAccent = readableAccent(normalizeHex(accentHex), bg, surface, onSurface)
+        val onPrimary = contrastingInk(normAccent, darkInk = "#000000")
         return mapOf(
             "primary" to normAccent,
             "on-primary" to onPrimary,

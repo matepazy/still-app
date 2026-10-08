@@ -1,0 +1,57 @@
+{
+  "unitTests": 124,
+  "failures": 0,
+  "emulator": "separate Pixel 10 Pro, emulator-5556",
+  "palette": "Lavender / Slate",
+  "renderedColors": {
+    "today": {
+      "background": [
+        21,
+        27,
+        34
+      ],
+      "topbar": [
+        33,
+        38,
+        45
+      ]
+    },
+    "settings": {
+      "background": [
+        21,
+        27,
+        34
+      ],
+      "topbar": [
+        33,
+        38,
+        45
+      ]
+    },
+    "themes": {
+      "background": [
+        21,
+        27,
+        34
+      ],
+      "topbar": [
+        33,
+        38,
+        45
+      ]
+    },
+    "creator": {
+      "background": [
+        21,
+        27,
+        34
+      ],
+      "topbar": [
+        33,
+        38,
+        45
+      ]
+    }
+  },
+  "scope": "Real screens with preview fixture usage, saved custom palette and Settings-to-Theme navigation"
+}

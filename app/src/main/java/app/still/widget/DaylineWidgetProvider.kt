@@ -96,6 +96,7 @@ class DaylineWidgetProvider : AppWidgetProvider() {
         content: DaylineWidgetContent,
         settings: UserSettings,
     ) {
+        val customThemeActive = (context.applicationContext as StillApplication).container.communityThemes.state.value.active != null
         val palette = WidgetPalette.resolve(context, settings.daylineWidgetAppearance, settings.daylineWidgetColor, settings.theme)
         ids.forEach { id ->
             val options = manager.getAppWidgetOptions(id)
@@ -106,9 +107,9 @@ class DaylineWidgetProvider : AppWidgetProvider() {
                 if (communityArt != null) setImageViewBitmap(R.id.widget_dayline_community_artwork, communityArt)
                 setImageViewResource(R.id.widget_dayline_background, settings.daylineWidgetCornerRadiusDp.widgetBackgroundDrawable)
                 setInt(R.id.widget_dayline_background, "setColorFilter", palette.background)
-                setViewVisibility(R.id.widget_dayline_fall_leaves, if (settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.widget_dayline_fall_leaves, if (settings.daylineWidgetShowThemeGraphics && !customThemeActive && settings.theme == ThemePreference.Fall) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_dayline_fall_leaves, "setColorFilter", palette.secondary)
-                setViewVisibility(R.id.widget_dayline_halloween_bats, if (settings.daylineWidgetShowThemeGraphics && settings.theme == ThemePreference.Halloween) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.widget_dayline_halloween_bats, if (settings.daylineWidgetShowThemeGraphics && !customThemeActive && settings.theme == ThemePreference.Halloween) View.VISIBLE else View.GONE)
                 setInt(R.id.widget_dayline_halloween_bats, "setColorFilter", palette.secondary)
                 setInt(
                     R.id.widget_dayline_background,

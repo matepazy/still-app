@@ -36,22 +36,8 @@ fun communityStyle(context: Context, installed: InstalledTheme, systemDark: Bool
         }
     }
     val palette = if (dark) installed.content.theme.dark else installed.content.theme.light
-    fun color(role: String) = themeColor(palette.getValue(role).resolve(values))
-    val primary = color("primary"); val onPrimary = color("on-primary")
-    val surface = color("surface"); val ink = color("on-surface")
-    val base = if (dark) StillDarkColors else StillLightColors
-    val colors = base.copy(
-        primary = primary, onPrimary = onPrimary, primaryContainer = surface, onPrimaryContainer = ink,
-        secondary = primary, onSecondary = onPrimary, secondaryContainer = surface, onSecondaryContainer = ink,
-        tertiary = primary, onTertiary = onPrimary, tertiaryContainer = surface, onTertiaryContainer = ink,
-        background = color("background"), onBackground = color("on-background"), surface = surface, onSurface = ink,
-        surfaceVariant = surface, onSurfaceVariant = ink, surfaceTint = primary,
-        surfaceContainerLowest = surface, surfaceContainerLow = surface, surfaceContainer = surface,
-        surfaceContainerHigh = surface, surfaceContainerHighest = surface,
-        outline = ink.copy(alpha = .55f), outlineVariant = ink.copy(alpha = .2f),
-        inverseSurface = ink, inverseOnSurface = surface, inversePrimary = primary,
-    )
-    return CommunityStyle(installed, values, colors, installed.content.theme.wordmark?.let { themeColor(it.resolve(values)) })
+    val colors = customThemeColors(palette.mapValues { it.value.resolve(values) })
+    return CommunityStyle(installed, values, colors, installed.content.theme.wordmark?.let { themeColor(it.resolve(values)) } ?: colors.primary)
 }
 
 fun themeColor(hex: String): Color {
@@ -59,17 +45,21 @@ fun themeColor(hex: String): Color {
     val alpha = if (hex.length == 9) hex.substring(7, 9).toLong(16) else 255L
     return Color((alpha shl 24) or rgb)
 }
-fun CommunityStyle.darkIcons(): Boolean = colors.background.luminance() > .5f
+fun CommunityStyle.darkIcons(): Boolean = colors.background.luminance() > .179f
 
-/** Readable host surfaces follow the active theme's appearance without trusting its palette. */
-@androidx.compose.runtime.Composable
-fun communityControlColors(appearance: ThemeAppearance): ColorScheme {
-    val dark = when (appearance) {
-        ThemeAppearance.System -> androidx.compose.foundation.isSystemInDarkTheme()
-        ThemeAppearance.Light -> false
-        ThemeAppearance.Dark -> true
+/** Keep readable custom palettes on recovery surfaces; fall back only when controls could vanish. */
+fun communityControlColors(colors: ColorScheme): ColorScheme {
+    fun readable(ink: Color, surface: Color): Boolean {
+        if (ink.alpha < 1f || surface.alpha < 1f) return false
+        val a = ink.luminance(); val b = surface.luminance()
+        return (maxOf(a, b) + .05f) / (minOf(a, b) + .05f) >= 4.5f
     }
-    return if (dark) StillDarkColors else StillLightColors
+    val surfaces = listOf(colors.surface, colors.surfaceContainer, colors.surfaceContainerHigh, colors.surfaceContainerHighest)
+    val readableControls = readable(colors.onBackground, colors.background) &&
+        surfaces.all { readable(colors.onSurface, it) && readable(colors.onSurfaceVariant, it) && readable(colors.primary, it) } &&
+        readable(colors.primary, colors.background) && readable(colors.onPrimary, colors.primary)
+    return if (readableControls) colors
+        else if (colors.background.luminance() > .179f) StillLightColors else StillDarkColors
 }
 
 /** Community data cannot hide the controls used to revoke consent or remove it. */
@@ -78,13 +68,10 @@ fun TrustedThemeControls(content: @androidx.compose.runtime.Composable () -> Uni
     val community = LocalCommunityStyle.current
     if (community == null) content()
     else {
-        val preference = when (community.installed.appearance) {
-            ThemeAppearance.System -> app.still.data.settings.ThemePreference.System
-            ThemeAppearance.Light -> app.still.data.settings.ThemePreference.Light
-            ThemeAppearance.Dark -> app.still.data.settings.ThemePreference.Dark
-        }
-        StillTheme(preference) {
-            androidx.compose.material3.Surface(color = androidx.compose.material3.MaterialTheme.colorScheme.background) { content() }
+        val colors = communityControlColors(community.colors)
+        // A local recovery surface must not overwrite the activity window or clear the active style.
+        androidx.compose.material3.MaterialTheme(colorScheme = colors) {
+            androidx.compose.material3.Surface(color = colors.background) { content() }
         }
     }
 }

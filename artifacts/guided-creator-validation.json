@@ -1,0 +1,28 @@
+{
+  "unitTests": 126,
+  "unitFailures": 0,
+  "assembleDebug": "passed",
+  "previewPackage": "app.still.themepreview",
+  "uiChecks": {
+    "fourSteps": true,
+    "accentAndBackgroundSelection": true,
+    "colorDetailDrawer": true,
+    "nameEntry": true,
+    "savedThemeVisibleInList": true,
+    "standardKeyboardFieldAndFooterReachable": true
+  },
+  "screenshots": {
+    "directory": ".impeccable/review",
+    "normalPhone": ["phone-accent.png", "phone-background.png", "phone-details.png", "phone-save.png"],
+    "drawer": "phone-color-drawer.png",
+    "fontScale1_3": "phone-enlarged.png",
+    "tablet800dp": "tablet.png",
+    "lightPhone": "phone-light.png",
+    "standardKeyboard": "phone-keyboard.png"
+  },
+  "devices": {
+    "layoutsAndSave": "Pixel 10 Pro emulator-5554",
+    "standardKeyboard": "workspace-local StillGuided emulator-5556, hardware keyboard disabled"
+  },
+  "limits": "Emulator layout and interaction evidence; preview usage is illustrative. Physical-device gestures, motion and refresh-rate behavior were not tested."
+}
