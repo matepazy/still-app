@@ -75,6 +75,1159 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+        <!-- Bundled custom theme icons: preset accent/background combinations. -->
+        <activity-alias android:name=".CustomThemeLauncher0_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_0" android:roundIcon="@mipmap/ic_launcher_custom_0_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher0_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_1" android:roundIcon="@mipmap/ic_launcher_custom_0_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher0_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_2" android:roundIcon="@mipmap/ic_launcher_custom_0_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher0_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_3" android:roundIcon="@mipmap/ic_launcher_custom_0_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher0_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_4" android:roundIcon="@mipmap/ic_launcher_custom_0_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher0_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_5" android:roundIcon="@mipmap/ic_launcher_custom_0_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher0_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_6" android:roundIcon="@mipmap/ic_launcher_custom_0_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher0_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_0_7" android:roundIcon="@mipmap/ic_launcher_custom_0_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_0" android:roundIcon="@mipmap/ic_launcher_custom_1_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_1" android:roundIcon="@mipmap/ic_launcher_custom_1_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_2" android:roundIcon="@mipmap/ic_launcher_custom_1_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_3" android:roundIcon="@mipmap/ic_launcher_custom_1_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_4" android:roundIcon="@mipmap/ic_launcher_custom_1_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_5" android:roundIcon="@mipmap/ic_launcher_custom_1_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_6" android:roundIcon="@mipmap/ic_launcher_custom_1_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher1_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_1_7" android:roundIcon="@mipmap/ic_launcher_custom_1_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_0" android:roundIcon="@mipmap/ic_launcher_custom_2_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_1" android:roundIcon="@mipmap/ic_launcher_custom_2_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_2" android:roundIcon="@mipmap/ic_launcher_custom_2_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_3" android:roundIcon="@mipmap/ic_launcher_custom_2_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_4" android:roundIcon="@mipmap/ic_launcher_custom_2_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_5" android:roundIcon="@mipmap/ic_launcher_custom_2_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_6" android:roundIcon="@mipmap/ic_launcher_custom_2_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher2_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_2_7" android:roundIcon="@mipmap/ic_launcher_custom_2_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_0" android:roundIcon="@mipmap/ic_launcher_custom_3_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_1" android:roundIcon="@mipmap/ic_launcher_custom_3_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_2" android:roundIcon="@mipmap/ic_launcher_custom_3_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_3" android:roundIcon="@mipmap/ic_launcher_custom_3_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_4" android:roundIcon="@mipmap/ic_launcher_custom_3_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_5" android:roundIcon="@mipmap/ic_launcher_custom_3_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_6" android:roundIcon="@mipmap/ic_launcher_custom_3_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher3_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_3_7" android:roundIcon="@mipmap/ic_launcher_custom_3_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_0" android:roundIcon="@mipmap/ic_launcher_custom_4_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_1" android:roundIcon="@mipmap/ic_launcher_custom_4_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_2" android:roundIcon="@mipmap/ic_launcher_custom_4_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_3" android:roundIcon="@mipmap/ic_launcher_custom_4_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_4" android:roundIcon="@mipmap/ic_launcher_custom_4_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_5" android:roundIcon="@mipmap/ic_launcher_custom_4_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_6" android:roundIcon="@mipmap/ic_launcher_custom_4_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher4_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_4_7" android:roundIcon="@mipmap/ic_launcher_custom_4_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_0" android:roundIcon="@mipmap/ic_launcher_custom_5_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_1" android:roundIcon="@mipmap/ic_launcher_custom_5_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_2" android:roundIcon="@mipmap/ic_launcher_custom_5_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_3" android:roundIcon="@mipmap/ic_launcher_custom_5_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_4" android:roundIcon="@mipmap/ic_launcher_custom_5_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_5" android:roundIcon="@mipmap/ic_launcher_custom_5_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_6" android:roundIcon="@mipmap/ic_launcher_custom_5_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher5_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_5_7" android:roundIcon="@mipmap/ic_launcher_custom_5_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_0" android:roundIcon="@mipmap/ic_launcher_custom_6_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_1" android:roundIcon="@mipmap/ic_launcher_custom_6_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_2" android:roundIcon="@mipmap/ic_launcher_custom_6_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_3" android:roundIcon="@mipmap/ic_launcher_custom_6_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_4" android:roundIcon="@mipmap/ic_launcher_custom_6_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_5" android:roundIcon="@mipmap/ic_launcher_custom_6_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_6" android:roundIcon="@mipmap/ic_launcher_custom_6_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher6_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_6_7" android:roundIcon="@mipmap/ic_launcher_custom_6_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_0" android:roundIcon="@mipmap/ic_launcher_custom_7_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_1" android:roundIcon="@mipmap/ic_launcher_custom_7_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_2" android:roundIcon="@mipmap/ic_launcher_custom_7_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_3" android:roundIcon="@mipmap/ic_launcher_custom_7_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_4" android:roundIcon="@mipmap/ic_launcher_custom_7_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_5" android:roundIcon="@mipmap/ic_launcher_custom_7_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_6" android:roundIcon="@mipmap/ic_launcher_custom_7_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher7_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_7_7" android:roundIcon="@mipmap/ic_launcher_custom_7_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_0" android:roundIcon="@mipmap/ic_launcher_custom_8_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_1" android:roundIcon="@mipmap/ic_launcher_custom_8_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_2" android:roundIcon="@mipmap/ic_launcher_custom_8_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_3" android:roundIcon="@mipmap/ic_launcher_custom_8_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_4" android:roundIcon="@mipmap/ic_launcher_custom_8_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_5" android:roundIcon="@mipmap/ic_launcher_custom_8_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_6" android:roundIcon="@mipmap/ic_launcher_custom_8_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher8_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_8_7" android:roundIcon="@mipmap/ic_launcher_custom_8_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_0" android:roundIcon="@mipmap/ic_launcher_custom_9_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_1" android:roundIcon="@mipmap/ic_launcher_custom_9_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_2" android:roundIcon="@mipmap/ic_launcher_custom_9_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_3" android:roundIcon="@mipmap/ic_launcher_custom_9_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_4" android:roundIcon="@mipmap/ic_launcher_custom_9_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_5" android:roundIcon="@mipmap/ic_launcher_custom_9_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_6" android:roundIcon="@mipmap/ic_launcher_custom_9_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher9_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_9_7" android:roundIcon="@mipmap/ic_launcher_custom_9_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_0" android:roundIcon="@mipmap/ic_launcher_custom_10_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_1" android:roundIcon="@mipmap/ic_launcher_custom_10_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_2" android:roundIcon="@mipmap/ic_launcher_custom_10_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_3" android:roundIcon="@mipmap/ic_launcher_custom_10_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_4" android:roundIcon="@mipmap/ic_launcher_custom_10_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_5" android:roundIcon="@mipmap/ic_launcher_custom_10_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_6" android:roundIcon="@mipmap/ic_launcher_custom_10_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher10_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_10_7" android:roundIcon="@mipmap/ic_launcher_custom_10_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_0" android:roundIcon="@mipmap/ic_launcher_custom_11_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_1" android:roundIcon="@mipmap/ic_launcher_custom_11_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_2" android:roundIcon="@mipmap/ic_launcher_custom_11_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_3" android:roundIcon="@mipmap/ic_launcher_custom_11_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_4" android:roundIcon="@mipmap/ic_launcher_custom_11_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_5" android:roundIcon="@mipmap/ic_launcher_custom_11_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_6" android:roundIcon="@mipmap/ic_launcher_custom_11_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher11_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_11_7" android:roundIcon="@mipmap/ic_launcher_custom_11_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_0" android:roundIcon="@mipmap/ic_launcher_custom_12_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_1" android:roundIcon="@mipmap/ic_launcher_custom_12_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_2" android:roundIcon="@mipmap/ic_launcher_custom_12_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_3" android:roundIcon="@mipmap/ic_launcher_custom_12_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_4" android:roundIcon="@mipmap/ic_launcher_custom_12_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_5" android:roundIcon="@mipmap/ic_launcher_custom_12_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_6" android:roundIcon="@mipmap/ic_launcher_custom_12_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher12_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_12_7" android:roundIcon="@mipmap/ic_launcher_custom_12_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_0" android:roundIcon="@mipmap/ic_launcher_custom_13_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_1" android:roundIcon="@mipmap/ic_launcher_custom_13_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_2" android:roundIcon="@mipmap/ic_launcher_custom_13_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_3" android:roundIcon="@mipmap/ic_launcher_custom_13_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_4" android:roundIcon="@mipmap/ic_launcher_custom_13_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_5" android:roundIcon="@mipmap/ic_launcher_custom_13_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_6" android:roundIcon="@mipmap/ic_launcher_custom_13_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher13_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_13_7" android:roundIcon="@mipmap/ic_launcher_custom_13_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_0" android:roundIcon="@mipmap/ic_launcher_custom_14_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_1" android:roundIcon="@mipmap/ic_launcher_custom_14_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_2" android:roundIcon="@mipmap/ic_launcher_custom_14_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_3" android:roundIcon="@mipmap/ic_launcher_custom_14_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_4" android:roundIcon="@mipmap/ic_launcher_custom_14_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_5" android:roundIcon="@mipmap/ic_launcher_custom_14_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_6" android:roundIcon="@mipmap/ic_launcher_custom_14_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher14_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_14_7" android:roundIcon="@mipmap/ic_launcher_custom_14_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_0"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_0" android:roundIcon="@mipmap/ic_launcher_custom_15_0"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_1"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_1" android:roundIcon="@mipmap/ic_launcher_custom_15_1"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_2"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_2" android:roundIcon="@mipmap/ic_launcher_custom_15_2"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_3"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_3" android:roundIcon="@mipmap/ic_launcher_custom_15_3"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_4"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_4" android:roundIcon="@mipmap/ic_launcher_custom_15_4"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_5"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_5" android:roundIcon="@mipmap/ic_launcher_custom_15_5"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_6"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_6" android:roundIcon="@mipmap/ic_launcher_custom_15_6"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".CustomThemeLauncher15_7"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_15_7" android:roundIcon="@mipmap/ic_launcher_custom_15_7"
+            android:label="@string/app_name" android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".widget.ScreenTimeWidgetConfigureActivity"
             android:exported="true">

@@ -333,7 +333,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     private fun refreshSeasonalTheme() {
         container.settingsRepository.refreshSeasonalDate()
         viewModelScope.launch {
-            SeasonalLauncherIcon.sync(container.applicationContext, container.settingsRepository.settings.first().theme)
+            val themes = container.communityThemes.state.value
+            if (themes.loaded) SeasonalLauncherIcon.sync(container.applicationContext,
+                container.settingsRepository.settings.first().theme, themes.active)
             WidgetUpdateDispatcher.updateAll(container.applicationContext)
         }
     }

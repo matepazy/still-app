@@ -30,6 +30,7 @@ data class InstalledTheme(
     val content: ThemePackage, val grants: Set<String>, val link: String?, val checkUpdates: Boolean,
     val pending: ThemePackage? = null, val lastChecked: Long = 0, val updateError: String? = null,
     val appearance: ThemeAppearance = ThemeAppearance.System,
+    val customIcon: Boolean = false,
 )
 data class CommunityThemeState(val loaded: Boolean = false, val themes: List<InstalledTheme> = emptyList(), val activeId: String? = null, val restoreError: String? = null) {
     val active: InstalledTheme? get() = themes.firstOrNull { it.content.theme.id == activeId && it.content.theme.available() }
@@ -65,7 +66,8 @@ class CommunityThemeRepository(
                             require(it.theme.id == content.theme.id && ThemeCompose.newer(it.theme.version, content.theme.version))
                         }
                         InstalledTheme(content, grants, link, item.optBoolean("checks"), pending, item.optLong("checked"), item.optString("error").takeIf(String::isNotEmpty),
-                            fixedAppearance(context, ThemeAppearance.valueOf(item.optString("appearance", ThemeAppearance.System.name))))
+                            fixedAppearance(context, ThemeAppearance.valueOf(item.optString("appearance", ThemeAppearance.System.name))),
+                            customIcon = item.optBoolean("customIcon"))
                     }
                     require(themes.sumOf { it.content.bytes.size.toLong() + (it.pending?.bytes?.size ?: 0) } <= 40 * 1024 * 1024)
                     require(themes.distinctBy { it.content.theme.id }.size == themes.size)
@@ -94,7 +96,7 @@ class CommunityThemeRepository(
         ThemePackages.load(fetchLink(link)).also { require(it.theme.updatable) { "Linked themes need an explicit id and version so Still can check for updates" } }
     }
 
-    suspend fun install(content: ThemePackage, grants: Set<String>, link: String?, checks: Boolean) = mutate { old ->
+    suspend fun install(content: ThemePackage, grants: Set<String>, link: String?, checks: Boolean, customIcon: Boolean = false) = mutate { old ->
         require(grants.all { key -> content.theme.requests.any { permissionKey(it) == key } }) { "Invalid permissions" }
         link?.let { ThemeLinkClient.validateUrl(it) }
         val previous = old.themes.firstOrNull { it.content.theme.id == content.theme.id }
@@ -103,18 +105,18 @@ class CommunityThemeRepository(
         val fixedPaletteAppearance = if (content.theme.light == content.theme.dark && content.theme.requests.isEmpty()) {
             if (CustomThemeBuilder.luminance(content.theme.light.getValue("background").text) < .179f) ThemeAppearance.Dark else ThemeAppearance.Light
         } else ThemeAppearance.System
-        val themes = old.themes.filterNot { it.content.theme.id == content.theme.id } + InstalledTheme(content, grants, link, checks, appearance = fixedAppearance(context, previous?.appearance ?: fixedPaletteAppearance))
+        val themes = old.themes.filterNot { it.content.theme.id == content.theme.id } + InstalledTheme(content, grants, link, checks, appearance = fixedAppearance(context, previous?.appearance ?: fixedPaletteAppearance), customIcon = previous?.customIcon ?: customIcon)
         require(themes.size <= 12) { "Remove a theme before adding another (12 maximum)" }
         require(themes.sumOf { it.content.bytes.size.toLong() + (it.pending?.bytes?.size ?: 0) } <= 40 * 1024 * 1024) { "Community themes exceed the 40 MB storage limit" }
         old.copy(themes = themes, activeId = content.theme.id, restoreError = null)
     }
     /** An explicit local edit is distinct from a linked update and cannot race a newer installed package. */
-    suspend fun edit(id: String, expectedDigest: String, content: ThemePackage) = mutate { old ->
+    suspend fun edit(id: String, expectedDigest: String, content: ThemePackage, customIcon: Boolean? = null) = mutate { old ->
         val previous = requireNotNull(old.themes.firstOrNull { it.content.theme.id == id }) { "Theme is no longer installed" }
         require(ThemeCompose.digest(previous.content.bytes) == expectedDigest) { "This theme changed. Reopen Edit to use the latest colors." }
         require(content.theme.id == id && content.theme.requests == previous.content.theme.requests && content.theme.images == previous.content.theme.images) { "The edited theme must retain its identity and capabilities" }
         val appearance = if (CustomThemeBuilder.luminance(content.theme.light.getValue("background").text) < .179f) ThemeAppearance.Dark else ThemeAppearance.Light
-        val replacement = previous.copy(content = content, link = null, checkUpdates = false, pending = null, updateError = null, appearance = appearance)
+        val replacement = previous.copy(content = content, link = null, checkUpdates = false, pending = null, updateError = null, appearance = appearance, customIcon = customIcon ?: previous.customIcon)
         val themes = old.themes.map { if (it.content.theme.id == id) replacement else it }
         require(themes.sumOf { it.content.bytes.size.toLong() + (it.pending?.bytes?.size ?: 0) } <= 40 * 1024 * 1024) { "Community themes exceed the 40 MB storage limit" }
         old.copy(themes = themes, activeId = id, restoreError = null)
@@ -182,7 +184,7 @@ class CommunityThemeRepository(
             val digest = writePackage(item.content)
             val pending = item.pending?.let(::writePackage)
             entries.put(JSONObject().put("digest", digest).put("grants", JSONArray(item.grants.sorted())).put("link", item.link ?: "")
-                .put("checks", item.checkUpdates).put("pending", pending ?: "").put("checked", item.lastChecked).put("error", item.updateError ?: "").put("appearance", item.appearance.name))
+                .put("checks", item.checkUpdates).put("pending", pending ?: "").put("checked", item.lastChecked).put("error", item.updateError ?: "").put("appearance", item.appearance.name).put("customIcon", item.customIcon))
         }
         val bytes = JSONObject().put("themes", entries).put("active", next.activeId ?: "").toString().toByteArray()
         val out = catalog.startWrite()

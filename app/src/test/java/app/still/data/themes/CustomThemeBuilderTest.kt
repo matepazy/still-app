@@ -5,6 +5,25 @@ import org.junit.Test
 
 class CustomThemeBuilderTest {
     @Test
+    fun arbitraryBackgroundsPreserveSelectedColorsAndGenerateReadableText() {
+        val backgrounds = listOf("#000000", "#FFFFFF", "#777777", "#FF00FF", "#0F8A71", "#285B8A")
+        for (background in backgrounds) {
+            for (accent in CustomThemeBuilder.swatches.map { it.hex } + "#ABCDEF88") {
+                val palette = CustomThemeBuilder.palette(accent, background)
+                assertEquals(accent, palette.getValue("primary"))
+                assertEquals(background, palette.getValue("background"))
+                assertEquals(CustomThemeBuilder.roles.toSet(), palette.keys)
+                for ((fill, ink) in listOf("primary" to "on-primary", "background" to "on-background", "surface" to "on-surface")) {
+                    assertTrue("$accent/$background/$ink", CustomThemeBuilder.contrastRatio(palette.getValue(fill), palette.getValue(ink)) >= 4.5f)
+                }
+                val restored = ThemeCompose.parse(CustomThemeBuilder.buildFixedSource("Custom", palette))
+                assertEquals(palette, restored.light.mapValues { it.value.text })
+                assertEquals(restored.light, restored.dark)
+            }
+        }
+    }
+
+    @Test
     fun editingRetainsIdentityMetadataAndBrandingWhileReplacingTheFixedPalette() {
         val palette = CustomThemeBuilder.palette("#285B8A", CustomThemeBuilder.darkTones.first())
         val source = CustomThemeBuilder.buildFixedSource("Before", palette, "custom-edit")

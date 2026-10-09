@@ -1,0 +1,10 @@
+<resources>
+    <color name="still_custom_icon_background_0">#FFFFFF</color>
+    <color name="still_custom_icon_background_1">#FFFDF8</color>
+    <color name="still_custom_icon_background_2">#F4F8F5</color>
+    <color name="still_custom_icon_background_3">#F5F5F5</color>
+    <color name="still_custom_icon_background_4">#121212</color>
+    <color name="still_custom_icon_background_5">#000000</color>
+    <color name="still_custom_icon_background_6">#111713</color>
+    <color name="still_custom_icon_background_7">#151B22</color>
+</resources>

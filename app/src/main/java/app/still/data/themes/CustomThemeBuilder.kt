@@ -95,6 +95,22 @@ object CustomThemeBuilder {
     fun palette(accentHex: String, tone: BackgroundTone): Map<String, String> =
         defaultPalette(accentHex, tone, luminance(tone.backgroundHex) < .5f)
 
+    /** Preserve the two selected colors; derive surfaces and readable text from them. */
+    fun palette(accentHex: String, backgroundHex: String): Map<String, String> {
+        require(isValidHex(accentHex) && isValidHex(backgroundHex)) { "Enter valid theme colors" }
+        val accent = normalizeHex(accentHex)
+        val background = normalizeHex(backgroundHex)
+        val surface = mixHex(background, contrastingInk(background, darkInk = "#000000"), .06f)
+        return mapOf(
+            "primary" to accent,
+            "on-primary" to contrastingInk(accent, darkInk = "#000000"),
+            "background" to background,
+            "on-background" to contrastingInk(background, darkInk = "#000000"),
+            "surface" to surface,
+            "on-surface" to contrastingInk(surface, darkInk = "#000000"),
+        )
+    }
+
     /** V1 packages carry two slots; a created theme writes the same palette to both. */
     fun buildFixedSource(title: String, colors: Map<String, String>, customId: String? = null): String =
         buildSource(title, lightColors = colors, darkColors = colors, customId = customId)

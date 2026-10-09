@@ -10,7 +10,8 @@ import app.still.widget.WidgetUpdateScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 class StillApplication : Application() {
@@ -23,7 +24,11 @@ class StillApplication : Application() {
         UsageHistoryScheduler.schedule(this)
         WidgetUpdateScheduler.schedule(this)
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            SeasonalLauncherIcon.sync(this@StillApplication, container.settingsRepository.settings.first().theme)
+            combine(container.settingsRepository.settings, container.communityThemes.state) { settings, themes ->
+                settings.theme to themes
+            }.filter { (_, themes) -> themes.loaded }.collect { (theme, themes) ->
+                SeasonalLauncherIcon.sync(this@StillApplication, theme, themes.active)
+            }
         }
     }
 }

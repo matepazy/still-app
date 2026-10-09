@@ -108,7 +108,7 @@ Theme cards and selection borders use the rounded theme-card shape. Small contai
 - **Theme choices:** existing preview cards, labels, radio/check semantics and primary selection indicators.
 - **Custom theme cards:** low tonal containers, title and author/version metadata, explicit selected state, Use theme, Export, and Manage actions.
 - **Drawers:** shared `StillDrawer` for focused settings and theme management; `ActionDrawer` for confirmations and wrapping action groups.
-- **Theme creation:** a dedicated four-step settings screen (Accent, Background, Fine-tune, Preview & save) with a contained live preview, wrapping palette choices, six color-role rows opening native editing drawers, a centered body bounded to 600dp, and a persistent Next/Back/save footer above the keyboard. Its composition and fixed-palette behavior are recorded in [the creator brief](docs/theme-creator-ui.md).
+- **Theme creation:** a dedicated three-step settings screen (Colors, App icon, Name & save) with a contained live preview, wrapping palette choices, six color-role rows opening native editing drawers, a centered body bounded to 600dp, and a persistent Next/Back/save footer above the keyboard. Its composition and fixed-palette behavior are recorded in [the creator brief](docs/theme-creator-ui.md).
 - **Actions and inputs:** Material `Button`, `OutlinedButton`, `TextButton`, `FilterChip`, and `OutlinedTextField`; choose variants according to the incumbent flow hierarchy.
 - **Trusted recovery:** `TrustedThemeControls` preserves readable custom colors and supplies a local host-colored fallback when recovery controls would be unreadable, without changing the activity window or clearing the active style.
 
