@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-09",
+  "package": "app.still.themepreview",
+  "device": "emulator-5554",
+  "build": "assembleDebug passed with isolated output and no build cache",
+  "checks": [
+    "Edit opens one screen with no creator steps",
+    "Save disabled for unchanged draft",
+    "Icon edit enables save",
+    "Back shows discard confirmation",
+    "Keep editing preserves draft",
+    "Reset restores original icon and disables save",
+    "Direct accent edit preserved the other five color roles",
+    "Reset restored original accent",
+    "Save updated existing theme without a duplicate",
+    "Reopened theme retained icon preference",
+    "Original icon preference restored after verification"
+  ],
+  "captures": [
+    "phone.png",
+    "phone-lower.png"
+  ],
+  "limitations": [
+    "Normal phone layout verified; enlarged text, tablet, physical-device motion and linked-theme saving not verified"
+  ]
+}

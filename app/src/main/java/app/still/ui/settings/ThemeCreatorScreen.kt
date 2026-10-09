@@ -1,6 +1,14 @@
 package app.still.ui.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -61,8 +70,8 @@ private val PaletteSaver = mapSaver<Map<String, String>>(
 )
 
 private val CreatorSteps = listOf("Colors", "App icon", "Name & save")
-private val RoleLabels = listOf("Accent", "Text on accent", "Background", "Text on background", "Surface", "Text on surface")
-private val RoleDescriptions = listOf("Buttons and highlights", "Text on colored elements", "App background", "Main text", "Cards and panels", "Text on cards and panels")
+internal val RoleLabels = listOf("Accent", "Text on accent", "Background", "Text on background", "Surface", "Text on surface")
+internal val RoleDescriptions = listOf("Buttons and highlights", "Text on colored elements", "App background", "Main text", "Cards and panels", "Text on cards and panels")
 
 /** A saved draft across focused steps; only the final action installs the palette. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -108,6 +117,11 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
     var background by rememberSaveable { mutableStateOf(initialPalette.getValue("background")) }
     var customBackground by rememberSaveable { mutableStateOf(false) }
     var showDetails by rememberSaveable { mutableStateOf(false) }
+    val detailsChevronRotation by animateFloatAsState(
+        targetValue = if (showDetails) 180f else 0f,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "Color details chevron",
+    )
     var useCustomIcon by rememberSaveable { mutableStateOf(editing?.customIcon == true) }
     var step by rememberSaveable { mutableIntStateOf(0) }
     var editingRole by rememberSaveable { mutableStateOf<String?>(null) }
@@ -119,6 +133,9 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
     }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    val hasChanges = editing != null && (title != editing.content.theme.title ||
+        palette != initialPalette || useCustomIcon != editing.customIcon)
     val rolesValid = CustomThemeBuilder.roles.all { CustomThemeBuilder.isValidHex(palette[it].orEmpty()) }
     // Invalid edits keep the last valid preview visible, and can never reach the parser or save.
     var validPalette by rememberSaveable(stateSaver = PaletteSaver) { mutableStateOf(palette) }
@@ -130,7 +147,9 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
     fun previous() {
         if (!busy) {
             focus.clearFocus()
-            if (step > 0) step-- else onClose()
+            if (editing != null) {
+                if (hasChanges) confirmDiscard = true else onClose()
+            } else if (step > 0) step-- else onClose()
         }
     }
     fun choose(accentHex: String = validPalette.getValue("primary"), backgroundHex: String = validPalette.getValue("background")) {
@@ -144,7 +163,7 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
         val index = CustomThemeBuilder.automaticBackgroundIndex(hex)
         choose(hex, choices[index].hex)
     }
-    BackHandler(enabled = busy || step > 0) { previous() }
+    BackHandler(enabled = busy || step > 0 || editing != null) { previous() }
     Scaffold(
         modifier = modifier.imePadding(),
         topBar = { SettingsTopBar(title = if (editing == null) "Create a theme" else "Edit theme", onBack = ::previous) },
@@ -153,8 +172,20 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                 Box(Modifier.fillMaxWidth().navigationBarsPadding(), contentAlignment = Alignment.Center) {
                 Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().padding(StillSpacing.large)) {
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = StillSpacing.small)) }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                    if (step == 0) OutlinedButton(
+                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                    if (editing != null) TextButton(
+                        onClick = {
+                            focus.clearFocus()
+                            title = editing.content.theme.title
+                            palette = initialPalette
+                            accent = initialPalette.getValue("primary")
+                            background = initialPalette.getValue("background")
+                            useCustomIcon = editing.customIcon
+                            error = null
+                        }, enabled = !busy && hasChanges, modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("Reset changes") }
+                    if (editing == null && step == 0) OutlinedButton(
                         onClick = {
                             val generated = CustomThemeBuilder.surprisePalette()
                             generatedAccent = generated.getValue("primary")
@@ -165,17 +196,18 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                     ) {
                         Icon(painterResource(StillIcons.Dice), "Surprise me", Modifier.size(22.dp))
                     }
-                    if (step > 0) OutlinedButton(onClick = ::previous, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) {
+                    if (editing == null && step > 0) OutlinedButton(onClick = ::previous, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) {
                         Icon(painterResource(StillIcons.Back), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(StillSpacing.small))
                         Text("Back")
                     }
                     Button(
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        enabled = !busy && rolesValid && CustomThemeBuilder.isValidHex(accent) && CustomThemeBuilder.isValidHex(background) && (step < CreatorSteps.lastIndex || title.isNotBlank()),
+                        modifier = Modifier.weight(1f).widthIn(min = 160.dp).heightIn(min = 48.dp),
+                        enabled = !busy && rolesValid && CustomThemeBuilder.isValidHex(accent) && CustomThemeBuilder.isValidHex(background) &&
+                            (if (editing != null) hasChanges && title.isNotBlank() else step < CreatorSteps.lastIndex || title.isNotBlank()),
                         onClick = {
                             focus.clearFocus()
-                            if (step < CreatorSteps.lastIndex) { step++; return@Button }
+                            if (editing == null && step < CreatorSteps.lastIndex) { step++; return@Button }
                             busy = true; error = null
                             scope.launch {
                                 try {
@@ -196,12 +228,12 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                     ) {
                         if (busy) CircularProgressIndicator(Modifier.size(18.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                         else {
-                            if (step == CreatorSteps.lastIndex) {
+                            if (editing != null || step == CreatorSteps.lastIndex) {
                                 Icon(painterResource(StillIcons.Check), null, Modifier.size(18.dp))
                                 Spacer(Modifier.width(StillSpacing.small))
                             }
-                            Text(if (step == CreatorSteps.lastIndex) "Save and use theme" else "Next")
-                            if (step < CreatorSteps.lastIndex) {
+                            Text(if (editing != null) "Save changes" else if (step == CreatorSteps.lastIndex) "Save and use theme" else "Next")
+                            if (editing == null && step < CreatorSteps.lastIndex) {
                                 Spacer(Modifier.width(StillSpacing.small))
                                 Icon(painterResource(StillIcons.ChevronRight), null, Modifier.size(18.dp))
                             }
@@ -218,6 +250,14 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
             Modifier.widthIn(max = 600.dp).fillMaxHeight().fillMaxWidth().verticalScroll(scroll).padding(StillSpacing.large),
             verticalArrangement = Arrangement.spacedBy(StillSpacing.medium),
         ) {
+            if (editing != null) {
+                ThemeEditorBody(
+                    title = title, onTitleChange = { title = it.take(80) },
+                    palette = palette, validPalette = validPalette, previewColors = previewColors,
+                    useCustomIcon = useCustomIcon, onCustomIconChange = { useCustomIcon = it },
+                    enabled = !busy, onEditColor = { editingRole = it }, linked = editing.link != null,
+                )
+            } else {
             Text("${step + 1} / ${CreatorSteps.size}", style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.End))
             Row(Modifier.fillMaxWidth().semantics { contentDescription = "Step ${step + 1} of ${CreatorSteps.size}: ${CreatorSteps[step]}" },
@@ -264,45 +304,58 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                                 Text(if (showDetails) "Hide the six color editors" else "Fine-tune the generated palette",
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Icon(painterResource(if (showDetails) StillIcons.ChevronUp else StillIcons.ChevronDown), null, Modifier.size(20.dp))
+                            Icon(painterResource(StillIcons.ChevronDown), null,
+                                Modifier.size(20.dp).rotate(detailsChevronRotation))
                         }
-                        if (showDetails) {
-                            HorizontalDivider(Modifier.padding(horizontal = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
-                            Text("Edit any of the six colors. Choosing an accent or background above recalculates these values.",
-                                modifier = Modifier.padding(StillSpacing.medium),
-                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            CustomThemeBuilder.roles.forEachIndexed { index, role ->
-                                val value = palette.getValue(role)
-                                Row(Modifier.fillMaxWidth().clickable(enabled = !busy, role = Role.Button) { editingRole = role }
-                                    .padding(StillSpacing.medium), verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                                    Box(Modifier.size(32.dp).clip(CircleShape)
-                                        .background(themeColor(validPalette.getValue(role)))
-                                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(RoleLabels[index], style = MaterialTheme.typography.titleMedium)
-                                        Text(RoleDescriptions[index], style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(value.uppercase(), style = MaterialTheme.typography.bodySmall,
-                                            color = if (CustomThemeBuilder.isValidHex(value)) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
+                        AnimatedVisibility(
+                            visible = showDetails,
+                            enter = expandVertically(tween(220, easing = FastOutSlowInEasing), expandFrom = Alignment.Top) + fadeIn(tween(160)),
+                            exit = shrinkVertically(tween(220, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Top) + fadeOut(tween(120)),
+                        ) {
+                            Column {
+                                HorizontalDivider(Modifier.padding(horizontal = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
+                                Text("Edit any of the six colors. Choosing an accent or background above recalculates these values.",
+                                    modifier = Modifier.padding(StillSpacing.medium),
+                                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                CustomThemeBuilder.roles.forEachIndexed { index, role ->
+                                    val value = palette.getValue(role)
+                                    Row(Modifier.fillMaxWidth().clickable(enabled = !busy, role = Role.Button) { editingRole = role }
+                                        .padding(StillSpacing.medium), verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                                        Box(Modifier.size(32.dp).clip(CircleShape)
+                                            .background(themeColor(validPalette.getValue(role)))
+                                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(RoleLabels[index], style = MaterialTheme.typography.titleMedium)
+                                            Text(RoleDescriptions[index], style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(value.uppercase(), style = MaterialTheme.typography.bodySmall,
+                                                color = if (CustomThemeBuilder.isValidHex(value)) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
+                                        }
+                                        Icon(painterResource(StillIcons.ChevronRight), null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
-                                    Icon(painterResource(StillIcons.ChevronRight), null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (index < CustomThemeBuilder.roles.lastIndex) HorizontalDivider(Modifier.padding(horizontal = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
                                 }
-                                if (index < CustomThemeBuilder.roles.lastIndex) HorizontalDivider(Modifier.padding(horizontal = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
-                            }
-                            TextButton(enabled = !busy, onClick = { choose() }) {
-                                Icon(painterResource(StillIcons.Refresh), null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(StillSpacing.small))
-                                Text("Reset color details")
+                                TextButton(enabled = !busy, onClick = { choose() }) {
+                                    Icon(painterResource(StillIcons.Refresh), null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(StillSpacing.small))
+                                    Text("Reset color details")
+                                }
                             }
                         }
-                        if (!showDetails) FlowRow(Modifier.fillMaxWidth().padding(start = StillSpacing.medium,
-                            end = StillSpacing.medium, bottom = StillSpacing.medium),
-                            horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
-                            verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                            CustomThemeBuilder.roles.forEach { role ->
-                                Box(Modifier.size(28.dp).background(themeColor(validPalette.getValue(role)), CircleShape)
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                        AnimatedVisibility(
+                            visible = !showDetails,
+                            enter = expandVertically(tween(220, easing = FastOutSlowInEasing), expandFrom = Alignment.Top) + fadeIn(tween(160)),
+                            exit = shrinkVertically(tween(220, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Top) + fadeOut(tween(120)),
+                        ) {
+                            FlowRow(Modifier.fillMaxWidth().padding(start = StillSpacing.medium,
+                                end = StillSpacing.medium, bottom = StillSpacing.medium),
+                                horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
+                                verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                                CustomThemeBuilder.roles.forEach { role ->
+                                    Box(Modifier.size(28.dp).background(themeColor(validPalette.getValue(role)), CircleShape)
+                                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                                }
                             }
                         }
                     }
@@ -397,7 +450,8 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                 }
             }
             }
-            if (step == 0 && rolesValid) {
+            }
+            if ((editing != null || step == 0) && rolesValid) {
                 val pairs = listOf("primary" to "on-primary", "background" to "on-background", "surface" to "on-surface")
                 if (pairs.any { (a, b) -> CustomThemeBuilder.contrastRatio(palette.getValue(a), palette.getValue(b)) < 4.5f }) {
                     Text("Some text may be hard to read. Try a different accent or adjust its text color.",
@@ -415,6 +469,18 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                 }
             }
         }
+        }
+    }
+    if (confirmDiscard) {
+        StillDrawer(onDismissRequest = { confirmDiscard = false }) {
+            Text("Discard changes?", style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(StillSpacing.small))
+            Text("Your saved theme will stay as it was.", style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(StillSpacing.medium))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                OutlinedButton(onClick = { confirmDiscard = false }) { Text("Keep editing") }
+                Button(onClick = { confirmDiscard = false; onClose() }) { Text("Discard changes") }
+            }
         }
     }
     if (customAccent) {
