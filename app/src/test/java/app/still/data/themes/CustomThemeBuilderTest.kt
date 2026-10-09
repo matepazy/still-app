@@ -5,6 +5,36 @@ import org.junit.Test
 
 class CustomThemeBuilderTest {
     @Test
+    fun fiveCreatorChoicesAndMatchingBackgroundsRetainTheFullIconPalette() {
+        assertEquals(5, CustomThemeBuilder.creatorSwatches.size)
+        assertEquals(16, CustomThemeBuilder.swatches.size)
+        for (accent in CustomThemeBuilder.creatorSwatches.map { it.hex } + listOf("#FAEEDD", "#000000", "#FFFFFF", "#777777")) {
+            val backgrounds = CustomThemeBuilder.matchingBackgrounds(accent)
+            assertEquals(5, backgrounds.map { it.hex }.distinct().size)
+            assertTrue(backgrounds.all { CustomThemeBuilder.isValidHex(it.hex) })
+            val automatic = backgrounds[CustomThemeBuilder.automaticBackgroundIndex(accent)].hex
+            assertTrue("$accent on $automatic", CustomThemeBuilder.contrastRatio(accent, automatic) >= 4.5f)
+        }
+        assertNotEquals(CustomThemeBuilder.matchingBackgrounds("#27683C"), CustomThemeBuilder.matchingBackgrounds("#285B8A"))
+    }
+
+    @Test
+    fun surpriseCombosVaryAndKeepGeneratedTextReadable() {
+        val random = kotlin.random.Random(42)
+        val combos = List(200) { CustomThemeBuilder.surprisePalette(random) }
+        assertTrue(combos.distinct().size > 190)
+        assertTrue(combos.any { CustomThemeBuilder.luminance(it.getValue("background")) < .179f })
+        assertTrue(combos.any { CustomThemeBuilder.luminance(it.getValue("background")) > .179f })
+        for (colors in combos) {
+            assertEquals(CustomThemeBuilder.roles.toSet(), colors.keys)
+            assertTrue(colors.values.all(CustomThemeBuilder::isValidHex))
+            for ((fill, text) in listOf("primary" to "on-primary", "background" to "on-background", "surface" to "on-surface")) {
+                assertTrue(CustomThemeBuilder.contrastRatio(colors.getValue(fill), colors.getValue(text)) >= 4.5f)
+            }
+        }
+    }
+
+    @Test
     fun arbitraryBackgroundsPreserveSelectedColorsAndGenerateReadableText() {
         val backgrounds = listOf("#000000", "#FFFFFF", "#777777", "#FF00FF", "#0F8A71", "#285B8A")
         for (background in backgrounds) {

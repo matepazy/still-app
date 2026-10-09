@@ -26,6 +26,45 @@ object CustomThemeBuilder {
         ColorSwatch("Slate", "#455A64"),
     )
 
+    // Keep the complete icon palette stable while presenting five choices in the creator.
+    val creatorSwatches = listOf("Emerald", "Ocean", "Lavender", "Rose", "Amber").map { name ->
+        swatches.first { it.name == name }
+    }
+
+    fun matchingBackgrounds(accentHex: String): List<ColorSwatch> {
+        require(isValidHex(accentHex))
+        // A small neutral blend keeps all five choices distinct even for white or black accents.
+        val tint = mixHex(accentHex, "#808080", .12f)
+        return listOf(
+            ColorSwatch("Light", mixHex("#FFFFFF", tint, .025f)),
+            ColorSwatch("Soft", mixHex("#FFFFFF", tint, .08f)),
+            ColorSwatch("Tinted", mixHex("#FFFFFF", tint, .16f)),
+            ColorSwatch("Dark", mixHex("#121212", tint, .12f)),
+            ColorSwatch("Deep", "#000000"),
+        )
+    }
+
+    fun automaticBackgroundIndex(accentHex: String): Int {
+        val choices = matchingBackgrounds(accentHex)
+        return choices.indices.firstOrNull { contrastRatio(accentHex, choices[it].hex) >= 4.5f }
+            ?: choices.indices.maxBy { contrastRatio(accentHex, choices[it].hex) }
+    }
+
+    fun surprisePalette(random: kotlin.random.Random = kotlin.random.Random.Default): Map<String, String> {
+        repeat(64) {
+            val accent = "#%02X%02X%02X".format(random.nextInt(32, 225), random.nextInt(32, 225), random.nextInt(32, 225))
+            val readable = matchingBackgrounds(accent).filter { background ->
+                val colors = palette(accent, background.hex)
+                val surface = colors.getValue("surface")
+                // Reserve contrast for elevated containers as well as the page and card.
+                listOf(background.hex, surface, mixHex(surface, colors.getValue("on-surface"), .2f))
+                    .all { contrastRatio(accent, it) >= 4.5f }
+            }
+            if (readable.isNotEmpty()) return palette(accent, readable.random(random).hex)
+        }
+        return palette("#274263", matchingBackgrounds("#274263").first().hex)
+    }
+
     val lightTones = listOf(
         BackgroundTone("white", "White", "#FFFFFF", "#F7F9F6"),
         BackgroundTone("warm", "Warm", "#FFFDF8", "#F6EDDF"),
@@ -100,7 +139,8 @@ object CustomThemeBuilder {
         require(isValidHex(accentHex) && isValidHex(backgroundHex)) { "Enter valid theme colors" }
         val accent = normalizeHex(accentHex)
         val background = normalizeHex(backgroundHex)
-        val surface = mixHex(background, contrastingInk(background, darkInk = "#000000"), .06f)
+        val surface = if (luminance(background) >= .179f) mixHex(background, "#FFFFFF", .5f)
+            else mixHex(background, "#FFFFFF", .06f)
         return mapOf(
             "primary" to accent,
             "on-primary" to contrastingInk(accent, darkInk = "#000000"),

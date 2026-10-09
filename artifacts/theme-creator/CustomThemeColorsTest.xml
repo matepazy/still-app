@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="app.still.ui.CustomThemeColorsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-08T16:01:08.027Z" hostname="DESKTOP-6KST7LQ" time="0.101">
-  <properties/>
-  <testcase name="presetAccentTextIsReadableAcrossActualMaterialSurfaces" classname="app.still.ui.CustomThemeColorsTest" time="0.079"/>
-  <testcase name="completeSchemeHasNoUnspecifiedRolesAndReturnsToTheSameColors" classname="app.still.ui.CustomThemeColorsTest" time="0.021"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

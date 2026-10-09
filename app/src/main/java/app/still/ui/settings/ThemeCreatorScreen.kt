@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.still.R
 import app.still.StillApplication
+import app.still.data.themes.ColorSwatch
 import app.still.data.themes.CustomThemeBuilder
 import app.still.data.themes.ThemePackages
 import app.still.data.themes.InstalledTheme
@@ -88,7 +89,10 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
             val style = app.still.ui.theme.communityStyle(context, item)
             val source = if (item.appearance == app.still.data.themes.ThemeAppearance.Light) item.content.theme.light else item.content.theme.dark
             source.mapValues { it.value.resolve(style.values) }
-        } ?: CustomThemeBuilder.palette(CustomThemeBuilder.swatches.first().hex, CustomThemeBuilder.backgroundTones.first().backgroundHex)
+        } ?: CustomThemeBuilder.creatorSwatches.first().hex.let { initialAccent ->
+            val backgrounds = CustomThemeBuilder.matchingBackgrounds(initialAccent)
+            CustomThemeBuilder.palette(initialAccent, backgrounds[CustomThemeBuilder.automaticBackgroundIndex(initialAccent)].hex)
+        }
     }
     val scope = rememberCoroutineScope()
     var title by rememberSaveable { mutableStateOf(editing?.content?.theme?.title.orEmpty()) }
@@ -124,6 +128,11 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
         background = backgroundHex
         palette = CustomThemeBuilder.palette(accentHex, backgroundHex)
         error = null
+    }
+    fun chooseAccent(hex: String) {
+        val choices = CustomThemeBuilder.matchingBackgrounds(hex)
+        val index = CustomThemeBuilder.automaticBackgroundIndex(hex)
+        choose(hex, choices[index].hex)
     }
     BackHandler(enabled = busy || step > 0) { previous() }
     Scaffold(
@@ -196,55 +205,25 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
             }
             Spacer(Modifier.height(StillSpacing.small))
             if (step == 0) {
-            Text("Choose your accent", style = MaterialTheme.typography.headlineSmall)
-            Text("Choose an accent and background. The other colors are calculated for you.", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(Modifier.fillMaxWidth().selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                CustomThemeBuilder.swatches.forEach { swatch ->
-                    val selected = palette["primary"].equals(swatch.hex, true)
-                    Box(Modifier.size(48.dp).clip(CircleShape)
-                        .border(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                        .selectable(selected, enabled = !busy, role = Role.RadioButton) { choose(swatch.hex); customAccent = false }
-                        .semantics { contentDescription = swatch.name }, contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(36.dp).background(themeColor(swatch.hex), CircleShape), contentAlignment = Alignment.Center) {
-                            if (selected) Icon(painterResource(StillIcons.Check), null,
-                                tint = themeColor(CustomThemeBuilder.contrastingInk(swatch.hex, darkInk = "#000000")), modifier = Modifier.size(20.dp))
-                        }
-                    }
+                Text("Start with an accent. Backgrounds and text colors are calculated for you.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(enabled = !busy, onClick = {
+                    val generated = CustomThemeBuilder.surprisePalette()
+                    choose(generated.getValue("primary"), generated.getValue("background"))
+                }) {
+                    Icon(painterResource(StillIcons.Refresh), null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(StillSpacing.small))
+                    Text("Surprise me")
                 }
-            }
-            Text(CustomThemeBuilder.swatches.firstOrNull { accent.equals(it.hex, true) }?.name ?: "Custom accent",
-                style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { customAccent = true }, enabled = !busy) { Text("Custom accent color") }
-            }
-            if (step == 0) {
-            Text("Background", style = MaterialTheme.typography.titleLarge)
-            Text("Choose a preset or pick any color.", style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(Modifier.fillMaxWidth().selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
-                verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                CustomThemeBuilder.backgroundTones.forEach { tone ->
-                    val selected = palette["background"].equals(tone.backgroundHex, true)
-                    Column(Modifier.widthIn(min = 76.dp).clip(RoundedCornerShape(12.dp))
-                        .border(if (selected) 2.dp else 1.dp,
-                            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-                        .selectable(selected, enabled = !busy, role = Role.RadioButton) { choose(backgroundHex = tone.backgroundHex) }
-                        .padding(StillSpacing.medium), horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-                        Box(Modifier.size(32.dp).clip(CircleShape).background(themeColor(tone.backgroundHex))
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape), contentAlignment = Alignment.Center) {
-                            if (selected) Icon(painterResource(StillIcons.Check), null,
-                                tint = themeColor(CustomThemeBuilder.contrastingInk(tone.backgroundHex)), modifier = Modifier.size(18.dp))
-                        }
-                        Text(tone.name, style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-            }
-            }
-            if (step == 0) {
-                TextButton(onClick = { customBackground = true }, enabled = !busy) { Text("Custom background color") }
+                CreatorColorChoices("Accent color", CustomThemeBuilder.creatorSwatches, palette.getValue("primary"),
+                    validPalette.getValue("primary"), "Custom accent color", !busy,
+                    onSelect = { chooseAccent(it) }, onCustom = { customAccent = true })
+                val backgrounds = CustomThemeBuilder.matchingBackgrounds(validPalette.getValue("primary"))
+                CreatorColorChoices("Background color", backgrounds, palette.getValue("background"),
+                    validPalette.getValue("background"), "Custom background color", !busy,
+                    onSelect = { hex ->
+                        choose(backgroundHex = hex)
+                    }, onCustom = { customBackground = true })
                 TextButton(onClick = { showDetails = !showDetails }, enabled = !busy) {
                     Text(if (showDetails) "Hide color values" else "Edit all color values")
                 }
@@ -294,14 +273,14 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                     Text("Still", style = MaterialTheme.typography.labelLarge)
                 }
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                    .toggleable(value = useCustomIcon, enabled = !busy, role = Role.Checkbox) { useCustomIcon = it }
+                    .toggleable(value = useCustomIcon, enabled = !busy, role = Role.Switch) { useCustomIcon = it }
                     .padding(vertical = StillSpacing.small), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Use custom app icon", style = MaterialTheme.typography.titleMedium)
                         Text("Changes Still’s launcher icon when this theme is active.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Checkbox(checked = useCustomIcon, onCheckedChange = null, enabled = !busy)
+                    Switch(checked = useCustomIcon, onCheckedChange = null, enabled = !busy)
                 }
                 if (!iconChoice.accent.equals(validPalette.getValue("primary").take(7), true) ||
                     !iconChoice.background.equals(validPalette.getValue("background").take(7), true)) {
@@ -317,8 +296,8 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                 if (editing?.link != null) Text("Saving makes this a local theme and stops linked updates.",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (step != 1) {
-                Text(if (step == 2) "Your theme" else "Live preview", style = MaterialTheme.typography.titleMedium)
+            if (step == 2) {
+                Text("Live preview", style = MaterialTheme.typography.titleMedium)
             MaterialTheme(colorScheme = previewColors) {
                 Surface(shape = RoundedCornerShape(16.dp), color = previewColors.background,
                     border = androidx.compose.foundation.BorderStroke(1.dp, previewColors.outlineVariant)) {
@@ -373,7 +352,7 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
             Spacer(Modifier.height(StillSpacing.medium))
             ThemeColorPicker("Accent color", accent, !busy) { input ->
                 accent = input
-                if (CustomThemeBuilder.isValidHex(input)) choose(input)
+                if (CustomThemeBuilder.isValidHex(input)) chooseAccent(input)
             }
             Spacer(Modifier.height(StillSpacing.medium))
             Button(onClick = { customAccent = false }, enabled = CustomThemeBuilder.isValidHex(accent),
@@ -386,7 +365,9 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
             Spacer(Modifier.height(StillSpacing.medium))
             ThemeColorPicker("Background color", background, !busy) { input ->
                 background = input
-                if (CustomThemeBuilder.isValidHex(input)) choose(backgroundHex = input)
+                if (CustomThemeBuilder.isValidHex(input)) {
+                    choose(backgroundHex = input)
+                }
             }
             Spacer(Modifier.height(StillSpacing.medium))
             Button(onClick = { customBackground = false }, enabled = CustomThemeBuilder.isValidHex(background),
@@ -408,6 +389,49 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
             Spacer(Modifier.height(StillSpacing.medium))
             Button(onClick = { editingRole = null }, enabled = CustomThemeBuilder.isValidHex(palette.getValue(role)),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Done") }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CreatorColorChoices(
+    label: String,
+    swatches: List<ColorSwatch>,
+    value: String,
+    validValue: String,
+    customLabel: String,
+    enabled: Boolean,
+    onSelect: (String) -> Unit,
+    onCustom: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+        Text(label, style = MaterialTheme.typography.titleLarge)
+        FlowRow(Modifier.fillMaxWidth().selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
+            verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+            swatches.forEach { swatch ->
+                val selected = value.equals(swatch.hex, true)
+                Box(Modifier.size(48.dp).clip(CircleShape)
+                    .border(if (selected) 2.dp else 1.dp,
+                        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                    .selectable(selected, enabled = enabled, role = Role.RadioButton) { onSelect(swatch.hex) }
+                    .semantics { contentDescription = "$label: ${swatch.name}" }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(36.dp).background(themeColor(swatch.hex), CircleShape), contentAlignment = Alignment.Center) {
+                        if (selected) Icon(painterResource(StillIcons.Check), null, Modifier.size(20.dp),
+                            tint = themeColor(CustomThemeBuilder.contrastingInk(swatch.hex, darkInk = "#000000")))
+                    }
+                }
+            }
+        }
+        Text(swatches.firstOrNull { value.equals(it.hex, true) }?.name ?: "Custom · ${value.uppercase()}",
+            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = onCustom, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Box(Modifier.size(20.dp).clip(CircleShape).background(themeColor(validValue))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+            Spacer(Modifier.width(StillSpacing.small))
+            Text(customLabel, modifier = Modifier.weight(1f))
+            Icon(painterResource(StillIcons.Edit), null, Modifier.size(18.dp))
         }
     }
 }

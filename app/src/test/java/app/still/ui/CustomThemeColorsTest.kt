@@ -11,6 +11,23 @@ import org.junit.Test
 
 class CustomThemeColorsTest {
     @Test
+    fun creatorDefaultsAndSurpriseCombosHaveNoAccentContrastWarnings() {
+        val defaults = CustomThemeBuilder.creatorSwatches.map { swatch ->
+            val backgrounds = CustomThemeBuilder.matchingBackgrounds(swatch.hex)
+            CustomThemeBuilder.palette(swatch.hex, backgrounds[CustomThemeBuilder.automaticBackgroundIndex(swatch.hex)].hex)
+        }
+        val random = kotlin.random.Random(42)
+        for (palette in defaults + List(200) { CustomThemeBuilder.surprisePalette(random) }) {
+            val scheme = customThemeColors(palette)
+            for (surface in listOf(scheme.background, scheme.surface, scheme.surfaceContainerHighest)) {
+                val a = scheme.primary.luminance(); val b = surface.luminance()
+                assertTrue("${palette.getValue("primary")}/${palette.getValue("background")}: $surface",
+                    (maxOf(a, b) + .05f) / (minOf(a, b) + .05f) >= 4.5f)
+            }
+        }
+    }
+
+    @Test
     fun lowContrastAndTransparentPalettesKeepExplicitColors() {
         for (hex in listOf("#111111", "#EEEEEE", "#12345680", "#12345600")) {
             val palette = listOf("primary", "on-primary", "background", "on-background", "surface", "on-surface")
