@@ -9,3 +9,6 @@ local.properties
 /.idea
 /signing/
 /.gradle-home
+/.android
+/.android-home
+/.impeccable

@@ -12,6 +12,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +22,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import app.still.CustomLauncherIcon
@@ -30,6 +36,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.still.R
 import app.still.StillApplication
@@ -104,6 +112,8 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
     var step by rememberSaveable { mutableIntStateOf(0) }
     var editingRole by rememberSaveable { mutableStateOf<String?>(null) }
     var customAccent by rememberSaveable { mutableStateOf(false) }
+    var generatedAccent by rememberSaveable { mutableStateOf<String?>(null) }
+    var generatedBackground by rememberSaveable { mutableStateOf<String?>(null) }
     var palette by rememberSaveable(stateSaver = PaletteSaver) {
         mutableStateOf(initialPalette)
     }
@@ -140,9 +150,21 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
         topBar = { SettingsTopBar(title = if (editing == null) "Create a theme" else "Edit theme", onBack = ::previous) },
         bottomBar = {
             Surface {
-                Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(StillSpacing.large)) {
+                Box(Modifier.fillMaxWidth().navigationBarsPadding(), contentAlignment = Alignment.Center) {
+                Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().padding(StillSpacing.large)) {
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = StillSpacing.small)) }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                    if (step == 0) OutlinedButton(
+                        onClick = {
+                            val generated = CustomThemeBuilder.surprisePalette()
+                            generatedAccent = generated.getValue("primary")
+                            generatedBackground = generated.getValue("background")
+                            choose(generated.getValue("primary"), generated.getValue("background"))
+                        }, enabled = !busy, contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Icon(painterResource(StillIcons.Dice), "Surprise me", Modifier.size(22.dp))
+                    }
                     if (step > 0) OutlinedButton(onClick = ::previous, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) {
                         Icon(painterResource(StillIcons.Back), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(StillSpacing.small))
@@ -174,6 +196,10 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                     ) {
                         if (busy) CircularProgressIndicator(Modifier.size(18.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                         else {
+                            if (step == CreatorSteps.lastIndex) {
+                                Icon(painterResource(StillIcons.Check), null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(StillSpacing.small))
+                            }
                             Text(if (step == CreatorSteps.lastIndex) "Save and use theme" else "Next")
                             if (step < CreatorSteps.lastIndex) {
                                 Spacer(Modifier.width(StillSpacing.small))
@@ -183,6 +209,7 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                     }
                     }
                 }
+                }
             }
         },
     ) { insets ->
@@ -191,11 +218,8 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
             Modifier.widthIn(max = 600.dp).fillMaxHeight().fillMaxWidth().verticalScroll(scroll).padding(StillSpacing.large),
             verticalArrangement = Arrangement.spacedBy(StillSpacing.medium),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(CreatorSteps[step], style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                Text("${step + 1} of ${CreatorSteps.size}", style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text("${step + 1} / ${CreatorSteps.size}", style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.End))
             Row(Modifier.fillMaxWidth().semantics { contentDescription = "Step ${step + 1} of ${CreatorSteps.size}: ${CreatorSteps[step]}" },
                 horizontalArrangement = Arrangement.spacedBy(StillSpacing.xSmall)) {
                 CreatorSteps.forEachIndexed { index, _ ->
@@ -204,83 +228,113 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                 }
             }
             Spacer(Modifier.height(StillSpacing.small))
+            Text(CreatorSteps[step], style = MaterialTheme.typography.headlineSmall)
             if (step == 0) {
                 Text("Start with an accent. Backgrounds and text colors are calculated for you.",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(enabled = !busy, onClick = {
-                    val generated = CustomThemeBuilder.surprisePalette()
-                    choose(generated.getValue("primary"), generated.getValue("background"))
-                }) {
-                    Icon(painterResource(StillIcons.Refresh), null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(StillSpacing.small))
-                    Text("Surprise me")
-                }
-                CreatorColorChoices("Accent color", CustomThemeBuilder.creatorSwatches, palette.getValue("primary"),
-                    validPalette.getValue("primary"), "Custom accent color", !busy,
+                CreatorPaletteSample(previewColors)
+                val accents = CustomThemeBuilder.creatorSwatches.filterNot { it.hex.equals(generatedAccent, true) } + listOfNotNull(generatedAccent?.let {
+                    ColorSwatch("Generated · ${it.uppercase()}", it)
+                })
+                CreatorColorChoices("Accent color", accents, palette.getValue("primary"),
+                    "Custom accent color", !busy,
                     onSelect = { chooseAccent(it) }, onCustom = { customAccent = true })
                 val backgrounds = CustomThemeBuilder.matchingBackgrounds(validPalette.getValue("primary"))
+                    .filterNot { it.hex.equals(generatedBackground, true) } +
+                    listOfNotNull(generatedBackground?.let { ColorSwatch("Generated · ${it.uppercase()}", it) })
                 CreatorColorChoices("Background color", backgrounds, palette.getValue("background"),
-                    validPalette.getValue("background"), "Custom background color", !busy,
+                    "Custom background color", !busy,
                     onSelect = { hex ->
                         choose(backgroundHex = hex)
                     }, onCustom = { customBackground = true })
-                TextButton(onClick = { showDetails = !showDetails }, enabled = !busy) {
-                    Text(if (showDetails) "Hide color values" else "Edit all color values")
-                }
-            }
-            if (step == 0 && showDetails) {
-                Text("Color values", style = MaterialTheme.typography.titleLarge)
-                Text("Edit any of the six colors. Choosing an accent or background above recalculates these values.",
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(StillSpacing.small))
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
-                    Column {
-                        CustomThemeBuilder.roles.forEachIndexed { index, role ->
-                            val value = palette.getValue(role)
-                            Row(Modifier.fillMaxWidth().clickable(enabled = !busy, role = Role.Button) { editingRole = role }
-                                .padding(StillSpacing.medium), verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                                Box(Modifier.size(32.dp).clip(CircleShape)
-                                    .background(themeColor(validPalette.getValue(role)))
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
-                                Column(Modifier.weight(1f)) {
-                                    Text(RoleLabels[index], style = MaterialTheme.typography.titleMedium)
-                                    Text(RoleDescriptions[index], style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(value.uppercase(), style = MaterialTheme.typography.bodySmall,
-                                        color = if (CustomThemeBuilder.isValidHex(value)) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
-                                }
-                                Icon(painterResource(StillIcons.ChevronRight), null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(if (!showDetails) Modifier
+                        .clickable(enabled = !busy, role = Role.Button) { showDetails = true }
+                        .semantics { stateDescription = "Collapsed" } else Modifier) {
+                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .then(if (showDetails) Modifier
+                                .clickable(enabled = !busy, role = Role.Button) { showDetails = false }
+                                .semantics { stateDescription = "Expanded" } else Modifier)
+                            .padding(StillSpacing.medium), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                            Icon(painterResource(StillIcons.Edit), null, Modifier.size(20.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Edit all color values", style = MaterialTheme.typography.titleMedium)
+                                Text(if (showDetails) "Hide the six color editors" else "Fine-tune the generated palette",
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            if (index < CustomThemeBuilder.roles.lastIndex) HorizontalDivider(Modifier.padding(horizontal = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
+                            Icon(painterResource(if (showDetails) StillIcons.ChevronUp else StillIcons.ChevronDown), null, Modifier.size(20.dp))
+                        }
+                        if (showDetails) {
+                            HorizontalDivider(Modifier.padding(horizontal = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
+                            Text("Edit any of the six colors. Choosing an accent or background above recalculates these values.",
+                                modifier = Modifier.padding(StillSpacing.medium),
+                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            CustomThemeBuilder.roles.forEachIndexed { index, role ->
+                                val value = palette.getValue(role)
+                                Row(Modifier.fillMaxWidth().clickable(enabled = !busy, role = Role.Button) { editingRole = role }
+                                    .padding(StillSpacing.medium), verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                                    Box(Modifier.size(32.dp).clip(CircleShape)
+                                        .background(themeColor(validPalette.getValue(role)))
+                                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(RoleLabels[index], style = MaterialTheme.typography.titleMedium)
+                                        Text(RoleDescriptions[index], style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(value.uppercase(), style = MaterialTheme.typography.bodySmall,
+                                            color = if (CustomThemeBuilder.isValidHex(value)) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
+                                    }
+                                    Icon(painterResource(StillIcons.ChevronRight), null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                if (index < CustomThemeBuilder.roles.lastIndex) HorizontalDivider(Modifier.padding(horizontal = StillSpacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                            TextButton(enabled = !busy, onClick = { choose() }) {
+                                Icon(painterResource(StillIcons.Refresh), null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(StillSpacing.small))
+                                Text("Reset color details")
+                            }
+                        }
+                        if (!showDetails) FlowRow(Modifier.fillMaxWidth().padding(start = StillSpacing.medium,
+                            end = StillSpacing.medium, bottom = StillSpacing.medium),
+                            horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
+                            verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                            CustomThemeBuilder.roles.forEach { role ->
+                                Box(Modifier.size(28.dp).background(themeColor(validPalette.getValue(role)), CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                            }
                         }
                     }
                 }
-                TextButton(enabled = !busy, onClick = { choose() }) {
-                    Icon(painterResource(StillIcons.Refresh), null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(StillSpacing.small))
-                    Text("Reset color details")
-                }
             }
             if (step == 1) {
-                Text("Your app icon", style = MaterialTheme.typography.headlineSmall)
+                Text("Choose whether Still’s launcher icon follows your theme.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 val iconChoice = remember(validPalette) { CustomLauncherIcon.closest(validPalette.getValue("primary"), validPalette.getValue("background")) }
-                val icon = remember(iconChoice) { CustomLauncherIcon.bitmap(context, iconChoice) }
-                Column(Modifier.fillMaxWidth().padding(vertical = StillSpacing.large),
+                val icon = remember(context, iconChoice) { CustomLauncherIcon.bitmap(context, iconChoice) }
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Column(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth().padding(vertical = StillSpacing.section),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
                     Image(icon.asImageBitmap(), "Still icon with your theme colors",
                         Modifier.size(96.dp).clip(RoundedCornerShape(24.dp)))
                     Text("Still", style = MaterialTheme.typography.labelLarge)
                 }
+                HorizontalDivider(Modifier.padding(horizontal = StillSpacing.large), color = MaterialTheme.colorScheme.outlineVariant)
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
                     .toggleable(value = useCustomIcon, enabled = !busy, role = Role.Switch) { useCustomIcon = it }
-                    .padding(vertical = StillSpacing.small), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
+                    .padding(StillSpacing.large), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(StillSpacing.xSmall)) {
                         Text("Use custom app icon", style = MaterialTheme.typography.titleMedium)
                         Text("Changes Still’s launcher icon when this theme is active.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = useCustomIcon, onCheckedChange = null, enabled = !busy)
+                }
+                }
                 }
                 if (!iconChoice.accent.equals(validPalette.getValue("primary").take(7), true) ||
                     !iconChoice.background.equals(validPalette.getValue("background").take(7), true)) {
@@ -291,8 +345,12 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (step == 2) {
+                Text("Give your theme a name and check how its colors work together.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(value = title, onValueChange = { title = it.take(80) }, enabled = !busy,
-                    label = { Text("Theme name") }, placeholder = { Text("My theme") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    label = { Text("Theme name") }, placeholder = { Text("My theme") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }), modifier = Modifier.fillMaxWidth())
                 if (editing?.link != null) Text("Saving makes this a local theme and stops linked updates.",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -313,15 +371,28 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
                                     color = previewColors.primary, trackColor = previewColors.surfaceContainerHighest)
                             }
                         }
-                        // Real Material controls exercise container, text and accent roles together.
-                        Row(horizontalArrangement = Arrangement.spacedBy(StillSpacing.small), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(painterResource(StillIcons.Check), null, tint = previewColors.primary, modifier = Modifier.size(20.dp))
-                            Text("Live preview · example usage", style = MaterialTheme.typography.bodySmall, color = previewColors.onBackground)
+                        Surface(color = previewColors.surface, shape = RoundedCornerShape(12.dp)) {
+                            Column(Modifier.fillMaxWidth().padding(StillSpacing.medium),
+                                verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                                Text("Apps", style = MaterialTheme.typography.titleMedium)
+                                listOf("Reading" to .7f, "Music" to .45f, "Messages" to .25f).forEach { (label, amount) ->
+                                    Row(verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+                                        Text(label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                                        LinearProgressIndicator(progress = { amount }, modifier = Modifier.weight(1f),
+                                            color = previewColors.primary, trackColor = previewColors.surfaceContainerHighest)
+                                    }
+                                }
+                            }
                         }
                         Surface(color = previewColors.primary, contentColor = previewColors.onPrimary, shape = RoundedCornerShape(8.dp)) {
-                            Text("Your accent", style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                            Row(Modifier.padding(horizontal = StillSpacing.medium, vertical = StillSpacing.small),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                                Icon(painterResource(StillIcons.Check), null, Modifier.size(18.dp))
+                                Text("Your accent", style = MaterialTheme.typography.labelLarge)
+                            }
                         }
+                        Text("Example usage", style = MaterialTheme.typography.bodySmall, color = previewColors.onBackground)
                     }
                 }
             }
@@ -395,18 +466,38 @@ private fun ThemeCreatorContent(onClose: () -> Unit, modifier: Modifier, origina
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
+private fun CreatorPaletteSample(colors: ColorScheme) {
+    Surface(color = colors.background, contentColor = colors.onBackground, shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        Row(Modifier.fillMaxWidth().padding(StillSpacing.large), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
+            Image(painterResource(R.drawable.ic_still_wordmark), "Draft accent on background",
+                Modifier.width(72.dp).height(36.dp), colorFilter = ColorFilter.tint(colors.primary))
+            Spacer(Modifier.weight(1f))
+            Surface(color = colors.surface, contentColor = colors.onSurface, shape = RoundedCornerShape(8.dp)) {
+                Row(Modifier.padding(StillSpacing.medium), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
+                    Box(Modifier.size(12.dp).background(colors.primary, CircleShape))
+                    Text("Aa", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
 private fun CreatorColorChoices(
     label: String,
     swatches: List<ColorSwatch>,
     value: String,
-    validValue: String,
     customLabel: String,
     enabled: Boolean,
     onSelect: (String) -> Unit,
     onCustom: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
-        Text(label, style = MaterialTheme.typography.titleLarge)
+        Text(label, style = MaterialTheme.typography.titleMedium)
         FlowRow(Modifier.fillMaxWidth().selectableGroup(),
             horizontalArrangement = Arrangement.spacedBy(StillSpacing.small),
             verticalArrangement = Arrangement.spacedBy(StillSpacing.small)) {
@@ -423,16 +514,23 @@ private fun CreatorColorChoices(
                     }
                 }
             }
+            val borderColor = MaterialTheme.colorScheme.outline.let { if (enabled) it else it.copy(alpha = .38f) }
+            Box(Modifier.size(48.dp).clip(CircleShape)
+                .drawBehind {
+                    val strokeWidth = 1.5.dp.toPx()
+                    drawCircle(borderColor, radius = size.minDimension / 2 - strokeWidth / 2,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(.5.dp.toPx(), 4.dp.toPx()))))
+                }
+                .clickable(enabled = enabled, role = Role.Button, onClick = onCustom)
+                .semantics { contentDescription = customLabel }, contentAlignment = Alignment.Center) {
+                Icon(painterResource(StillIcons.Add), null, Modifier.size(22.dp),
+                    tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .38f))
+            }
         }
         Text(swatches.firstOrNull { value.equals(it.hex, true) }?.name ?: "Custom · ${value.uppercase()}",
             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedButton(onClick = onCustom, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Box(Modifier.size(20.dp).clip(CircleShape).background(themeColor(validValue))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
-            Spacer(Modifier.width(StillSpacing.small))
-            Text(customLabel, modifier = Modifier.weight(1f))
-            Icon(painterResource(StillIcons.Edit), null, Modifier.size(18.dp))
-        }
     }
 }
 
