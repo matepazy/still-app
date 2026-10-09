@@ -5,27 +5,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import app.still.data.themes.CustomThemeBuilder
 import app.still.ui.theme.customThemeColors
-import app.still.ui.theme.communityControlColors
-import app.still.ui.theme.StillDarkColors
-import app.still.ui.theme.StillLightColors
 import app.still.ui.theme.themeColor
 import org.junit.Assert.*
 import org.junit.Test
 
 class CustomThemeColorsTest {
     @Test
-    fun recoverySurfacesKeepEveryReadablePresetPalette() {
-        for (swatch in CustomThemeBuilder.swatches) for (tone in CustomThemeBuilder.backgroundTones) {
-            val scheme = customThemeColors(CustomThemeBuilder.palette(swatch.hex, tone))
-            assertSame("${swatch.name}/${tone.name}", scheme, communityControlColors(scheme))
+    fun lowContrastAndTransparentPalettesKeepExplicitColors() {
+        for (hex in listOf("#111111", "#EEEEEE", "#12345680", "#12345600")) {
+            val palette = listOf("primary", "on-primary", "background", "on-background", "surface", "on-surface")
+                .associateWith { hex }
+            val scheme = customThemeColors(palette)
+            val chosen = themeColor(hex)
+            assertEquals(chosen, scheme.primary)
+            assertEquals(chosen, scheme.onPrimary)
+            assertEquals(chosen, scheme.background)
+            assertEquals(chosen, scheme.onBackground)
+            assertEquals(chosen, scheme.surface)
+            assertEquals(chosen, scheme.onSurface)
         }
-    }
-
-    @Test
-    fun unreadableAndTransparentThemesStillHaveVisibleRecoveryControls() {
-        assertSame(StillDarkColors, communityControlColors(StillDarkColors.copy(onSurface = StillDarkColors.surface)))
-        assertSame(StillLightColors, communityControlColors(StillLightColors.copy(onPrimary = StillLightColors.primary)))
-        assertSame(StillDarkColors, communityControlColors(StillDarkColors.copy(background = Color.Transparent)))
     }
 
     @Test

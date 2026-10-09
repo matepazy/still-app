@@ -48,7 +48,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TodayTopBar(onSettings: () -> Unit) {
     val community = app.still.ui.theme.LocalCommunityStyle.current
-    val colors = community?.let { app.still.ui.theme.communityControlColors(it.colors) } ?: MaterialTheme.colorScheme
+    val colors = MaterialTheme.colorScheme
     TopAppBar(colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
         containerColor = MaterialTheme.colorScheme.background,
         scrolledContainerColor = MaterialTheme.colorScheme.background,

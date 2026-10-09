@@ -81,13 +81,8 @@ fun ThemeSettingsScreen(
     onCreateTheme: () -> Unit = {},
     onEditTheme: (String) -> Unit = {},
 ) {
-    val colors = if (app.still.ui.theme.LocalCommunityStyle.current != null) {
-        app.still.ui.theme.communityControlColors(app.still.ui.theme.LocalCommunityStyle.current!!.colors)
-    } else MaterialTheme.colorScheme
-    androidx.compose.material3.MaterialTheme(colorScheme = colors) {
-        androidx.compose.material3.Surface(modifier = modifier.fillMaxSize(), color = colors.background) {
-            ThemeSettingsContent(selectedTheme, promotedSimpleTheme, onThemeChange, onDrawerThemeChange, onCreateTheme = onCreateTheme, onEditTheme = onEditTheme)
-        }
+    androidx.compose.material3.Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        ThemeSettingsContent(selectedTheme, promotedSimpleTheme, onThemeChange, onDrawerThemeChange, onCreateTheme = onCreateTheme, onEditTheme = onEditTheme)
     }
 }
 

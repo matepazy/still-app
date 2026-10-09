@@ -46,32 +46,3 @@ fun themeColor(hex: String): Color {
     return Color((alpha shl 24) or rgb)
 }
 fun CommunityStyle.darkIcons(): Boolean = colors.background.luminance() > .179f
-
-/** Keep readable custom palettes on recovery surfaces; fall back only when controls could vanish. */
-fun communityControlColors(colors: ColorScheme): ColorScheme {
-    fun readable(ink: Color, surface: Color): Boolean {
-        if (ink.alpha < 1f || surface.alpha < 1f) return false
-        val a = ink.luminance(); val b = surface.luminance()
-        return (maxOf(a, b) + .05f) / (minOf(a, b) + .05f) >= 4.5f
-    }
-    val surfaces = listOf(colors.surface, colors.surfaceContainer, colors.surfaceContainerHigh, colors.surfaceContainerHighest)
-    val readableControls = readable(colors.onBackground, colors.background) &&
-        surfaces.all { readable(colors.onSurface, it) && readable(colors.onSurfaceVariant, it) && readable(colors.primary, it) } &&
-        readable(colors.primary, colors.background) && readable(colors.onPrimary, colors.primary)
-    return if (readableControls) colors
-        else if (colors.background.luminance() > .179f) StillLightColors else StillDarkColors
-}
-
-/** Community data cannot hide the controls used to revoke consent or remove it. */
-@androidx.compose.runtime.Composable
-fun TrustedThemeControls(content: @androidx.compose.runtime.Composable () -> Unit) {
-    val community = LocalCommunityStyle.current
-    if (community == null) content()
-    else {
-        val colors = communityControlColors(community.colors)
-        // A local recovery surface must not overwrite the activity window or clear the active style.
-        androidx.compose.material3.MaterialTheme(colorScheme = colors) {
-            androidx.compose.material3.Surface(color = colors.background) { content() }
-        }
-    }
-}

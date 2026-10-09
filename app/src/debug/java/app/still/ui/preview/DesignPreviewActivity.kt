@@ -86,11 +86,11 @@ private fun DesignScreen(screen: String) {
         "detail" -> Scaffold(topBar = { AppDetailTopBar("Instagram", {}) }) { padding ->
             AppDetailScreen(PreviewFixtures.appDetail, Modifier.padding(padding))
         }
-        "theme-creator" -> app.still.ui.theme.TrustedThemeControls { app.still.ui.settings.ThemeCreatorScreen(onClose = { activeScreen = "themes" }, themeId = editingId) }
-        "themes" -> app.still.ui.theme.TrustedThemeControls { Scaffold(topBar = { SettingsTopBar(title = "Theme", onBack = { activeScreen = "settings" }) }) { padding ->
+        "theme-creator" -> app.still.ui.settings.ThemeCreatorScreen(onClose = { activeScreen = "themes" }, themeId = editingId)
+        "themes" -> Scaffold(topBar = { SettingsTopBar(title = "Theme", onBack = { activeScreen = "settings" }) }) { padding ->
             ThemeSettingsScreen(ThemePreference.Dark, null, {}, {}, Modifier.padding(padding), onCreateTheme = { editingId = null; activeScreen = "theme-creator" },
                 onEditTheme = { editingId = it; activeScreen = "theme-creator" })
-        } }
+        }
         "widget" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             WidgetSettingsScreen(
                 UserSettings(theme = ThemePreference.Dark), PreviewFixtures.today,
@@ -100,7 +100,7 @@ private fun DesignScreen(screen: String) {
         "widgets" -> Scaffold(topBar = { SettingsTopBar(title = "Widgets") {} }) { padding ->
             WidgetSelectorScreen(UserSettings(), PreviewFixtures.today, {}, {}, Modifier.padding(padding))
         }
-        "settings" -> app.still.ui.theme.TrustedThemeControls { Scaffold(topBar = { SettingsTopBar {} }) { padding ->
+        "settings" -> Scaffold(topBar = { SettingsTopBar {} }) { padding ->
             SettingsScreen(
                 settings = UserSettings(onboardingComplete = true, theme = ThemePreference.Dark),
                 onThemeClick = { activeScreen = "themes" },
@@ -110,7 +110,7 @@ private fun DesignScreen(screen: String) {
                 onStoredDataClick = {},
                 modifier = Modifier.padding(padding),
             )
-        } }
+        }
         else -> PreviewMainScaffold(screen)
     }
 }

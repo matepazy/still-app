@@ -557,7 +557,6 @@ private fun MainNavigation(
             }
             composable(SettingsRoute) {
                 val communityThemeTitle = app.still.ui.theme.LocalCommunityStyle.current?.installed?.content?.theme?.title
-                app.still.ui.theme.TrustedThemeControls {
                 LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
                 LaunchedEffect(storedDataSummary?.importRollbackUntilMillis) {
                     storedDataSummary?.importRollbackUntilMillis?.let { until ->
@@ -611,7 +610,6 @@ private fun MainNavigation(
                         modifier = Modifier.padding(padding),
                     )
                 }
-                }
             }
             composable(VersionArtworkRoute) {
                 VersionArtworkScreen(
@@ -636,7 +634,6 @@ private fun MainNavigation(
                 }
             }
             composable(ThemeSettingsRoute) {
-                app.still.ui.theme.TrustedThemeControls {
                 DestinationScaffold(
                     topBar = { SettingsTopBar(title = "Theme", onBack = { navController.popBackStack() }) },
                 ) { padding ->
@@ -650,14 +647,11 @@ private fun MainNavigation(
                         modifier = Modifier.padding(padding),
                     )
                 }
-                }
             }
             composable("$ThemeCreatorRoute?themeId={themeId}", arguments = listOf(androidx.navigation.navArgument("themeId") {
                 type = androidx.navigation.NavType.StringType; nullable = true; defaultValue = null
             })) { entry ->
-                app.still.ui.theme.TrustedThemeControls {
-                    app.still.ui.settings.ThemeCreatorScreen(onClose = { navController.popBackStack() }, themeId = entry.arguments?.getString("themeId"))
-                }
+                app.still.ui.settings.ThemeCreatorScreen(onClose = { navController.popBackStack() }, themeId = entry.arguments?.getString("themeId"))
             }
             composable(StoredDataRoute) {
                 LaunchedEffect(Unit) { viewModel.refreshStoredDataSummary() }
