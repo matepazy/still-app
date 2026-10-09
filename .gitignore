@@ -1,14 +1,30 @@
+# Build outputs and caches
 /.gradle/
-/.idea/
+/.gradle-home/
 **/build/
-local.properties
-*.iml
 /.kotlin/
 /.externalNativeBuild/
 /.cxx/
-/.idea
+
+# Machine-specific IDE and Android state
+/.idea/
+*.iml
+local.properties
+/.android/
+/.android-home/
+/.android-user-home/
+
+# Local signing credentials
 /signing/
-/.gradle-home
-/.android
-/.android-home
-/.impeccable
+*.keystore
+*.keystore.lock
+*.jks
+
+# Temporary review and validation output
+/.impeccable/
+/artifacts/
+*.tmp
+*.bak
+*.hprof
+hs_err_pid*.log
+replay_pid*.log
