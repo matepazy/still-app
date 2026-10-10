@@ -36,10 +36,25 @@ internal class NavigationIconMotion(private val scope: CoroutineScope) {
     private var pressedRoute: String? = null
     var fillingRoute by mutableStateOf<String?>(null)
         private set
+    var reduceMotion by mutableStateOf(false)
+        private set
 
-    fun progress(route: String): Float = progress.getValue(route).value
+    fun setMotionReduced(value: Boolean) {
+        if (reduceMotion == value) return
+        reduceMotion = value
+        animation?.cancel()
+        animation = null
+        pressedRoute = null
+        fillingRoute = null
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            progress.values.forEach { it.snapTo(1f) }
+        }
+    }
+
+    fun progress(route: String): Float = if (reduceMotion) 1f else progress.getValue(route).value
 
     fun play(route: String, alreadySelected: Boolean) {
+        if (reduceMotion) return
         val startedOnPress = pressedRoute == route && animation?.isActive == true
         pressedRoute = null
         if (startedOnPress) return
@@ -47,6 +62,7 @@ internal class NavigationIconMotion(private val scope: CoroutineScope) {
     }
 
     fun press(route: String, alreadySelected: Boolean) {
+        if (reduceMotion) return
         pressedRoute = route
         startAnimation(route, alreadySelected)
     }

@@ -1,5 +1,7 @@
 package app.still.ui.settings
 
+import app.still.ui.theme.LocalReduceMotion
+
 import android.os.SystemClock
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -97,17 +99,20 @@ fun VersionArtworkScreen(
     val colors = remember(palette) {
         palette.colors.map { Color.hsv(it.hue, it.saturation, it.value) }
     }
-    val animation = rememberInfiniteTransition(label = "Version gradient")
-    // A full orbit has no seam. Compose respects the system animator duration scale.
-    val progress by animation.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * PI).toFloat(),
-        animationSpec = infiniteRepeatable(
-            tween(24000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "Gradient orbit",
-    )
+    val progress = if (LocalReduceMotion.current) 0f else {
+        val animation = rememberInfiniteTransition(label = "Version gradient")
+        // A full orbit has no seam. Compose respects the system animator duration scale.
+        val value by animation.animateFloat(
+            initialValue = 0f,
+            targetValue = (2 * PI).toFloat(),
+            animationSpec = infiniteRepeatable(
+                tween(24000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "Gradient orbit",
+        )
+        value
+    }
     Box(modifier.fillMaxSize().background(
         palette.background.let { Color.hsv(it.hue, it.saturation, it.value) },
     )) {

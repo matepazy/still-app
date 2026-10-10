@@ -30,11 +30,12 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.dp
 import app.still.ui.components.DurationHeadline
 import app.still.ui.theme.StillSpacing
+import app.still.ui.theme.LocalReduceMotion
 import kotlin.math.sin
 
 @Composable
 internal fun HalloweenTodayHeader(date: String, duration: String) {
-    val glow = if (ValueAnimator.areAnimatorsEnabled()) {
+    val glow = if (!LocalReduceMotion.current && ValueAnimator.areAnimatorsEnabled()) {
         val transition = rememberInfiniteTransition(label = "moonlight")
         val value by transition.animateFloat(
             initialValue = .6f,

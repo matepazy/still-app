@@ -16,16 +16,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import kotlin.math.sin
 
-internal fun Modifier.fallingLeaves(lifecycle: Lifecycle): Modifier = then(FallingLeavesElement(lifecycle))
+internal fun Modifier.fallingLeaves(lifecycle: Lifecycle, reduceMotion: Boolean = false): Modifier =
+    then(FallingLeavesElement(lifecycle, reduceMotion))
 
-private data class FallingLeavesElement(val lifecycle: Lifecycle) : ModifierNodeElement<FallingLeavesNode>() {
-    override fun create() = FallingLeavesNode(lifecycle)
-    override fun update(node: FallingLeavesNode) = node.updateLifecycle(lifecycle)
+private data class FallingLeavesElement(val lifecycle: Lifecycle, val reduceMotion: Boolean) : ModifierNodeElement<FallingLeavesNode>() {
+    override fun create() = FallingLeavesNode(lifecycle, reduceMotion)
+    override fun update(node: FallingLeavesNode) = node.update(lifecycle, reduceMotion)
     override fun InspectorInfo.inspectableProperties() { name = "fallingLeaves" }
 }
 
 /** Repaints its own layer without snapshot writes or continuous recomposer frame requests. */
-private class FallingLeavesNode(private var lifecycle: Lifecycle) : Modifier.Node(), DrawModifierNode,
+private class FallingLeavesNode(private var lifecycle: Lifecycle, private var reduceMotion: Boolean) : Modifier.Node(), DrawModifierNode,
     Choreographer.FrameCallback {
     private val choreographer = Choreographer.getInstance()
     private var running = false
@@ -56,11 +57,12 @@ private class FallingLeavesNode(private var lifecycle: Lifecycle) : Modifier.Nod
         lifecycle.removeObserver(observer)
     }
 
-    fun updateLifecycle(value: Lifecycle) {
-        if (lifecycle === value) return
+    fun update(value: Lifecycle, motionReduced: Boolean) {
+        if (lifecycle === value && reduceMotion == motionReduced) return
         stop()
         if (isAttached) lifecycle.removeObserver(observer)
         lifecycle = value
+        reduceMotion = motionReduced
         if (isAttached) {
             lifecycle.addObserver(observer)
             updateRunning()
@@ -68,7 +70,7 @@ private class FallingLeavesNode(private var lifecycle: Lifecycle) : Modifier.Nod
     }
 
     private fun updateRunning() {
-        if (isAttached && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+        if (isAttached && !reduceMotion && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             if (!running) {
                 running = true
                 lastFrameNanos = 0L

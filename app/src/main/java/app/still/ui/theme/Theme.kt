@@ -28,6 +28,7 @@ import androidx.core.view.WindowCompat
 import app.still.data.settings.ThemePreference
 
 val LocalThemePreference = staticCompositionLocalOf { ThemePreference.System }
+val LocalReduceMotion = staticCompositionLocalOf { false }
 
 internal val StillDarkColors = darkColorScheme(
     primary = Color(0xFF9FE3B2),
@@ -535,6 +536,7 @@ fun StillTheme(
     themePreference: ThemePreference,
     darkStatusBarIcons: Boolean? = null,
     communityStyle: CommunityStyle? = null,
+    reduceMotion: Boolean = LocalReduceMotion.current,
     content: @Composable () -> Unit,
 ) {
     val systemDark = isSystemInDarkTheme()
@@ -562,7 +564,11 @@ fun StillTheme(
     }
     val effectivePreference = if (communityStyle == null) themePreference
         else if (communityStyle.darkIcons()) ThemePreference.Light else ThemePreference.Dark
-    CompositionLocalProvider(LocalThemePreference provides effectivePreference, LocalCommunityStyle provides communityStyle) {
+    CompositionLocalProvider(
+        LocalThemePreference provides effectivePreference,
+        LocalCommunityStyle provides communityStyle,
+        LocalReduceMotion provides reduceMotion,
+    ) {
         MaterialTheme(colorScheme = colors, typography = StillTypography, content = content)
     }
 }

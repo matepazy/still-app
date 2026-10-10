@@ -30,10 +30,11 @@ class NavigationSettingsTest {
         val theme = tab.copy(theme = ThemePreference.Black)
         val categories = theme.copy(appCategoryOverrides = mapOf("example.app" to AppCategory.entries.first()))
         val history = categories.copy(saveUsageHistory = false)
+        val reducedMotion = history.copy(reduceMotion = true)
 
-        val emissions = flowOf(initial, tab, theme, categories, history).distinctUiSettings().toList()
+        val emissions = flowOf(initial, tab, theme, categories, history, reducedMotion).distinctUiSettings().toList()
 
-        assertEquals(listOf(initial, theme, categories, history), emissions)
+        assertEquals(listOf(initial, theme, categories, history, reducedMotion), emissions)
     }
 
     @Test

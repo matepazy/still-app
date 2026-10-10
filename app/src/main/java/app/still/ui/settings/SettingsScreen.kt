@@ -145,6 +145,7 @@ fun SettingsScreen(
     reportSubmitted: Boolean = false,
     onDismissReportSubmitted: () -> Unit = {},
     onSaveUsageHistoryChange: (Boolean) -> Unit = {},
+    onReduceMotionChange: (Boolean) -> Unit = {},
     storedDataSummary: StoredDataSummary? = null,
     archiveRestoreState: ArchiveRestoreState = ArchiveRestoreState.Idle,
     archiveUpgradeState: ArchiveUpgradeState = ArchiveUpgradeState.Idle,
@@ -189,6 +190,14 @@ fun SettingsScreen(
                     title = "Home screen widget",
                     supporting = "Color, appearance, title and refresh",
                     onClick = onWidgetClick,
+                )
+                Hairline()
+                SettingSwitch(
+                    title = "Reduce motion",
+                    supporting = "Turn off navigation and decorative animations",
+                    checked = settings.reduceMotion,
+                    enabled = true,
+                    onCheckedChange = onReduceMotionChange,
                 )
             }
         }

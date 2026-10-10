@@ -390,6 +390,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         SeasonalLauncherIcon.sync(container.applicationContext, SeasonalThemeAvailability.activeTheme(value))
         WidgetUpdateDispatcher.updateAll(container.applicationContext)
     }
+    fun setReduceMotion(value: Boolean) = viewModelScope.launch {
+        container.settingsRepository.setReduceMotion(value)
+    }
     fun setThemeFromDrawer(value: ThemePreference) = viewModelScope.launch {
         container.settingsRepository.setThemeFromDrawer(value)
         SeasonalLauncherIcon.sync(container.applicationContext, SeasonalThemeAvailability.activeTheme(value))

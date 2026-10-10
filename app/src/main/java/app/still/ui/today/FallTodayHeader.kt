@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.still.ui.components.DurationHeadline
 import app.still.ui.theme.StillSpacing
+import app.still.ui.theme.LocalReduceMotion
 
 @Composable
 internal fun FallTodayHeader(date: String, duration: String) {
@@ -36,7 +37,7 @@ internal fun FallTodayHeader(date: String, duration: String) {
         Spacer(
             Modifier.matchParentSize()
                 .graphicsLayer()
-                .fallingLeaves(lifecycleOwner.lifecycle),
+                .fallingLeaves(lifecycleOwner.lifecycle, LocalReduceMotion.current),
         )
         Column(Modifier.padding(StillSpacing.large)) {
             Text(

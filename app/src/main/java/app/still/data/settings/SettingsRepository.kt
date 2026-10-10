@@ -43,6 +43,7 @@ enum class LastDestination {
 data class UserSettings(
     val onboardingComplete: Boolean = false,
     val theme: ThemePreference = ThemePreference.System,
+    val reduceMotion: Boolean = false,
     val promotedSimpleTheme: ThemePreference? = null,
     val dailyTargetMinutes: Long? = null,
     val versionCheckEnabled: Boolean = true,
@@ -86,6 +87,7 @@ class SettingsRepository(private val context: Context) {
     private object Keys {
         val onboarding = booleanPreferencesKey("onboarding_complete")
         val theme = stringPreferencesKey("theme")
+        val reduceMotion = booleanPreferencesKey("reduce_motion")
         val promotedSimpleTheme = stringPreferencesKey("promoted_simple_theme")
         val dynamic = booleanPreferencesKey("dynamic_colors")
         val target = longPreferencesKey("daily_target_minutes")
@@ -132,6 +134,7 @@ class SettingsRepository(private val context: Context) {
         UserSettings(
             onboardingComplete = preferences[Keys.onboarding] ?: false,
             theme = SeasonalThemeAvailability.activeTheme(savedTheme, date),
+            reduceMotion = preferences[Keys.reduceMotion] ?: false,
             promotedSimpleTheme = preferences[Keys.promotedSimpleTheme]
                 ?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() },
             dailyTargetMinutes = preferences[Keys.target],
@@ -180,6 +183,9 @@ class SettingsRepository(private val context: Context) {
     suspend fun setTheme(value: ThemePreference) = context.settingsDataStore.edit {
         it[Keys.theme] = value.name
         it.remove(Keys.dynamic)
+    }
+    suspend fun setReduceMotion(value: Boolean) = context.settingsDataStore.edit {
+        it[Keys.reduceMotion] = value
     }
     suspend fun setThemeFromDrawer(value: ThemePreference) = context.settingsDataStore.edit {
         it[Keys.theme] = value.name

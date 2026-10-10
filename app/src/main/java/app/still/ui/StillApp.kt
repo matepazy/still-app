@@ -260,6 +260,7 @@ fun StillApp(
     StillTheme(
         themePreference = if (!settings.onboardingComplete) ThemePreference.Dark else settings.theme,
         communityStyle = activeCommunityStyle.takeIf { settings.onboardingComplete },
+        reduceMotion = settings.reduceMotion,
         darkStatusBarIcons = if (navigationVisible && navigationBarState.route == VersionArtworkRoute) false else null,
     ) {
         SideEffect(onContentReady)
@@ -354,6 +355,7 @@ private fun MainNavigation(
     val navController = rememberNavController()
     val navigationIconScope = rememberCoroutineScope()
     val navigationIconMotion = remember(navigationIconScope) { NavigationIconMotion(navigationIconScope) }
+    SideEffect { navigationIconMotion.setMotionReduced(settings.reduceMotion) }
     var reportSubmitted by rememberSaveable { mutableStateOf(false) }
     val initialDestination = remember { navigationRequest?.destination ?: settings.lastDestination }
     val initialRequestId = remember { navigationRequest?.id }
@@ -417,31 +419,33 @@ private fun MainNavigation(
             modifier = navigationModifier,
             enterTransition = {
                 backAnimationState.tabNavigation = false
-                if (initialState.destination.route in TopLevelRoutes &&
+                if (settings.reduceMotion || (initialState.destination.route in TopLevelRoutes &&
                     targetState.destination.route in TopLevelRoutes
-                ) EnterTransition.None else forwardDestinationEnter(forwardNavigationOffsetPx)
+                )) EnterTransition.None else forwardDestinationEnter(forwardNavigationOffsetPx)
             },
             exitTransition = {
-                if (initialState.destination.route in TopLevelRoutes &&
+                if (settings.reduceMotion || (initialState.destination.route in TopLevelRoutes &&
                     targetState.destination.route in TopLevelRoutes
-                ) ExitTransition.None else forwardDestinationExit()
+                )) ExitTransition.None else forwardDestinationExit()
             },
             popEnterTransition = {
-                if (backAnimationState.tabNavigation) EnterTransition.None
+                if (settings.reduceMotion || backAnimationState.tabNavigation) EnterTransition.None
                 else backDestinationEnter(backAnimationState.value, predictiveBackMarginPx)
             },
             popExitTransition = {
-                if (backAnimationState.tabNavigation) ExitTransition.None
+                if (settings.reduceMotion || backAnimationState.tabNavigation) ExitTransition.None
                 else backDestinationExit(backAnimationState.value, predictiveBackMarginPx)
             },
             predictivePopEnterTransition = { swipeEdge ->
                 backAnimationState.tabNavigation = false
-                backDestinationEnter(swipeEdge, predictiveBackMarginPx)
+                if (settings.reduceMotion) EnterTransition.None
+                else backDestinationEnter(swipeEdge, predictiveBackMarginPx)
             },
             predictivePopExitTransition = { swipeEdge ->
                 backAnimationState.tabNavigation = false
                 backAnimationState.value = swipeEdge
-                backDestinationExit(swipeEdge, predictiveBackMarginPx)
+                if (settings.reduceMotion) ExitTransition.None
+                else backDestinationExit(swipeEdge, predictiveBackMarginPx)
             },
         ) {
             composable(TodayRoute) {
@@ -582,6 +586,7 @@ private fun MainNavigation(
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://matepazy.hu")))
                         },
                         onSaveUsageHistoryChange = viewModel::setSaveUsageHistory,
+                        onReduceMotionChange = viewModel::setReduceMotion,
                         storedDataSummary = storedDataSummary,
                         archiveRestoreState = archiveRestoreState,
                         archiveUpgradeState = archiveUpgradeState,
