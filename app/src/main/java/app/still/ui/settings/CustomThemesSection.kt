@@ -141,7 +141,7 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text("Create a theme", style = MaterialTheme.typography.titleMedium)
+                Text("Add a theme", style = MaterialTheme.typography.titleMedium)
                 Text("Choose colors and make it yours", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(painterResource(StillIcons.ChevronRight), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
@@ -194,7 +194,7 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
                 Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
                     when (drawer) {
                         "add" -> {
-                            Text("Create a theme", style = MaterialTheme.typography.titleLarge)
+                            Text("Add a theme", style = MaterialTheme.typography.titleLarge)
                             Button(onClick = { drawer = null; onCreateTheme() }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(painterResource(StillIcons.Add), null, Modifier.size(18.dp))
                                 Spacer(Modifier.width(StillSpacing.small))
