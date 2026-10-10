@@ -105,7 +105,6 @@ private fun DesignScreen(screen: String) {
                 settings = UserSettings(onboardingComplete = true, theme = ThemePreference.Dark),
                 onThemeClick = { activeScreen = "themes" },
                 communityThemeTitle = app.still.ui.theme.LocalCommunityStyle.current?.installed?.content?.theme?.title,
-                onRefresh = {},
                 onWidgetClick = {},
                 onStoredDataClick = {},
                 modifier = Modifier.padding(padding),

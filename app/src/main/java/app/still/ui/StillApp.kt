@@ -578,7 +578,6 @@ private fun MainNavigation(
                         onVersionArtworkClick = {
                             navController.navigate(VersionArtworkRoute) { launchSingleTop = true }
                         },
-                        onRefresh = viewModel::refresh,
                         onWidgetClick = { navController.navigate(WidgetSettingsRoute) },
                         onStoredDataClick = { navController.navigate(StoredDataRoute) },
                         onReportIssueClick = { navController.navigate(IssueReportRoute) },

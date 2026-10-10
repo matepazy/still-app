@@ -137,7 +137,6 @@ fun SettingsScreen(
     settings: UserSettings,
     communityThemeTitle: String? = null,
     onThemeClick: () -> Unit,
-    onRefresh: () -> Unit,
     onWidgetClick: () -> Unit,
     onStoredDataClick: () -> Unit,
     onReportIssueClick: () -> Unit = {},
@@ -253,13 +252,6 @@ fun SettingsScreen(
         SectionTitle("Maintenance")
         TonalPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
             Column {
-                SettingActionRow(
-                    title = "Refresh usage data",
-                    supporting = "Recalculate your local screen-time history",
-                    icon = StillIcons.Refresh,
-                    onClick = onRefresh,
-                )
-                Hairline()
                 SettingSwitch(
                     title = "Automatic update checks",
                     supporting = "Check GitHub when Still opens",
