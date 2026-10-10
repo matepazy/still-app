@@ -22,6 +22,8 @@ import java.time.Duration
 import kotlin.math.cos
 import kotlin.math.sin
 
+private val InsightCircleInset = 22.dp
+
 @Composable
 internal fun UseWindow(first: Int, last: Int, singleDay: Boolean) {
     val start = Math.floorMod(first, 1440)
@@ -35,7 +37,7 @@ internal fun UseWindow(first: Int, last: Int, singleDay: Boolean) {
         Box(Modifier.size(chartSize).semantics {
             contentDescription = "24 hour clock, first use ${clockMinute(start)}, last use ${clockMinute(end)}"
         }, contentAlignment = Alignment.Center) {
-            Canvas(Modifier.fillMaxSize().padding(22.dp)) {
+            Canvas(Modifier.fillMaxSize().padding(InsightCircleInset)) {
                 val radius = size.minDimension / 2 - 4.dp.toPx()
                 val center = Offset(size.width / 2, size.height / 2)
                 val topLeft = center - Offset(radius, radius)
@@ -87,7 +89,7 @@ internal fun QuickCheckBreakdown(share: Double) {
     InsightLayout(graphic = { chartSize ->
         Box(Modifier.size(chartSize).semantics { contentDescription = "$percent percent of check-ins were quick checks" },
             contentAlignment = Alignment.Center) {
-            Canvas(Modifier.fillMaxSize().padding(10.dp)) {
+            Canvas(Modifier.fillMaxSize().padding(InsightCircleInset)) {
                 val stroke = 14.dp.toPx()
                 val inset = stroke / 2
                 val bounds = Size(size.width - stroke, size.height - stroke)
