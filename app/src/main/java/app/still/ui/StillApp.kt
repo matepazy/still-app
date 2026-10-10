@@ -111,7 +111,6 @@ import app.still.ui.settings.DaylineWidgetSettingsScreen
 import app.still.ui.theme.StillSpacing
 import app.still.ui.theme.StillTheme
 import app.still.ui.update.UpdateDetailsSheet
-import app.still.ui.update.VersionOptInSheet
 import app.still.update.UpdateState
 import app.still.ui.timeline.TimelineScreen
 import app.still.ui.timeline.TimelineTopBar
@@ -307,10 +306,6 @@ fun StillApp(
             if (settings.onboardingComplete) {
                 ArchiveMigrationSheet(notice, viewModel::acknowledgeArchiveMigration)
             }
-        }
-
-        if (archiveMigrationNotice == null && settings.onboardingComplete && settings.versionCheckEnabled == null) {
-            VersionOptInSheet(onDecision = viewModel::setVersionCheckEnabled)
         }
 
         if (manageBeta && settings.updateChannel == "pre-release") {

@@ -40,32 +40,6 @@ import app.still.ui.theme.StillSpacing
 import app.still.update.UpdateState
 import app.still.ui.components.StillIcons
 
-@Composable
-fun VersionOptInSheet(onDecision: (Boolean) -> Unit) {
-    ActionDrawer(
-        onDismissRequest = {},
-        dismissible = false,
-        icon = { Icon(painterResource(StillIcons.Download), contentDescription = null) },
-        title = { Text("Automatic updates") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
-                Text("Would you like Still to automatically check for updates via the GitHub API?")
-                Text(
-                    "Still does not send usage data. A version check only generates the standard network information GitHub receives during an API request, such as your IP address.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = { Button(onClick = { onDecision(true) }) { Text("Stay up to date") } },
-        dismissButton = {
-            OutlinedButton(onClick = { onDecision(false) }) {
-                Text("I don't want the latest version")
-            }
-        },
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpdateDetailsSheet(

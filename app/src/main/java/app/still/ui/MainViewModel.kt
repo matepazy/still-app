@@ -244,9 +244,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                         deferred != null -> Unit
                         settings.deferredUpdate != null -> {
                             container.settingsRepository.clearRememberedUpdate()
-                            if (settings.versionCheckEnabled == true) checkForUpdates(settings.updateChannel)
+                            if (settings.versionCheckEnabled) checkForUpdates(settings.updateChannel)
                         }
-                        settings.versionCheckEnabled == true -> checkForUpdates(settings.updateChannel)
+                        settings.versionCheckEnabled -> checkForUpdates(settings.updateChannel)
                     }
                 }
             }

@@ -45,7 +45,7 @@ data class UserSettings(
     val theme: ThemePreference = ThemePreference.System,
     val promotedSimpleTheme: ThemePreference? = null,
     val dailyTargetMinutes: Long? = null,
-    val versionCheckEnabled: Boolean? = null,
+    val versionCheckEnabled: Boolean = true,
     val updateChannel: String = "release",
     val deferredUpdate: DeferredUpdate? = null,
     val saveUsageHistory: Boolean = true,
@@ -135,7 +135,7 @@ class SettingsRepository(private val context: Context) {
             promotedSimpleTheme = preferences[Keys.promotedSimpleTheme]
                 ?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() },
             dailyTargetMinutes = preferences[Keys.target],
-            versionCheckEnabled = preferences[Keys.versionCheckEnabled],
+            versionCheckEnabled = preferences[Keys.versionCheckEnabled] ?: true,
             updateChannel = preferences[Keys.updateChannel] ?: "release",
             deferredUpdate = deferredUpdate,
             saveUsageHistory = preferences[Keys.saveUsageHistory] ?: true,

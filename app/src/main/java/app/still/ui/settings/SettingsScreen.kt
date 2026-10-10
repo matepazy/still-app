@@ -255,7 +255,7 @@ fun SettingsScreen(
                 SettingSwitch(
                     title = "Automatic update checks",
                     supporting = "Check GitHub when Still opens",
-                    checked = settings.versionCheckEnabled == true,
+                    checked = settings.versionCheckEnabled,
                     enabled = true,
                     onCheckedChange = onVersionCheckChange,
                 )
