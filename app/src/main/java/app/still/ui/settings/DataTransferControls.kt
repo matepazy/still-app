@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.still.ui.components.StillBottomSheet
+import app.still.ui.components.StillDrawer
 import app.still.ui.DataTransferState
 import app.still.ui.components.StillIcons
 import app.still.ui.components.TonalPanel
@@ -63,11 +64,12 @@ internal fun DataTransferControls(
         }
     }
     val busy = state is DataTransferState.Working || state == DataTransferState.ChoosingDestination
-    SettingRow("Export data", if (state is DataTransferState.Working && !state.importing) "Encrypting your history…" else "Save an encrypted copy of your history",
-        enabled = !busy, onClick = { dialog = "export" })
-    Hairline()
-    SettingRow("Import data", if (state is DataTransferState.Working && state.importing) "Restoring your history…" else "Restore from a Still export",
-        enabled = !busy, onClick = { importPicker.launch(app.still.data.usage.EncryptedDataExport.IMPORT_MIME_TYPES) })
+    SettingRow("Manage data", when {
+        state is DataTransferState.Working && state.rollingBack -> "Restoring previous database…"
+        state is DataTransferState.Working && state.importing -> "Restoring your history…"
+        state is DataTransferState.Working -> "Encrypting your history…"
+        else -> "Import or export your history"
+    }, enabled = !busy, onClick = { dialog = "manage" })
     if (rollbackUntilMillis != null) {
         Hairline()
         val expiry = java.time.Instant.ofEpochMilli(rollbackUntilMillis).atZone(java.time.ZoneId.systemDefault())
@@ -76,7 +78,19 @@ internal fun DataTransferControls(
             enabled = !busy, onClick = { dialog = "rollback" })
     }
     fun close() { pin = ""; firstPin = ""; dialog = null; importUri = null }
-    if (dialog == "rollback") {
+    if (dialog == "manage") {
+        StillDrawer(onDismissRequest = ::close, expandToFitContent = false) {
+            Text("Manage data", style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = StillSpacing.medium))
+            SettingRow("Import data", "Restore from a Still export", enabled = !busy, onClick = {
+                close()
+                importPicker.launch(app.still.data.usage.EncryptedDataExport.IMPORT_MIME_TYPES)
+            })
+            Hairline()
+            SettingRow("Export data", "Save an encrypted copy of your history",
+                enabled = !busy, onClick = { dialog = "export" })
+        }
+    } else if (dialog == "rollback") {
         StillBottomSheet(onDismissRequest = ::close, expandToFitContent = false, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = StillSpacing.large)
                 .padding(bottom = StillSpacing.large), verticalArrangement = Arrangement.spacedBy(StillSpacing.large)) {
