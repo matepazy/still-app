@@ -1,5 +1,6 @@
 package app.still.ui.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -273,7 +274,7 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
 
                                 TextButton(
                                     enabled = !busy,
-                                    onClick = { perform { repository.remove(item.content.theme.id); drawer = null; notice = "Theme removed." } },
+                                    onClick = { drawer = "remove"; error = null; notice = null },
                                     colors = ButtonDefaults.textButtonColors(
                                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
                                         containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -283,6 +284,40 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
                                     Icon(painterResource(StillIcons.Delete), null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(StillSpacing.small))
                                     Text("Remove theme")
+                                }
+                            }
+                        }
+                        "remove" -> {
+                            val item = state.themes.firstOrNull { it.content.theme.id == managing }
+                            if (item != null) {
+                                Text("Remove theme?", style = MaterialTheme.typography.titleLarge)
+                                Text(
+                                    "Remove \"${item.content.theme.title}\" from your saved themes? This cannot be undone.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Button(
+                                    enabled = !busy,
+                                    onClick = {
+                                        perform {
+                                            repository.remove(item.content.theme.id)
+                                            drawer = null
+                                            managing = null
+                                            Toast.makeText(context, "Theme removed", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError,
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(painterResource(StillIcons.Delete), null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(StillSpacing.small))
+                                    Text("Remove theme")
+                                }
+                                TextButton(enabled = !busy, onClick = ::dismiss, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Cancel")
                                 }
                             }
                         }
