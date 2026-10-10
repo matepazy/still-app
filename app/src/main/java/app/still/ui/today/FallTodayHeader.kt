@@ -45,8 +45,9 @@ internal fun FallTodayHeader(date: String, duration: String) {
                 style = MaterialTheme.typography.labelMedium,
                 color = Color(0xFFFFE5C4),
             )
-            Spacer(Modifier.height(StillSpacing.large))
+            Spacer(Modifier.height(StillSpacing.medium))
             DurationHeadline(duration, color = Color.White)
+            Spacer(Modifier.height(StillSpacing.xSmall))
             Text("Screen time today", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFFFE5C4))
         }
     }
