@@ -194,8 +194,15 @@ object VersionUpdater {
         )
     }
 
-    internal fun managedVersions(releases: List<GitHubRelease>): List<UpdateState.UpdateAvailable> {
-        val published = releases.filter { !it.draft }
+    internal fun managedVersions(
+        releases: List<GitHubRelease>,
+        currentVersion: String,
+    ): List<UpdateState.UpdateAvailable> {
+        val installedStable = !currentVersion.substringBefore('+').contains('-')
+        // Stable releases advance the version code beyond their betas and older releases.
+        val published = releases.filter {
+            !it.draft && (!installedStable || SemanticVersion.compare(it.tag_name, currentVersion) >= 0)
+        }
         val stable = published.filter { !it.prerelease && !it.tag_name.substringBefore('+').contains('-') }
             .maxWithOrNull { a, b -> SemanticVersion.compare(a.tag_name, b.tag_name) }
         return (listOfNotNull(stable) + published.filter {

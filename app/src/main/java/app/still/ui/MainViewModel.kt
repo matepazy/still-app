@@ -557,7 +557,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         _betaVersions.value = BetaVersionsState.Loading
         VersionUpdater.fetchReleases { result ->
             _betaVersions.value = result.fold(
-                onSuccess = { BetaVersionsState.Ready(VersionUpdater.managedVersions(it)) },
+                onSuccess = { BetaVersionsState.Ready(VersionUpdater.managedVersions(it, BuildConfig.VERSION_NAME)) },
                 onFailure = { BetaVersionsState.Error(it.message ?: "Couldn’t load versions.") },
             )
         }

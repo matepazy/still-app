@@ -71,7 +71,7 @@ class VersionUpdaterTest {
             release("v1.6.0-beta10", prerelease = true),
             release("v1.6.0-beta1", prerelease = true),
             release("v1.7.0-beta1", prerelease = true).copy(draft = true),
-        ))
+        ), currentVersion = "1.6.0-beta2")
         assertEquals(listOf("v1.5.4", "v1.6.0-beta10", "v1.6.0-beta2", "v1.6.0-beta1"), result.map { it.version })
         assertTrue(result.all { it.isVersionSwitch })
         assertTrue(!result.first().isBeta)
@@ -83,7 +83,33 @@ class VersionUpdaterTest {
         assertTrue(VersionUpdater.releaseUpdate(release("v1.6.0", prerelease = true))!!.isBeta)
         assertTrue(VersionUpdater.releaseUpdate(release("v1.6.0-beta1"))!!.isBeta)
         assertTrue(!VersionUpdater.releaseUpdate(release("v1.6.0"))!!.isBeta)
-        assertTrue(VersionUpdater.managedVersions(listOf(release("v1.5.4").copy(assets = emptyList()))).isEmpty())
+        assertTrue(VersionUpdater.managedVersions(listOf(release("v1.5.4").copy(assets = emptyList())), "1.5.4").isEmpty())
+    }
+
+    @Test
+    fun stableInstallExcludesSameVersionBetasAndOlderReleases() {
+        val releases = listOf(
+            release("v1.5.5"),
+            release("v1.5.5-beta1", prerelease = true),
+            release("v1.6.0-beta1", prerelease = true),
+            release("v1.6.0-beta10"),
+            release("v1.6.0"),
+            release("v1.6.1-beta1", prerelease = true),
+        )
+        val expected = listOf("v1.6.0", "v1.6.1-beta1")
+        assertEquals(expected, VersionUpdater.managedVersions(releases, "1.6.0").map { it.version })
+        assertEquals(expected, VersionUpdater.managedVersions(releases.reversed(), "v1.6.0+build.15").map { it.version })
+    }
+
+    @Test
+    fun stableInstallFiltersOlderReleasesEvenBeforeInstalledReleaseIsPublished() {
+        val releases = listOf(
+            release("v1.5.5"),
+            release("v1.6.0-beta5", prerelease = true),
+            release("v1.7.0-beta1", prerelease = true),
+        )
+        assertEquals(listOf("v1.7.0-beta1"), VersionUpdater.managedVersions(releases, "1.6.0").map { it.version })
+        assertTrue(VersionUpdater.managedVersions(releases.take(2), "1.6.0").isEmpty())
     }
 
     private fun check(releases: List<GitHubRelease>, current: String = "1.5.2", beta: Boolean = false) =
