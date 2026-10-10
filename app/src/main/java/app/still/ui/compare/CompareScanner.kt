@@ -79,7 +79,14 @@ import app.still.ui.theme.StillSpacing
 import app.still.data.comparison.ComparePayloadCodec
 
 @Composable
-fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
+fun CompareScanner(
+    onCode: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    validateCode: (String) -> Boolean = { ComparePayloadCodec.decode(it).isSuccess },
+    title: String = "Scan a friend's code",
+    instruction: String = "Point at your friend's QR code",
+    invalidMessage: String = "Not a Still code",
+) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
@@ -110,7 +117,7 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(42.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
             Spacer(Modifier.height(24.dp))
-            Text("Scan a friend's code", style = MaterialTheme.typography.headlineMedium)
+            Text(title, style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
             Text("Allow camera access to scan the QR code.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -140,7 +147,7 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     val ignoredCodeLastSeen = remember { AtomicLong(0L) }
     var cameraError by remember { mutableStateOf<String?>(null) }
     var detectedCode by remember { mutableStateOf<String?>(null) }
-    val validCode = remember(detectedCode) { detectedCode?.let { ComparePayloadCodec.decode(it).isSuccess } }
+    val validCode = remember(detectedCode) { detectedCode?.let(validateCode) }
     val confirmationColor = when (validCode) {
         true -> Color(0xFF9FE3B2)
         false -> Color(0xFFFFA8A8)
@@ -251,8 +258,8 @@ fun CompareScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
         }
         Text(when (validCode) {
             true -> "Code scanned"
-            false -> "Not a Still code"
-            null -> "Point at your friend's QR code"
+            false -> invalidMessage
+            null -> instruction
         },
             modifier = Modifier.align(Alignment.Center)
             .offset(y = frameSide / 2 + 32.dp)

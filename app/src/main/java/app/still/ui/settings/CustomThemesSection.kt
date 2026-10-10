@@ -1,7 +1,5 @@
 package app.still.ui.settings
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,6 +37,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +57,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.still.R
 import app.still.StillApplication
 import app.still.data.themes.InstalledTheme
+import app.still.data.themes.ThemePackage
+import app.still.data.themes.ThemeQrCodec
+import app.still.ui.compare.CompareQr
+import app.still.ui.compare.CompareScanner
 import app.still.ui.components.StillDrawer
 import app.still.ui.components.StillIcons
 import app.still.ui.theme.StillSpacing
@@ -66,7 +71,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> Unit, onEditTheme: (String) -> Unit) {
     val context = LocalContext.current
@@ -81,6 +86,9 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
     var operation by remember { mutableStateOf<Job?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
+    var scanning by remember { mutableStateOf(false) }
+    var imported by remember { mutableStateOf<ThemePackage?>(null) }
+    var sharedQr by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
 
     fun perform(canCancel: Boolean = false, block: suspend () -> Unit) {
         if (busy) return
@@ -98,21 +106,6 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
         operation?.cancel()
         if (drawer == null) { error = null; notice = null }
         else closing = true
-    }
-
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
-        val managingId = managing
-        if (uri != null && managingId != null) {
-            val item = state.themes.firstOrNull { it.content.theme.id == managingId }
-            if (item != null) perform(canCancel = true) {
-                withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.use { stream ->
-                        stream.write(item.content.bytes)
-                    }
-                }
-                notice = "Theme exported."
-            }
-        }
     }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = StillSpacing.large), verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
@@ -133,7 +126,7 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
         Row(
             Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
                 .clip(RoundedCornerShape(16.dp)).clickable(enabled = !busy, role = Role.Button, onClick = {
-                    onCreateTheme()
+                    drawer = "add"
                     error = null
                     notice = null
                 })
@@ -162,6 +155,34 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
         }
     }
 
+    if (scanning) {
+        Dialog(onDismissRequest = { scanning = false; drawer = "add" },
+            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            androidx.compose.material3.Scaffold(
+                topBar = {
+                    androidx.compose.material3.TopAppBar(title = { Text("Import a theme") }, navigationIcon = {
+                        IconButton(onClick = { scanning = false; drawer = "add" }) {
+                            Icon(painterResource(StillIcons.Back), "Back")
+                        }
+                    })
+                },
+            ) { padding ->
+                CompareScanner(
+                    onCode = { code ->
+                        imported = ThemeQrCodec.load(code).getOrNull()
+                        scanning = false
+                        drawer = "import"
+                    },
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    validateCode = { ThemeQrCodec.load(it).isSuccess },
+                    title = "Scan a theme code",
+                    instruction = "Point at the theme's QR code",
+                    invalidMessage = "Not a Still theme code",
+                )
+            }
+        }
+    }
+
     if (drawer != null) {
         StillDrawer(
             onDismissRequest = { closing = false; drawer = null; error = null; notice = null },
@@ -171,6 +192,53 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
         ) {
                 Column(verticalArrangement = Arrangement.spacedBy(StillSpacing.medium)) {
                     when (drawer) {
+                        "add" -> {
+                            Text("Create a theme", style = MaterialTheme.typography.titleLarge)
+                            Button(onClick = { drawer = null; onCreateTheme() }, modifier = Modifier.fillMaxWidth()) {
+                                Icon(painterResource(StillIcons.Add), null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(StillSpacing.small))
+                                Text("Create a theme")
+                            }
+                            androidx.compose.material3.FilledTonalButton(
+                                onClick = { drawer = null; imported = null; scanning = true },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Icon(painterResource(StillIcons.Scan), null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(StillSpacing.small))
+                                Text("Import a theme")
+                            }
+                        }
+                        "share" -> {
+                            Text("Share a theme", style = MaterialTheme.typography.titleLarge)
+                            Text("Scan this code in Still to import the theme.", style = MaterialTheme.typography.bodyMedium)
+                            sharedQr?.let { qr ->
+                                Image(qr, "Theme QR code", Modifier.fillMaxWidth().height(300.dp), contentScale = ContentScale.Fit)
+                            }
+                            Text("The theme is shared directly between phones. No upload is needed.",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Button(onClick = ::dismiss, modifier = Modifier.fillMaxWidth()) { Text("Done") }
+                        }
+                        "import" -> {
+                            imported?.let { content ->
+                                Text("Import a theme", style = MaterialTheme.typography.titleLarge)
+                                CustomThemeCard(InstalledTheme(content, emptySet(), null, false),
+                                    selected = false, enabled = false, manageEnabled = false, onSelect = {}, onManage = {})
+                                if (content.theme.requests.isNotEmpty()) {
+                                    Text("This theme requests access to local data. Importing does not grant access.",
+                                        style = MaterialTheme.typography.bodyMedium)
+                                    content.theme.requests.forEach { Text(it.description, style = MaterialTheme.typography.bodySmall) }
+                                }
+                                Button(enabled = !busy, onClick = {
+                                    perform {
+                                        repository.install(content, emptySet(), null, false)
+                                        onCustomThemeSelected()
+                                        imported = null
+                                        drawer = null
+                                        notice = "Theme imported."
+                                    }
+                                }, modifier = Modifier.fillMaxWidth()) { Text("Import theme") }
+                            }
+                        }
                         "manage" -> {
                             val item = state.themes.firstOrNull { it.content.theme.id == managing }
                             if (item != null) {
@@ -189,14 +257,17 @@ fun CustomThemesSection(onCustomThemeSelected: () -> Unit, onCreateTheme: () -> 
                                     }
                                     androidx.compose.material3.FilledTonalButton(
                                         onClick = {
-                                            val slug = item.content.theme.title.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').ifBlank { "theme" }
-                                            val suggestedName = "$slug.tc"
-                                            exportLauncher.launch(suggestedName)
+                                            perform(canCancel = true) {
+                                                sharedQr = withContext(Dispatchers.Default) {
+                                                    CompareQr.bitmap(ThemeQrCodec.encode(item.content.bytes)).asImageBitmap()
+                                                }
+                                                drawer = "share"
+                                            }
                                         }, enabled = !busy, modifier = Modifier.weight(1f),
                                     ) {
                                         Icon(painterResource(StillIcons.Export), null, Modifier.size(18.dp))
                                         Spacer(Modifier.width(StillSpacing.small))
-                                        Text("Export")
+                                        Text("Share")
                                     }
                                 }
 
