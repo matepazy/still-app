@@ -73,6 +73,7 @@ class DaylineWidgetProvider : AppWidgetProvider() {
                 val container = (context.applicationContext as StillApplication).container
                 container.settingsRepository.refreshSeasonalDate()
                 val settings = container.settingsRepository.settings.first()
+                container.communityThemes.awaitLoaded()
                 render(context, manager, ids, DaylineWidgetContent.Loading, settings)
                 val content = if (!container.permissionManager.hasUsageAccess()) {
                     DaylineWidgetContent.PermissionRequired

@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.material3.ColorScheme
 import app.still.R
 import app.still.data.settings.UserSettings
 import app.still.data.settings.WidgetAppearance
@@ -36,8 +37,8 @@ internal data class WidgetPalette(
     @param:ColorInt val secondary: Int,
 ) {
     companion object {
-        fun resolve(context: Context, settings: UserSettings): WidgetPalette {
-            return resolve(context, settings.widgetAppearance, settings.widgetColor, settings.theme)
+        fun resolve(context: Context, settings: UserSettings, appColors: ColorScheme? = null): WidgetPalette {
+            return resolve(context, settings.widgetAppearance, settings.widgetColor, settings.theme, appColors)
         }
 
         fun resolve(
@@ -45,6 +46,7 @@ internal data class WidgetPalette(
             appearance: WidgetAppearance,
             customColor: String?,
             appTheme: ThemePreference,
+            appColors: ColorScheme? = null,
         ): WidgetPalette {
             parseWidgetColor(customColor)?.let { background ->
                 val colors = widgetContrastColors(background)
@@ -52,7 +54,7 @@ internal data class WidgetPalette(
             }
             if (appearance == WidgetAppearance.App) {
                 val community = (context.applicationContext as? app.still.StillApplication)?.container?.communityThemes?.state?.value?.active
-                val colors = community?.let { app.still.ui.theme.communityStyle(context, it).colors } ?: appColorScheme(context, appTheme)
+                val colors = appColors ?: community?.let { app.still.ui.theme.communityStyle(context, it).colors } ?: appColorScheme(context, appTheme)
                 return WidgetPalette(
                     colors.surfaceContainer.toArgb(),
                     colors.onSurface.toArgb(),

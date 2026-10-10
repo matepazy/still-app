@@ -85,6 +85,11 @@ class CommunityThemeRepository(
             } finally { ready.complete(Unit) }
         }
     }
+    /** Widget broadcasts can start the process before the saved catalog has been restored. */
+    suspend fun awaitLoaded() {
+        ready.await()
+    }
+
     suspend fun fromFile(uri: Uri): ThemePackage = withContext(Dispatchers.IO) {
         require(uri.scheme == "content") { "Choose a file through the system file picker" }
         val bytes = requireNotNull(context.contentResolver.openInputStream(uri)) { "Cannot open this file" }

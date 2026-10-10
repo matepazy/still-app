@@ -99,6 +99,7 @@ import app.still.ui.components.StillWordmark
 import app.still.ui.components.TonalPanel
 import app.still.ui.components.compactDuration
 import app.still.ui.theme.StillSpacing
+import app.still.ui.theme.LocalCommunityStyle
 import app.still.update.UpdateState
 import app.still.widget.WidgetPalette
 import java.text.NumberFormat
@@ -778,6 +779,7 @@ fun WidgetSettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     var colorDialog by remember { mutableStateOf(false) }
+    val appThemeName = LocalCommunityStyle.current?.installed?.content?.theme?.title ?: settings.theme.displayName
     val savedCornerRadius = if (settings.widgetCornerRadiusDp == WIDGET_PILL_RADIUS) {
         36f
     } else {
@@ -819,7 +821,7 @@ fun WidgetSettingsScreen(
                         title = "Theme",
                         options = WidgetAppearance.entries.map { appearance ->
                             DirectChoiceOption(
-                                label = if (appearance == WidgetAppearance.App) "App · ${settings.theme.displayName}" else "System",
+                                label = if (appearance == WidgetAppearance.App) "App · $appThemeName" else "System",
                                 selected = settings.widgetAppearance == appearance,
                                 onClick = { onWidgetThemeChange(appearance) },
                             )
@@ -1009,6 +1011,7 @@ fun DaylineWidgetSettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     var colorDialog by remember { mutableStateOf(false) }
+    val appThemeName = LocalCommunityStyle.current?.installed?.content?.theme?.title ?: settings.theme.displayName
     val savedCornerRadius = if (settings.daylineWidgetCornerRadiusDp == WIDGET_PILL_RADIUS) {
         36f
     } else {
@@ -1050,7 +1053,7 @@ fun DaylineWidgetSettingsScreen(
                         title = "Theme",
                         options = WidgetAppearance.entries.map { appearance ->
                             DirectChoiceOption(
-                                label = if (appearance == WidgetAppearance.App) "App · ${settings.theme.displayName}" else "System",
+                                label = if (appearance == WidgetAppearance.App) "App · $appThemeName" else "System",
                                 selected = settings.daylineWidgetAppearance == appearance,
                                 onClick = { onWidgetThemeChange(appearance) },
                             )
@@ -1270,7 +1273,8 @@ private fun displayWidgetColor(color: String?): String = when (color) {
 @Composable
 private fun WidgetPreview(settings: UserSettings, duration: Duration) {
     val context = LocalContext.current
-    val palette = WidgetPalette.resolve(context, settings)
+    val communityStyle = LocalCommunityStyle.current
+    val palette = WidgetPalette.resolve(context, settings, communityStyle?.colors)
     val background = Color(palette.background)
     val primary = Color(palette.primary)
     val secondary = Color(palette.secondary)
@@ -1292,7 +1296,7 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
 
     WidgetPreviewLayout(
         background = background,
-        themeGraphicRes = if (settings.widgetShowThemeGraphics) when (settings.theme) {
+        themeGraphicRes = if (settings.widgetShowThemeGraphics && communityStyle == null) when (settings.theme) {
             ThemePreference.Fall -> R.drawable.ic_widget_fall_leaves
             ThemePreference.Halloween -> R.drawable.ic_widget_halloween_moon
             else -> null
@@ -1318,7 +1322,8 @@ private fun WidgetPreview(settings: UserSettings, duration: Duration) {
 @Composable
 private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
     val context = LocalContext.current
-    val palette = WidgetPalette.resolve(context, settings.daylineWidgetAppearance, settings.daylineWidgetColor, settings.theme)
+    val communityStyle = LocalCommunityStyle.current
+    val palette = WidgetPalette.resolve(context, settings.daylineWidgetAppearance, settings.daylineWidgetColor, settings.theme, communityStyle?.colors)
     val background = Color(palette.background)
     val primary = Color(palette.primary)
     val secondary = Color(palette.secondary)
@@ -1332,7 +1337,7 @@ private fun DaylineWidgetPreview(settings: UserSettings, day: DailyUsage) {
 
     WidgetPreviewLayout(
         background = background,
-        themeGraphicRes = if (settings.daylineWidgetShowThemeGraphics) when (settings.theme) {
+        themeGraphicRes = if (settings.daylineWidgetShowThemeGraphics && communityStyle == null) when (settings.theme) {
             ThemePreference.Fall -> R.drawable.ic_widget_fall_leaves
             ThemePreference.Halloween -> R.drawable.ic_widget_halloween_bats
             else -> null

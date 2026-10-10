@@ -65,6 +65,7 @@ class ScreenTimeWidgetProvider : AppWidgetProvider() {
                 val container = application.container
                 container.settingsRepository.refreshSeasonalDate()
                 val settings = container.settingsRepository.settings.first()
+                container.communityThemes.awaitLoaded()
                 render(context, appWidgetManager, appWidgetIds, WidgetContent.Loading, settings)
                 val content = if (!container.permissionManager.hasUsageAccess()) {
                     WidgetContent.PermissionRequired
